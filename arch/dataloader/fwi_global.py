@@ -47,13 +47,14 @@ class ModelDataset(Dataset):
 
         self.hparams = hparams
 
-        if inp_daily:
-            self.inp_daily = inp_daily
-        else:
-            with xr.open_dataset(root_dir + "/era5_daily.nc") as ds:
-                self.inp_daily = np.stack(
-                    [ds[var].values for var in ds.data_vars], axis=-1
-                )
+        file_list = glob(f'{forcings_dir}/ECMWF_FO_2019*.nc')
+        files = sorted(sorted(glob(f'{forcings_dir}/ECMWF_FO_2019*.nc')), key=lambda x: int(x.split("2019")[1].split("_1200_hr_")[0][:2])*100 + int(x.split("2019")[1].split("_1200_hr_")[0][2:]))
+        with xr.open_mfdataset(file_list) as ds:
+            self.input = ds
+
+
+        file_list = glob(f'{forecast_dir}/ECMWF_FWI_2019*.nc')
+        
 
         if inp_invar:
             self.inp_invar = inp_invar

@@ -68,9 +68,9 @@ def main(hparams):
     # LOGGING SETUP
     # ------------------------
 
-    tb_logger = TensorBoardLogger("tb_logs/", name=name)
+    tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
     wandb_logger = WandbLogger(
-        name=hparams.comment if hparams.comment else time.ctime(), project=name
+        name=hparams.comment if hparams.comment else time.ctime(), project=name, save_dir='logs/wandb'
     )
     if not hparams.test:
         wandb_logger.watch(model, log="all", log_freq=100)
