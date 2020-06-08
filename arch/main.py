@@ -41,10 +41,8 @@ def main(hparams):
     # ------------------------
 
     Model = importlib.import_module(f"model.{hparams.model}").Model
-    if hparams.model in ["zhang_class", "zhang_orig", "zhang", "custom"]:
-        ModelDataset = importlib.import_module(f"dataloader.phase_1").ModelDataset
-    elif hparams.model in ["unet", "resnet"]:
-        ModelDataset = importlib.import_module(f"dataloader.phase_2").ModelDataset
+    if hparams.model in ["unet"]:
+        ModelDataset = importlib.import_module(f"dataloader.fwi_global").ModelDataset
 
     name = hparams.model + "-" + hparams.out
     if hparams.test:
@@ -70,7 +68,7 @@ def main(hparams):
 
     tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
     wandb_logger = WandbLogger(
-        name=hparams.comment if hparams.comment else time.ctime(), project=name, save_dir='logs/wandb'
+        name=hparams.comment if hparams.comment else time.ctime(), project=name, save_dir='logs'
     )
     if not hparams.test:
         wandb_logger.watch(model, log="all", log_freq=100)
@@ -109,7 +107,7 @@ def main(hparams):
             precision=16 if hparams.use_16bit else 32,
             # Alternative method for 16-bit training
             # amp_level="O2",
-            logger=[wandb_logger, tb_logger],
+            # logger=[wandb_logger, tb_logger],
             # checkpoint_callback=checkpoint_callback,
             # Using maximum GPU memory. NB: Learning rate should be adjusted according to
             # the batch size
@@ -165,50 +163,28 @@ if __name__ == "__main__":
 
     # these are project-wide arguments
 
-    # Number of divisions for input patches
-    # Maximum 8 for `custom` model and 11 for `zhang` model
-    div = 8
-    x = (269 + div - 1) // div
-    y = (183 + div - 1) // div
-
     params = dict(
         #
-        # Phase 1
-        in_width=x,
-        in_length=y,
-        in_depth=7,
-        div=div,
-        output_size=x * y,
-        drop_prob=0.5,
-        conv1={"stride": 1, "kernel_size": 3, "channels": 64},
-        conv2={"stride": 1, "kernel_size": 3, "channels": 128},
-        conv3={"stride": 1, "kernel_size": 3, "channels": 256},
-        pool1={"stride": 2, "kernel_size": 2},
-        pool2={"stride": 2, "kernel_size": 2},
-        fc1={"out_features": int(1 * x * y)},
-        fc2={"out_features": int(1 * x * y)},
-        fc3={"out_features": int(1 * x * y)},
-        #
         # U-Net config
-        init_features=64,
-        in_channels=10,
+        init_features=4,
+        in_channels=8,
         #
         # General
         epochs=100,
-        learning_rate=0.1,
-        batch_size=19,
+        learning_rate=0.01,
+        batch_size=1,
         split=0.2,
         use_16bit=False,
         gpus=1,
         optim="one_cycle",  # one_cycle, cosine
         #
         # Run specific
-        model="unet",  # zhang_class, zhang_orig, zhang, custom, unet, resnet
-        out="reanalysis_fwi_africa",  # reanalysis_fwi(10), reanalysis_danger,
-                                      # reanalysis_fwi, gfas_full, reanalysis_fwi_africa(15)
-        root_dir="/nvme0/wikilimo-remote-gpu-tpu/deepgeff/data/phase_2/data",
-        thresh=15,
-        comment="something broke",
+        model="unet",  # unet
+        out="fwi_global",  # fwi_global
+        forecast_dir='/nvme0/fwi-forecast',
+        forcings_dir='/nvme1/fwi-forcings',
+        thresh=10.4,
+        comment="debug run",
         #
         # Test run
         test=False,

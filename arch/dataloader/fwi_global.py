@@ -5,7 +5,7 @@ import os
 from argparse import ArgumentParser
 from collections import OrderedDict
 import json
-import glob
+from glob import glob
 
 import xarray as xr
 import numpy as np
@@ -34,103 +34,96 @@ class ModelDataset(Dataset):
 
     def __init__(
         self,
-        inp_daily=None,
-        inp_invar=None,
-        output=None,
-        out=None,
-        mask=None,
-        root_dir=None,
+        out_var=None,
+        out_mean=None,
+        forecast_dir=None,
+        forcings_dir=None,
         transform=None,
         hparams=None,
         **kwargs,
     ):
 
         self.hparams = hparams
+        self.out_mean = out_mean
+        self.out_var = out_var
 
-        file_list = glob(f'{forcings_dir}/ECMWF_FO_2019*.nc')
-        files = sorted(sorted(glob(f'{forcings_dir}/ECMWF_FO_2019*.nc')), key=lambda x: int(x.split("2019")[1].split("_1200_hr_")[0][:2])*100 + int(x.split("2019")[1].split("_1200_hr_")[0][2:]))
-        with xr.open_mfdataset(file_list) as ds:
+        preprocess = lambda x: x.isel(time=slice(0, 1))
+
+        inp_files = sorted(
+            sorted(glob(f"{forcings_dir}/ECMWF_FO_2019*.nc")),
+            key=lambda x: int(x.split("2019")[1].split("_1200_hr_")[0][:2]) * 100
+            + int(x.split("2019")[1].split("_1200_hr_")[0][2:]),
+        )[:736]
+        with xr.open_mfdataset(
+            inp_files, preprocess=preprocess, engine="h5netcdf"
+        ) as ds:
             self.input = ds
 
+        out_files = sorted(
+            glob(f"{forecast_dir}/ECMWF_FWI_2019*_1200_hr_fwi.nc"),
+            key=lambda x: int(x[-19:-17]) * 100 + int(x[-17:-15]),
+        )
+        with xr.open_mfdataset(
+            out_files, preprocess=preprocess, engine="h5netcdf"
+        ) as ds:
+            self.output = ds
 
-        file_list = glob(f'{forecast_dir}/ECMWF_FWI_2019*.nc')
-        
+        assert len(self.input.time) == len(self.input.time)
 
-        if inp_invar:
-            self.inp_invar = inp_invar
-        else:
-            with xr.open_dataset(root_dir + "/era5_invar.nc") as ds:
-                self.inp_invar = np.stack(
-                    [ds[var].values.squeeze() for var in ds.data_vars], axis=-1
-                )
+        self.out_mean = out_mean if out_mean else 18.389227
+        self.out_var = out_var if out_var else 716.1736
 
-        if output:
-            self.output = transforms.Compose([transforms.ToTensor(),])(
-                output
-            ).permute(1, 2, 0)
-        else:
-            with xr.open_dataset(root_dir + "/" + out + ".nc4") as ds:
-                self.output = transforms.Compose([transforms.ToTensor(),])(
-                    ds[next(iter(ds.data_vars))].values
-                ).permute(1, 2, 0)
-
-        if mask:
-            self.mask = mask
-        else:
-            if out == "gfas_full":
-                with xr.open_dataset(root_dir + "/mask.nc4") as ds:
-                    self.mask = torch.from_numpy(ds.mask.values)
-            elif out == "reanalysis_fwi_africa":
-                self.mask = ~torch.isnan(self.output[0])
-
-        self.out_mean = self.output[self.mask.expand_as(self.output)].mean()
-        self.out_var = self.output[self.mask.expand_as(self.output)].var()
-
-        self.root_dir = root_dir
         self.transform = transforms.Compose(
             [
                 transforms.ToTensor(),
                 transforms.Normalize(
-                    (
-                        -5.7299817e-01,
-                        6.2098390e-01,
-                        3.5890472e01,
-                        3.5890472e01,
-                        7.0098579e-02,
-                        9.1358015e-05,
-                        1.6867602e-01,
-                        9.4428211e-01,
-                        3.6612868e-03,
-                        3.9232330e00,
-                    ),
-                    (
-                        2.9325078e00,
-                        2.8127456e00,
-                        9.5853851e01,
-                        9.5853851e01,
-                        2.6476136e-01,
-                        5.3015084e-04,
-                        0.33469415,
-                        1.605381,
-                        0.00712241,
-                        7.042249,
-                    ),
+                    (72.03445, 281.2624, 2.4925985, 6.5504117,72.03445, 281.2624, 2.4925985, 6.5504117,),
+                    (18.8233801, 21.9253515, 6.37190019, 3.73465273,18.8233801, 21.9253515, 6.37190019, 3.73465273,),
                 ),
             ]
         )
 
     def __len__(self):
-        return self.output.shape[0]
+        return 2*(len(self.input.time) - 1)
 
     def __getitem__(self, idx):
         """
         Internal method used by pytorch to fetch input and corresponding output tensors.
         """
+
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        X = np.concatenate((self.inp_daily[idx], self.inp_invar), axis=-1)
-        y = self.output[idx].unsqueeze(0)
+        if idx % 2:
+            X = np.stack(
+                (
+                    self.input["rh"][idx][:, :2560],
+                    self.input["t2"][idx][:, :2560],
+                    self.input["tp"][idx][:, :2560],
+                    self.input["wspeed"][idx][:, :2560],
+                    self.input["rh"][idx+1][:, :2560],
+                    self.input["t2"][idx+1][:, :2560],
+                    self.input["tp"][idx+1][:, :2560],
+                    self.input["wspeed"][idx+1][:, :2560],
+                ),
+                axis=-1,
+            )
+            y = torch.from_numpy(self.output["fwi"][idx+1].values[:, :2560]).unsqueeze(0)
+        else:
+            X = np.stack(
+                (
+                    self.input["rh"][idx][:, 2560:],
+                    self.input["t2"][idx][:, 2560:],
+                    self.input["tp"][idx][:, 2560:],
+                    self.input["wspeed"][idx][:, 2560:],
+                    self.input["rh"][idx+1][:, 2560:],
+                    self.input["t2"][idx+1][:, 2560:],
+                    self.input["tp"][idx+1][:, 2560:],
+                    self.input["wspeed"][idx+1][:, 2560:],
+                ),
+                axis=-1,
+            )
+            y = torch.from_numpy(self.output["fwi"][idx+1].values[:, 2560:]).unsqueeze(0)
 
         if self.transform:
             X = self.transform(X)
@@ -148,7 +141,8 @@ class ModelDataset(Dataset):
         mask = model.data.mask.expand_as(y_pre)
         if y_pre.shape != y_hat_pre.shape:
             breakpoint()
-        y = y_pre[mask]; y_hat = y_hat_pre[mask]
+        y = y_pre[mask]
+        y_hat = y_hat_pre[mask]
         pre_loss = (y_hat - y) ** 2
         loss = pre_loss.mean()
         if model.aux:
@@ -172,17 +166,14 @@ class ModelDataset(Dataset):
         mask = model.data.mask.expand_as(y_pre)
         if y_pre.shape != y_hat_pre.shape:
             breakpoint()
-        y = y_pre[mask]; y_hat = y_hat_pre[mask]
+        y = y_pre[mask]
+        y_hat = y_hat_pre[mask]
         pre_loss = (y_hat - y) ** 2
         val_loss = pre_loss.mean()
 
         # Accuracy for multiple thresholds
-        n_correct_pred = (
-            (((y - y_hat).abs() < model.hparams.thresh / 2)).float().mean()
-        )
-        n_correct_pred_10 = (
-            (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
-        )
+        n_correct_pred = (((y - y_hat).abs() < model.hparams.thresh / 2)).float().mean()
+        n_correct_pred_10 = (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
         n_correct_pred_20 = (
             (((y - y_hat).abs() < model.hparams.thresh * 2)).float().mean()
         )
@@ -205,17 +196,14 @@ class ModelDataset(Dataset):
         x, y = batch
         y_hat, _ = model(x) if model.aux else model(x), None
         mask = model.data.mask.expand_as(y)
-        y = y[mask]; y_hat = y_hat[mask]
+        y = y[mask]
+        y_hat = y_hat[mask]
         pre_loss = (y_hat - y) ** 2
         test_loss = pre_loss.mean()
 
         # Accuracy for multiple thresholds
-        n_correct_pred = (
-            (((y - y_hat).abs() < model.hparams.thresh / 2)).float().mean()
-        )
-        n_correct_pred_10 = (
-            (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
-        )
+        n_correct_pred = (((y - y_hat).abs() < model.hparams.thresh / 2)).float().mean()
+        n_correct_pred_10 = (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
         n_correct_pred_20 = (
             (((y - y_hat).abs() < model.hparams.thresh * 2)).float().mean()
         )

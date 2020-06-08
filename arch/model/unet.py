@@ -5,7 +5,7 @@ import os
 from argparse import ArgumentParser
 from collections import OrderedDict
 import json
-import glob
+from glob import glob
 
 import xarray as xr
 import numpy as np
@@ -73,8 +73,8 @@ class Model(BaseModel):
         self.hparams = hparams
         self.batch_size = self.hparams.batch_size
         out_channels = 1
-
         features = self.hparams.init_features
+
         self.encoder1 = Model._block(self.hparams.in_channels, features, name="enc1")
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.encoder2 = Model._block(features, features * 2, name="enc2")

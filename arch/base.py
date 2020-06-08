@@ -5,7 +5,7 @@ import os
 from argparse import ArgumentParser
 from collections import OrderedDict
 import json
-import glob
+from glob import glob
 import types
 
 import xarray as xr
@@ -165,9 +165,9 @@ class BaseModel(LightningModule):
             pass
         elif ModelDataset:
             self.data = ModelDataset(
-                root_dir=self.hparams.root_dir,
-                in_depth=self.hparams.in_depth,
-                div=self.hparams.div,
+                forecast_dir=self.hparams.forecast_dir,
+                forcings_dir=self.hparams.forcings_dir,
+                hparams=self.hparams,
                 out=self.hparams.out,
             )
             self.add_bias(self.data.out_mean)
@@ -190,18 +190,18 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.train_data,
             batch_size=self.hparams.batch_size,
-            num_workers=128,
+            num_workers=1,
             shuffle=True,
         )
 
     def val_dataloader(self):
         log.info("Validation data loader called.")
         return DataLoader(
-            self.test_data, batch_size=self.hparams.batch_size, num_workers=128
+            self.test_data, batch_size=self.hparams.batch_size, num_workers=1
         )
 
     def test_dataloader(self):
         log.info("Test data loader called.")
         return DataLoader(
-            self.test_data, batch_size=self.hparams.batch_size, num_workers=128
+            self.test_data, batch_size=self.hparams.batch_size, num_workers=1
         )
