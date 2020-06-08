@@ -13,3 +13,5 @@
 *wandb*
 *.ckpt
 *.7z
+*lightning_logs*
+*tb_logs*

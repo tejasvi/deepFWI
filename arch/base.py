@@ -190,18 +190,18 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.train_data,
             batch_size=self.hparams.batch_size,
-            num_workers=1,
+            num_workers=64,
             shuffle=True,
         )
 
     def val_dataloader(self):
         log.info("Validation data loader called.")
         return DataLoader(
-            self.test_data, batch_size=self.hparams.batch_size, num_workers=1
+            self.test_data, batch_size=self.hparams.batch_size, num_workers=64
         )
 
     def test_dataloader(self):
         log.info("Test data loader called.")
         return DataLoader(
-            self.test_data, batch_size=self.hparams.batch_size, num_workers=1
+            self.test_data, batch_size=self.hparams.batch_size, num_workers=64
         )

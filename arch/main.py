@@ -107,8 +107,8 @@ def main(hparams):
             precision=16 if hparams.use_16bit else 32,
             # Alternative method for 16-bit training
             # amp_level="O2",
-            # logger=[wandb_logger, tb_logger],
-            # checkpoint_callback=checkpoint_callback,
+            logger=[wandb_logger, tb_logger],
+            checkpoint_callback=checkpoint_callback,
             # Using maximum GPU memory. NB: Learning rate should be adjusted according to
             # the batch size
             # auto_scale_batch_size='binsearch',
@@ -166,12 +166,12 @@ if __name__ == "__main__":
     params = dict(
         #
         # U-Net config
-        init_features=4,
+        init_features=7,
         in_channels=8,
         #
         # General
         epochs=100,
-        learning_rate=0.01,
+        learning_rate=0.1,
         batch_size=1,
         split=0.2,
         use_16bit=False,
@@ -184,7 +184,7 @@ if __name__ == "__main__":
         forecast_dir='/nvme0/fwi-forecast',
         forcings_dir='/nvme1/fwi-forcings',
         thresh=10.4,
-        comment="debug run",
+        comment="seems to be working",
         #
         # Test run
         test=False,

@@ -57,7 +57,7 @@ class ModelDataset(Dataset):
         with xr.open_mfdataset(
             inp_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.input = ds
+            self.input = ds.load()
 
         out_files = sorted(
             glob(f"{forecast_dir}/ECMWF_FWI_2019*_1200_hr_fwi.nc"),
@@ -66,9 +66,11 @@ class ModelDataset(Dataset):
         with xr.open_mfdataset(
             out_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.output = ds
+            self.output = ds.load()
 
         assert len(self.input.time) == len(self.input.time)
+
+        self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
 
         self.out_mean = out_mean if out_mean else 18.389227
         self.out_var = out_var if out_var else 716.1736
@@ -84,7 +86,7 @@ class ModelDataset(Dataset):
         )
 
     def __len__(self):
-        return 2*(len(self.input.time) - 1)
+        return len(self.input.time) - 1
 
     def __getitem__(self, idx):
         """
@@ -94,21 +96,29 @@ class ModelDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        if idx % 2:
+        if 1 or idx % 2:
             X = np.stack(
                 (
-                    self.input["rh"][idx][:, :2560],
-                    self.input["t2"][idx][:, :2560],
-                    self.input["tp"][idx][:, :2560],
-                    self.input["wspeed"][idx][:, :2560],
-                    self.input["rh"][idx+1][:, :2560],
-                    self.input["t2"][idx+1][:, :2560],
-                    self.input["tp"][idx+1][:, :2560],
-                    self.input["wspeed"][idx+1][:, :2560],
+                    # self.input["rh"][idx][:, :2560],
+                    # self.input["t2"][idx][:, :2560],
+                    # self.input["tp"][idx][:, :2560],
+                    # self.input["wspeed"][idx][:, :2560],
+                    # self.input["rh"][idx+1][:, :2560],
+                    # self.input["t2"][idx+1][:, :2560],
+                    # self.input["tp"][idx+1][:, :2560],
+                    # self.input["wspeed"][idx+1][:, :2560],self.input["rh"][idx][:, :2560],
+                    self.input["rh"][idx],
+                    self.input["t2"][idx],
+                    self.input["tp"][idx],
+                    self.input["wspeed"][idx],
+                    self.input["rh"][idx+1],
+                    self.input["t2"][idx+1],
+                    self.input["tp"][idx+1],
+                    self.input["wspeed"][idx+1],
                 ),
                 axis=-1,
             )
-            y = torch.from_numpy(self.output["fwi"][idx+1].values[:, :2560]).unsqueeze(0)
+            y = torch.from_numpy(self.output["fwi"][idx+1].values).unsqueeze(0)
         else:
             X = np.stack(
                 (
@@ -152,7 +162,7 @@ class ModelDataset(Dataset):
         if loss != loss:
             breakpoint()
         tensorboard_logs = {"train_loss_unscaled": loss.item()}
-        self.logger.experiment.log(tensorboard_logs)
+        model.logger.log_metrics(tensorboard_logs)
         return {"loss": loss.true_divide(model.data.out_var), "log": tensorboard_logs}
 
     def validation_step(self, model, batch, batch_idx):
@@ -185,7 +195,7 @@ class ModelDataset(Dataset):
             "n_correct_pred_20": n_correct_pred_20,
             "abs_error": abs_error,
         }
-        self.logger.experiment.log(tensorboard_logs)
+        model.logger.log_metrics(tensorboard_logs)
         return {
             "val_loss": val_loss,
             "log": tensorboard_logs,
@@ -215,7 +225,7 @@ class ModelDataset(Dataset):
             "n_correct_pred_20": n_correct_pred_20,
             "abs_error": abs_error,
         }
-        self.logger.experiment.log(tensorboard_logs)
+        model.logger.log_metrics(tensorboard_logs)
         return {
             "test_loss": test_loss,
             "log": tensorboard_logs,
