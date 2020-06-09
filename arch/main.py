@@ -59,7 +59,7 @@ def main(hparams):
         prefix=name + time.ctime(),
     )
 
-    model = Model(hparams).to(non_blocking=True)
+    model = Model(hparams)
     model.prepare_data(ModelDataset)
 
     # ------------------------
