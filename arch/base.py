@@ -134,7 +134,7 @@ class BaseModel(LightningModule):
         Return optimizers and learning rate schedulers.
         At least one optimizer is required.
         """
-        optimizer = optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        optimizer = optim.Adam(self.parameters(), lr=self.hparams.learning_rate, weight_decay=None)
         if self.hparams.optim == "cosine":
             scheduler = [
                 optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10),
@@ -189,7 +189,7 @@ class BaseModel(LightningModule):
             batch_size=self.hparams.batch_size,
             num_workers=32,
             shuffle=True,
-            # pin_memory=True,
+            pin_memory=True,
         )
 
     def val_dataloader(self):
@@ -198,7 +198,7 @@ class BaseModel(LightningModule):
             self.test_data,
             batch_size=self.hparams.batch_size,
             num_workers=32,
-            # pin_memory=True,
+            pin_memory=True,
         )
 
     def test_dataloader(self):
@@ -207,5 +207,5 @@ class BaseModel(LightningModule):
             self.test_data,
             batch_size=self.hparams.batch_size,
             num_workers=32,
-            # pin_memory=True,
+            pin_memory=True,
         )
