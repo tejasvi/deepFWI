@@ -144,11 +144,11 @@ class BaseModel(LightningModule):
             ]
         elif self.hparams.optim == "one_cycle":
             scheduler = optim.lr_scheduler.OneCycleLR(
-                    optimizer,
-                    max_lr=self.hparams.learning_rate,
-                    steps_per_epoch=len(self.train_data),
-                    epochs=self.hparams.epochs,
-                    )
+                optimizer,
+                max_lr=self.hparams.learning_rate,
+                steps_per_epoch=len(self.train_data),
+                epochs=self.hparams.epochs,
+            )
         return [optimizer], [scheduler]
 
     def add_bias(self, bias):
@@ -173,10 +173,7 @@ class BaseModel(LightningModule):
             self.add_bias(self.data.out_mean)
             self.train_data, self.test_data = torch.utils.data.random_split(
                 self.data,
-                [
-                    len(self.data) * 8 // 10,
-                    len(self.data) - len(self.data) * 8 // 10,
-                ],
+                [len(self.data) * 8 // 10, len(self.data) - len(self.data) * 8 // 10,],
             )
 
             self.data_prepared = True
@@ -190,18 +187,25 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.train_data,
             batch_size=self.hparams.batch_size,
-            num_workers=64,
+            num_workers=1,
             shuffle=True,
+            pin_memory=True,
         )
 
     def val_dataloader(self):
         log.info("Validation data loader called.")
         return DataLoader(
-            self.test_data, batch_size=self.hparams.batch_size, num_workers=64
+            self.test_data,
+            batch_size=self.hparams.batch_size,
+            num_workers=1,
+            pin_memory=True,
         )
 
     def test_dataloader(self):
         log.info("Test data loader called.")
         return DataLoader(
-            self.test_data, batch_size=self.hparams.batch_size, num_workers=64
+            self.test_data,
+            batch_size=self.hparams.batch_size,
+            num_workers=1,
+            pin_memory=True,
         )

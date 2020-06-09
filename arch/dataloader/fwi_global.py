@@ -57,7 +57,7 @@ class ModelDataset(Dataset):
         with xr.open_mfdataset(
             inp_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.input = ds.load()
+            self.input = ds.isel(time=slice(0, 10)).load()
 
         out_files = sorted(
             glob(f"{forecast_dir}/ECMWF_FWI_2019*_1200_hr_fwi.nc"),
@@ -66,7 +66,7 @@ class ModelDataset(Dataset):
         with xr.open_mfdataset(
             out_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.output = ds.load()
+            self.output = ds.isel(time=slice(0, 10)).load()
 
         assert len(self.input.time) == len(self.input.time)
 
