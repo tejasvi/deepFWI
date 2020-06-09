@@ -172,7 +172,7 @@ if __name__ == "__main__":
         #
         # General
         epochs=100,
-        learning_rate=0.1,
+        learning_rate=1,
         batch_size=1,
         split=0.2,
         use_16bit=False,
@@ -185,7 +185,7 @@ if __name__ == "__main__":
         forecast_dir='/nvme0/fwi-forecast',
         forcings_dir='/nvme1/fwi-forcings',
         thresh=10.4,
-        comment="seems to be working",
+        comment="Learning rate 1 and other optim",
         #
         # Test run
         test=False,
