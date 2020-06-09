@@ -172,10 +172,10 @@ if __name__ == "__main__":
         #
         # General
         epochs=100,
-        learning_rate=1,
+        learning_rate=0.01,
         batch_size=1,
         split=0.2,
-        use_16bit=False,
+        use_16bit=True,
         gpus=1,
         optim="one_cycle",  # one_cycle, cosine
         #
@@ -185,7 +185,7 @@ if __name__ == "__main__":
         forecast_dir='/nvme0/fwi-forecast',
         forcings_dir='/nvme1/fwi-forcings',
         thresh=10.4,
-        comment="Learning rate 1 and other optim",
+        comment="Learning rate 1 16bit",
         #
         # Test run
         test=False,
