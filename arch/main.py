@@ -59,7 +59,7 @@ def main(hparams):
         prefix=name + time.ctime(),
     )
 
-    model = Model(hparams)
+    model = Model(hparams).to(non_blocking=True)
     model.prepare_data(ModelDataset)
 
     # ------------------------
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     params = dict(
         #
         # U-Net config
-        init_features=7,
+        init_features=11,
         in_channels=8,
         #
         # General

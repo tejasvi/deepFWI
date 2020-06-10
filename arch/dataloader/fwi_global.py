@@ -62,13 +62,13 @@ class ModelDataset(Dataset):
         out_files = sorted(
             glob(f"{forecast_dir}/ECMWF_FWI_2019*_1200_hr_fwi.nc"),
             key=lambda x: int(x[-19:-17]) * 100 + int(x[-17:-15]),
-        )
+            )[:184]
         with xr.open_mfdataset(
             out_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
             self.output = ds.load()
 
-        assert len(self.input.time) == len(self.input.time)
+        assert len(self.input.time) == len(self.output.time)
 
         self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
 
