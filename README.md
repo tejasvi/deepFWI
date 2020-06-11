@@ -1,6 +1,7 @@
 # deepFWI
 * The dependencies are present in [environment.yml](environment.yml). To create environment run:<br>
 `conda env create -f environment.yml`
+<br>`conda activate wildfire-dl`
 * The entry point for training and inference is [arch/main.py](arch/main.py). After specifying the configuration in the script, run:
 `python main.py`
 * The [arch](arch) directory contains the architecture implementation.
