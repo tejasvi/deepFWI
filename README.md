@@ -1,5 +1,5 @@
 # deepFWI
-* The dependencies are present in [environment.yml](environments.yml). To create environment run:<br>
+* The dependencies are present in [environment.yml](environment.yml). To create environment run:<br>
 `conda env create -f environment.yml`
 * The entry point for training and inference is [arch/main.py](arch/main.py). After specifying the configuration in the script, run:
 `python main.py`
