@@ -72,12 +72,18 @@ class ModelDataset(Dataset):
 
         self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
 
+        # Mean of output variable used for bias-initialization.
         self.out_mean = out_mean if out_mean else 18.389227
-        self.out_var = out_var if out_var else 20.80943
+
+        # Variance of output variable used to scale the training loss.
+        self.out_var = out_var if out_var else 20.80943 if self.hparams.loss == 'mae' else 716.1736
 
         self.transform = transforms.Compose(
             [
                 transforms.ToTensor(),
+                
+                # Mean and standard deviation stats used to normalize the input data to
+                # the mean of zero and standard deviation of one.
                 transforms.Normalize(
                     (72.03445, 281.2624, 2.4925985, 6.5504117,72.03445, 281.2624, 2.4925985, 6.5504117,),
                     (18.8233801, 21.9253515, 6.37190019, 3.73465273,18.8233801, 21.9253515, 6.37190019, 3.73465273,),
@@ -153,11 +159,11 @@ class ModelDataset(Dataset):
             breakpoint()
         y = y_pre[mask]
         y_hat = y_hat_pre[mask]
-        pre_loss = (y_hat - y).abs()
+        pre_loss = (y_hat - y).abs() if model.hparams.loss == 'mae' else (y_hat - y) ** 2
         loss = pre_loss.mean()
         if model.aux:
             aux_y_hat = aux_y_hat[mask]
-            aux_pre_loss = (aux_y_hat - y).abs()
+            aux_pre_loss = (y_hat - y).abs() if model.hparams.loss == 'mae' else (y_hat - y) ** 2
             loss += 0.3 * aux_pre_loss.mean()
         if loss != loss:
             breakpoint()
@@ -178,7 +184,7 @@ class ModelDataset(Dataset):
             breakpoint()
         y = y_pre[mask]
         y_hat = y_hat_pre[mask]
-        pre_loss = (y_hat - y).abs()
+        pre_loss = (y_hat - y).abs() if model.hparams.loss == 'mae' else (y_hat - y) ** 2
         val_loss = pre_loss.mean()
 
         # Accuracy for multiple thresholds
@@ -187,7 +193,7 @@ class ModelDataset(Dataset):
         n_correct_pred_20 = (
             (((y - y_hat).abs() < model.hparams.thresh * 2)).float().mean()
         )
-        abs_error = ((y - y_hat) ** 2).float().mean()
+        abs_error = (y - y_hat).abs().float().mean() if model.hparams.loss == 'mae' else (y - y_hat).abs().float().mean()
         tensorboard_logs = {
             "val_loss": val_loss.item(),
             "n_correct_pred": n_correct_pred,
@@ -208,7 +214,7 @@ class ModelDataset(Dataset):
         mask = model.data.mask.expand_as(y)
         y = y[mask]
         y_hat = y_hat[mask]
-        pre_loss = (y_hat - y).abs()
+        pre_loss = (y_hat - y).abs() if model.hparams.loss == 'mae' else (y_hat - y) ** 2
         test_loss = pre_loss.mean()
 
         # Accuracy for multiple thresholds
@@ -217,7 +223,7 @@ class ModelDataset(Dataset):
         n_correct_pred_20 = (
             (((y - y_hat).abs() < model.hparams.thresh * 2)).float().mean()
         )
-        abs_error = ((y - y_hat) ** 2).float().mean()
+        abs_error = (y - y_hat).abs().float().mean() if model.hparams.loss == 'mae' else (y - y_hat).abs().float().mean()
         tensorboard_logs = {
             "test_loss": test_loss.item(),
             "n_correct_pred": n_correct_pred,

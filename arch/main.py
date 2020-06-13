@@ -173,6 +173,7 @@ if __name__ == "__main__":
         # General
         epochs=100,
         learning_rate=0.01,
+        loss='mse', # 'mae', 'mse'
         batch_size=1,
         split=0.2,
         use_16bit=True,
@@ -184,7 +185,7 @@ if __name__ == "__main__":
         out="fwi_global",  # fwi_global
         forecast_dir='/nvme0/fwi-forecast',
         forcings_dir='/nvme1/fwi-forcings',
-        thresh=10.4,
+        thresh=10.4, # Half of MAE
         comment="Learning rate 1 16bit",
         #
         # Test run
