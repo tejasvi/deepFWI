@@ -185,7 +185,7 @@ if __name__ == "__main__":
         forecast_dir='/nvme0/fwi-forecast',
         forcings_dir='/nvme1/fwi-forcings',
         thresh=10.4,
-        comment="More number of features 16 -bit",
+        comment="Learning rate 1 16bit",
         #
         # Test run
         test=False,

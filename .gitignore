@@ -15,3 +15,5 @@
 *.7z
 *lightning_logs*
 *tb_logs*
+.docs.sh
+Dockerfile
