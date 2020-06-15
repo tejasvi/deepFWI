@@ -25,8 +25,10 @@ from pytorch_lightning import _logger as log
 from pytorch_lightning.core import LightningModule
 import wandb
 
+from dataloader.fwi_global import ModelDataset as BaseDataset
 
-class ModelDataset(Dataset):
+
+class ModelDataset(BaseDataset):
     """
     The dataset class responsible for loading the data and providing the samples for
     training.
@@ -55,21 +57,35 @@ class ModelDataset(Dataset):
             # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
             + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]),
-        )
+        )#[:20]
         with xr.open_mfdataset(
             inp_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.input = ds.load()
+            self.input = ds#.load()
 
         out_files = sorted(
             glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
             # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x[-22:-20]) * 100 + int(x[-20:-18]),
-        )
+        )#[:5]
         with xr.open_mfdataset(
             out_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
             self.output = ds#.load()
+
+        assert self.output.fwi.time.min(skipna=True) == self.input.rh.time.min(
+            skipna=True
+        )
+        assert self.output.fwi.time.max(skipna=True) == self.input.rh.time.max(
+            skipna=True
+        )
+
+        print(
+            {
+                "start_date": self.output.fwi.time.min(skipna=True),
+                "end_date": self.output.fwi.time.max(skipna=True),
+            }
+        )
 
         assert len(self.input.time) == len(self.output.time)
 
@@ -117,9 +133,6 @@ class ModelDataset(Dataset):
             ]
         )
 
-    def __len__(self):
-        return len(self.input.time) - 1
-
     def __getitem__(self, idx):
         """
         Internal method used by pytorch to fetch input and corresponding output tensors.
@@ -147,110 +160,3 @@ class ModelDataset(Dataset):
             X = self.transform(X)
 
         return X, y
-
-    def training_step(self, model, batch, batch_idx):
-        """
-        Called inside the training loop with the data from the training dataloader
-        passed in as `batch`.
-        """
-        # forward pass
-        x, y_pre = batch
-        y_hat_pre, aux_y_hat = model(x) if model.aux else model(x), None
-        mask = model.data.mask.expand_as(y_pre)
-        if y_pre.shape != y_hat_pre.shape:
-            breakpoint()
-        y = y_pre[mask]
-        y_hat = y_hat_pre[mask]
-        pre_loss = (
-            (y_hat - y).abs() if model.hparams.loss == "mae" else (y_hat - y) ** 2
-        )
-        loss = pre_loss.mean()
-        if model.aux:
-            aux_y_hat = aux_y_hat[mask]
-            aux_pre_loss = (
-                (y_hat - y).abs() if model.hparams.loss == "mae" else (y_hat - y) ** 2
-            )
-            loss += 0.3 * aux_pre_loss.mean()
-        if loss != loss:
-            breakpoint()
-        tensorboard_logs = {"train_loss_unscaled": loss.item()}
-        model.logger.log_metrics(tensorboard_logs)
-        return {"loss": loss.true_divide(model.data.out_var), "log": tensorboard_logs}
-
-    def validation_step(self, model, batch, batch_idx):
-        """
-        Called inside the validation loop with the data from the validation dataloader
-        passed in as `batch`.
-        """
-        # forward pass
-        x, y_pre = batch
-        y_hat_pre, aux_y_hat = model(x) if model.aux else model(x), None
-        mask = model.data.mask.expand_as(y_pre)
-        if y_pre.shape != y_hat_pre.shape:
-            breakpoint()
-        y = y_pre[mask]
-        y_hat = y_hat_pre[mask]
-        pre_loss = (
-            (y_hat - y).abs() if model.hparams.loss == "mae" else (y_hat - y) ** 2
-        )
-        val_loss = pre_loss.mean()
-
-        # Accuracy for multiple thresholds
-        n_correct_pred = (((y - y_hat).abs() < model.hparams.thresh / 2)).float().mean()
-        n_correct_pred_10 = (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
-        n_correct_pred_20 = (
-            (((y - y_hat).abs() < model.hparams.thresh * 2)).float().mean()
-        )
-        abs_error = (
-            (y - y_hat).abs().float().mean()
-            if model.hparams.loss == "mae"
-            else (y - y_hat).abs().float().mean()
-        )
-        tensorboard_logs = {
-            "val_loss": val_loss.item(),
-            "n_correct_pred": n_correct_pred,
-            "n_correct_pred_10": n_correct_pred_10,
-            "n_correct_pred_20": n_correct_pred_20,
-            "abs_error": abs_error,
-        }
-        model.logger.log_metrics(tensorboard_logs)
-        return {
-            "val_loss": val_loss,
-            "log": tensorboard_logs,
-        }
-
-    def test_step(self, model, batch, batch_idx):
-        """ Called during manual invocation on test data."""
-        x, y = batch
-        y_hat, _ = model(x) if model.aux else model(x), None
-        mask = model.data.mask.expand_as(y)
-        y = y[mask]
-        y_hat = y_hat[mask]
-        pre_loss = (
-            (y_hat - y).abs() if model.hparams.loss == "mae" else (y_hat - y) ** 2
-        )
-        test_loss = pre_loss.mean()
-
-        # Accuracy for multiple thresholds
-        n_correct_pred = (((y - y_hat).abs() < model.hparams.thresh / 2)).float().mean()
-        n_correct_pred_10 = (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
-        n_correct_pred_20 = (
-            (((y - y_hat).abs() < model.hparams.thresh * 2)).float().mean()
-        )
-        abs_error = (
-            (y - y_hat).abs().float().mean()
-            if model.hparams.loss == "mae"
-            else (y - y_hat).abs().float().mean()
-        )
-        tensorboard_logs = {
-            "test_loss": test_loss.item(),
-            "n_correct_pred": n_correct_pred,
-            "n_correct_pred_10": n_correct_pred_10,
-            "n_correct_pred_20": n_correct_pred_20,
-            "abs_error": abs_error,
-        }
-        model.logger.log_metrics(tensorboard_logs)
-        return {
-            "test_loss": test_loss,
-            "log": tensorboard_logs,
-        }
