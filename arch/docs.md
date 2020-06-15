@@ -2,13 +2,31 @@
     
 # Module `main` {#main}
 
-Runs a model on a single node across multiple gpus.
+Primary training and evaluation script.
 
 
 
 
     
 ## Functions
+
+
+    
+### Function `hparams` {#main.hparams}
+
+
+
+    
+> `def hparams(init_features: ('Architecture complexity', 'option') = 11, in_channels: ('Number of input channels', 'option') = 8, epochs: ('Number of training epochs', 'option') = 100, learning_rate: ('Maximum learning rate', 'option') = 0.01, loss: ('Loss function: mae or mse', 'option') = 'mae', batch_size: ('Batch size of the input', 'option') = 1, split: ('Test split fraction', 'option') = 0.2, use_16bit: ('Use 16-bit precision for training', 'option') = True, gpus: ('Number of GPUs to use', 'option') = 1, optim: ('Learning rate optimizer: one_cycle or cosine', 'option') = 'one_cycle', model: ('Model to use: unet', 'option') = 'unet', out: ('Output data for training', 'option') = 'fwi_global', forecast_dir: ('Directory containing forecast data', 'option') = '/nvme0/fwi-forecast', forcings_dir: ('Directory containing forcings data', 'option') = '/nvme1/fwi-forcings', thresh: ('Threshold for accuracy: Half of output MAD', 'option') = 10.4, comment: ('Used for logging', 'option') = 'None', test: ('Use model for evaluation', 'option') = False, checkpoint: ('Path to the test model checkpoint', 'option') = '')`
+
+
+The project wide arguments. Run `python main.py -h` for usage details.
+
+###### Returns
+
+<code>Dict</code>
+:   Dictionary containing configuration options.
+
 
 
     
