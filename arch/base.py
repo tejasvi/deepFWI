@@ -167,6 +167,7 @@ class BaseModel(LightningModule):
             self.data = ModelDataset(
                 forecast_dir=self.hparams.forecast_dir,
                 forcings_dir=self.hparams.forcings_dir,
+                reanalysis_dir=self.hparams.reanalysis_dir,
                 hparams=self.hparams,
                 out=self.hparams.out,
             )
