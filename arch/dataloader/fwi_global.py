@@ -38,6 +38,7 @@ class ModelDataset(Dataset):
         out_mean=None,
         forecast_dir=None,
         forcings_dir=None,
+        reanalysis_dir=None,
         transform=None,
         hparams=None,
         **kwargs,
