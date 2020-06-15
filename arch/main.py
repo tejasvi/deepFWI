@@ -43,7 +43,11 @@ def main(hparams):
 
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
-        ModelDataset = importlib.import_module(f"dataloader.fwi_global").ModelDataset
+        if hparams.out == 'fwi_global':
+            ModelDataset = importlib.import_module(f"dataloader.fwi_global").ModelDataset
+    elif hparams.model in ["exp0_m"]:
+        if hparams.out == 'exp0':
+            ModelDataset = importlib.import_module(f"dataloader.exp0").ModelDataset
 
     name = hparams.model + "-" + hparams.out
     if hparams.test:
@@ -168,8 +172,8 @@ def hparams(
     #
     # General
     epochs: ("Number of training epochs", "option") = 100,
-    learning_rate: ("Maximum learning rate", "option") = 0.01,
-    loss: ("Loss function: mae or mse", "option") = "mae",
+    learning_rate: ("Maximum learning rate", "option") = 0.1,
+    loss: ("Loss function: mae or mse", "option") = "mse",
     batch_size: ("Batch size of the input", "option") = 1,
     split: ("Test split fraction", "option") = 0.2,
     use_16bit: ("Use 16-bit precision for training", "option") = True,
@@ -177,8 +181,8 @@ def hparams(
     optim: ("Learning rate optimizer: one_cycle or cosine", "option") = "one_cycle",
     #
     # Run specific
-    model: ("Model to use: unet", "option") = "unet",
-    out: ("Output data for training", "option") = "fwi_global",
+    model: ("Model to use: unet or exp0_m", "option") = "exp0_m",
+    out: ("Output data for training: fwi_global or exp0", "option") = "exp0",
     forecast_dir: (
         "Directory containing forecast data",
         "option",
@@ -187,7 +191,11 @@ def hparams(
         "Directory containing forcings data",
         "option",
     ) = "/nvme1/fwi-forcings",
-    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 10.4,
+    reanalysis_dir: (
+        "Directory containing reanalysis data",
+        "option",
+    ) = "/nvme0/fwi-reanalysis",
+    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 9.4, # 10.4, 9.4
     comment: ("Used for logging", "option") = "None",
     #
     # Test run
