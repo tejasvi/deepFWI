@@ -9,6 +9,7 @@ import time
 from glob import glob
 import shutil
 import importlib
+import fire
 
 import numpy as np
 import torch
@@ -69,7 +70,9 @@ def main(hparams):
     tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
     tb_logger.experiment.add_graph(model, next(iter(model.train_dataloader()))[0])
     wandb_logger = WandbLogger(
-        name=hparams.comment if hparams.comment else time.ctime(), project=name, save_dir='logs'
+        name=hparams.comment if hparams.comment else time.ctime(),
+        project=name,
+        save_dir="logs",
     )
     if not hparams.test:
         wandb_logger.watch(model, log="all", log_freq=100)
@@ -114,7 +117,7 @@ def main(hparams):
             # the batch size
             # auto_scale_batch_size='binsearch',
         )
-    
+
         # ------------------------
         # LR FINDER
         # ------------------------
@@ -131,14 +134,14 @@ def main(hparams):
 
         # # Pick point based on plot, or get suggestion
         # new_lr = lr_finder.suggestion()
-    
+
         # ------------------------
         # BATCH SIZE SEARCH
         # ------------------------
 
         # # update hparams of the model
         # model.hparams.learning_rate = new_lr
-    
+
         # # Invoke the batch size search using more sophisticated paramters.
         # new_batch_size = trainer.scale_batch_size(
         #     model, mode="binary", steps_per_trial=50, init_val=1, max_trials=10
@@ -157,43 +160,45 @@ def main(hparams):
         # torch.save(model.state_dict(), "model.pth")
 
 
-if __name__ == "__main__":
+def hparams(
+    #
+    # U-Net config
+    init_features=11,
+    in_channels=8,
+    #
+    # General
+    epochs=100,
+    learning_rate=0.01,
+    loss="mae",  # 'mae', 'mse'
+    batch_size=1,
+    split=0.2,
+    use_16bit=True,
+    gpus=1,
+    optim="one_cycle",  # one_cycle, cosine
+    #
+    # Run specific
+    model="unet",  # unet
+    out:'fwi_global'="fwi_global",  # fwi_global
+    forecast_dir="/nvme0/fwi-forecast",
+    forcings_dir="/nvme1/fwi-forcings",
+    thresh=10.4,  # Half of MAE
+    comment="Learning rate 1 16bit",
+    #
+    # Test run
+    test=False,
+    checkpoint="",
+):
     # ------------------------
     # TRAINING ARGUMENTS
     # ------------------------
 
     # these are project-wide arguments
+    return locals()
 
-    params = dict(
-        #
-        # U-Net config
-        init_features=11,
-        in_channels=8,
-        #
-        # General
-        epochs=100,
-        learning_rate=0.01,
-        loss='mse', # 'mae', 'mse'
-        batch_size=1,
-        split=0.2,
-        use_16bit=True,
-        gpus=1,
-        optim="one_cycle",  # one_cycle, cosine
-        #
-        # Run specific
-        model="unet",  # unet
-        out="fwi_global",  # fwi_global
-        forecast_dir='/nvme0/fwi-forecast',
-        forcings_dir='/nvme1/fwi-forcings',
-        thresh=10.4, # Half of MAE
-        comment="Learning rate 1 16bit",
-        #
-        # Test run
-        test=False,
-        checkpoint='',
-    )
 
-    hyperparams = Namespace(**params)
+if __name__ == "__main__":
+
+    hyperparams = Namespace(**fire.Fire(hparams))
 
     # ---------------------
     # RUN TRAINING
