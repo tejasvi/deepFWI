@@ -51,6 +51,7 @@ class ModelDataset(Dataset):
 
         inp_files = sorted(
             sorted(glob(f"{forcings_dir}/ECMWF_FO_2019*.nc")),
+            # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x.split("2019")[1].split("_1200_hr_")[0][:2]) * 100
             + int(x.split("2019")[1].split("_1200_hr_")[0][2:]),
         )[:736]
@@ -61,6 +62,7 @@ class ModelDataset(Dataset):
 
         out_files = sorted(
             glob(f"{forecast_dir}/ECMWF_FWI_2019*_1200_hr_fwi.nc"),
+            # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x[-19:-17]) * 100 + int(x[-17:-15]),
             )[:184]
         with xr.open_mfdataset(
