@@ -1,5 +1,5 @@
 """
-Phase 2 Dataset class to be used with U-Net and FCN-ResNet101 models.
+Experiment 0 dataset class to be used with U-Net model.
 """
 import os
 from argparse import ArgumentParser
@@ -61,7 +61,7 @@ class ModelDataset(BaseDataset):
         with xr.open_mfdataset(
             inp_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.input = ds#.load()
+            self.input = ds.load()
 
         out_files = sorted(
             glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
@@ -71,7 +71,7 @@ class ModelDataset(BaseDataset):
         with xr.open_mfdataset(
             out_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.output = ds#.load()
+            self.output = ds.load()
 
         assert self.output.fwi.time.min(skipna=True) == self.input.rh.time.min(
             skipna=True
