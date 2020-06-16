@@ -106,7 +106,7 @@ def main(hparams):
             # profiler=pl.profiler.AdvancedProfiler('profile'),
             max_epochs=hparams.epochs,
             # CUDA trick to speed up training after the first epoch
-            benchmark=True,
+            # benchmark=True,
             deterministic=False,
             # Sanity checks
             # fast_dev_run=False,
@@ -172,7 +172,7 @@ def hparams(
     #
     # General
     epochs: ("Number of training epochs", "option") = 100,
-    learning_rate: ("Maximum learning rate", "option") = 0.1,
+    learning_rate: ("Maximum learning rate", "option") = 0.001,
     loss: ("Loss function: mae or mse", "option") = "mse",
     batch_size: ("Batch size of the input", "option") = 1,
     split: ("Test split fraction", "option") = 0.2,
@@ -217,6 +217,7 @@ if __name__ == "__main__":
 
     # Converting dictionary to namespace
     hyperparams = Namespace(**plac.call(hparams, eager=False))
+    print(hyperparams)
 
     # ---------------------
     # RUN TRAINING
