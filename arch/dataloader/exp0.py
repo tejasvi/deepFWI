@@ -57,9 +57,9 @@ class ModelDataset(BaseDataset):
             # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
             + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]),
-        )#[:12]
+        )[:12]
         with xr.open_mfdataset(
-            inp_files, preprocess=preprocess, engine="h5netcdf", parallel=True,
+            inp_files, preprocess=preprocess, engine="h5netcdf",# parallel=True,
         ) as ds:
             self.input = ds.load()
 
@@ -67,9 +67,9 @@ class ModelDataset(BaseDataset):
             glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
             # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x[-22:-20]) * 100 + int(x[-20:-18]),
-        )#[:3]
+        )[:3]
         with xr.open_mfdataset(
-            out_files, preprocess=preprocess, engine="h5netcdf", parallel=True,
+            out_files, preprocess=preprocess, engine="h5netcdf",# parallel=True,
         ) as ds:
             self.output = ds.load()
 
