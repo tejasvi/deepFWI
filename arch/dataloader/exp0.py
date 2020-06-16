@@ -59,7 +59,7 @@ class ModelDataset(BaseDataset):
             + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]),
         )#[:12]
         with xr.open_mfdataset(
-            inp_files, preprocess=preprocess, engine="h5netcdf"
+            inp_files, preprocess=preprocess, engine="h5netcdf", parallel=True,
         ) as ds:
             self.input = ds.load()
 
@@ -69,7 +69,7 @@ class ModelDataset(BaseDataset):
             key=lambda x: int(x[-22:-20]) * 100 + int(x[-20:-18]),
         )#[:3]
         with xr.open_mfdataset(
-            out_files, preprocess=preprocess, engine="h5netcdf"
+            out_files, preprocess=preprocess, engine="h5netcdf", parallel=True,
         ) as ds:
             self.output = ds.load()
 
