@@ -72,7 +72,7 @@ def main(hparams):
     # ------------------------
 
     tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
-    tb_logger.experiment.add_graph(model, next(iter(model.train_dataloader()))[0])
+    tb_logger.experiment.add_graph(model, model.data[0][0].unsqueeze(0))
     wandb_logger = WandbLogger(
         name=hparams.comment if hparams.comment else time.ctime(),
         project=name,
