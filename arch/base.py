@@ -188,7 +188,7 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.train_data,
             batch_size=self.hparams.batch_size,
-            num_workers=32,
+            num_workers=0,
             shuffle=True,
             # pin_memory=True,
         )
@@ -198,7 +198,7 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.test_data,
             batch_size=self.hparams.batch_size,
-            num_workers=32,
+            num_workers=0,
             # pin_memory=True,
         )
 
@@ -207,6 +207,6 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.test_data,
             batch_size=self.hparams.batch_size,
-            num_workers=32,
+            num_workers=0,
             # pin_memory=True,
         )
