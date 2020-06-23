@@ -2,6 +2,8 @@
 * The dependencies are present in [environment.yml](environment.yml). To create environment run:<br>
 `conda env create -f environment.yml`
 <br>`conda activate wildfire-dl`
+
+    >The setup is tested on Ubuntu 18.04 only. Other systems may have problems while creating the environment. See [this](https://github.com/conda/conda/issues/7311) issue for further details.
 * The entry point for training and inference is [arch/main.py](arch/main.py). After specifying the configuration in the script or through command line, run:
 `python main.py`
   * **Usage**: main.py `[-h] [-init-features 11] [-in-channels 8] [-epochs 100]
