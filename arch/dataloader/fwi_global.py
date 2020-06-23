@@ -1,5 +1,5 @@
 """
-Phase 2 Dataset class to be used with U-Net and FCN-ResNet101 models.
+Dataset class for fwi-forcings and fwi-forecast.
 """
 import os
 from argparse import ArgumentParser
