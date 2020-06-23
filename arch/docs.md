@@ -17,7 +17,7 @@ Primary training and evaluation script.
 
 
     
-> `def hparams(init_features:Â ('ArchitectureÂ complexity',Â 'option')Â =Â 11, in_channels:Â ('NumberÂ ofÂ inputÂ channels',Â 'option')Â =Â 8, epochs:Â ('NumberÂ ofÂ trainingÂ epochs',Â 'option')Â =Â 100, learning_rate:Â ('MaximumÂ learningÂ rate',Â 'option')Â =Â 0.01, loss:Â ('LossÂ function:Â maeÂ orÂ mse',Â 'option')Â =Â 'mae', batch_size:Â ('BatchÂ sizeÂ ofÂ theÂ input',Â 'option')Â =Â 1, split:Â ('TestÂ splitÂ fraction',Â 'option')Â =Â 0.2, use_16bit:Â ('UseÂ 16-bitÂ precisionÂ forÂ training',Â 'option')Â =Â True, gpus:Â ('NumberÂ ofÂ GPUsÂ toÂ use',Â 'option')Â =Â 1, optim:Â ('LearningÂ rateÂ optimizer:Â one_cycleÂ orÂ cosine',Â 'option')Â =Â 'one_cycle', model:Â ('ModelÂ toÂ use:Â unet',Â 'option')Â =Â 'unet', out:Â ('OutputÂ dataÂ forÂ training',Â 'option')Â =Â 'fwi_global', forecast_dir:Â ('DirectoryÂ containingÂ forecastÂ data',Â 'option')Â =Â '/nvme0/fwi-forecast', forcings_dir:Â ('DirectoryÂ containingÂ forcingsÂ data',Â 'option')Â =Â '/nvme1/fwi-forcings', thresh:Â ('ThresholdÂ forÂ accuracy:Â HalfÂ ofÂ outputÂ MAD',Â 'option')Â =Â 10.4, comment:Â ('UsedÂ forÂ logging',Â 'option')Â =Â 'None', test:Â ('UseÂ modelÂ forÂ evaluation',Â 'option')Â =Â False, checkpoint:Â ('PathÂ toÂ theÂ testÂ modelÂ checkpoint',Â 'option')Â =Â '')`
+> `def hparams(init_features: ('Architecture complexity', 'option') = 11, in_channels: ('Number of input channels', 'option') = 8, epochs: ('Number of training epochs', 'option') = 100, learning_rate: ('Maximum learning rate', 'option') = 0.001, loss: ('Loss function: mae or mse', 'option') = 'mse', batch_size: ('Batch size of the input', 'option') = 1, split: ('Test split fraction', 'option') = 0.2, use_16bit: ('Use 16-bit precision for training', 'option') = True, gpus: ('Number of GPUs to use', 'option') = 1, optim: ('Learning rate optimizer: one_cycle or cosine', 'option') = 'one_cycle', model: ('Model to use: unet or exp0_m', 'option') = 'exp0_m', out: ('Output data for training: fwi_global or exp0', 'option') = 'exp0', forecast_dir: ('Directory containing forecast data', 'option') = '/nvme0/fwi-forecast', forcings_dir: ('Directory containing forcings data', 'option') = '/nvme1/fwi-forcings', reanalysis_dir: ('Directory containing reanalysis data', 'option') = '/nvme0/fwi-reanalysis', thresh: ('Threshold for accuracy: Half of output MAD', 'option') = 9.4, comment: ('Used for logging', 'option') = 'None', test: ('Use model for evaluation', 'option') = False, checkpoint: ('Path to the test model checkpoint', 'option') = '')`
 
 
 The project wide arguments. Run `python main.py -h` for usage details.
@@ -41,6 +41,55 @@ The project wide arguments. Run `python main.py -h` for usage details.
 Main training routine specific for this project
 :param hparams:
 
+    
+### Function `s2num` {#main.s2num}
+
+
+
+    
+> `def s2num(s)`
+
+
+
+
+
+
+
+    
+# Module `exp0` {#exp0}
+
+Experiment 0 dataset class to be used with U-Net model.
+
+
+
+
+
+    
+## Classes
+
+
+    
+### Class `ModelDataset` {#exp0.ModelDataset}
+
+
+
+> `class ModelDataset(out_var=None, out_mean=None, forecast_dir=None, forcings_dir=None, reanalysis_dir=None, transform=None, hparams=None, **kwargs)`
+
+
+The dataset class responsible for loading the data and providing the samples for
+training.
+
+
+    
+#### Ancestors (in MRO)
+
+* [dataloader.fwi_global.ModelDataset](#dataloader.fwi_global.ModelDataset)
+* [torch.utils.data.dataset.Dataset](#torch.utils.data.dataset.Dataset)
+
+
+
+
+
 
 
 
@@ -62,7 +111,7 @@ Phase 2 Dataset class to be used with U-Net and FCN-ResNet101 models.
 
 
 
-> `class ModelDataset(out_var=None, out_mean=None, forecast_dir=None, forcings_dir=None, transform=None, hparams=None, **kwargs)`
+> `class ModelDataset(out_var=None, out_mean=None, forecast_dir=None, forcings_dir=None, reanalysis_dir=None, transform=None, hparams=None, **kwargs)`
 
 
 The dataset class responsible for loading the data and providing the samples for

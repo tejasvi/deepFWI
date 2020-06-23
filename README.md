@@ -6,7 +6,8 @@
     >The setup is tested on Ubuntu 18.04 only. Other systems may have problems while creating the environment. See [this](https://github.com/conda/conda/issues/7311) issue for further details.
 * The entry point for training and inference is [arch/main.py](arch/main.py). After specifying the configuration in the script or through command line, run:
 `python main.py`
-  * **Usage**: main.py `[-h] [-init-features 11] [-in-channels 8] [-epochs 100]
+
+  * **Usage**: main/test.py `[-h] [-init-features 11] [-in-channels 8] [-epochs 100]
                [-learning-rate 0.01] [-loss mae] [-batch-size 1] [-split 0.2]
                [-use-16bit True] [-gpus 1] [-optim one_cycle] [-model unet]
                [-out fwi_global] [-forecast-dir /nvme0/fwi-forecast]
@@ -14,7 +15,7 @@
                [-comment None] [-test False] [-checkpoint]`
 
   * **Optional arguments**:
-    <pre>  -h, --help            show this help message and exit
+    `  -h, --help            show this help message and exit`<pre>
     -init-features 11     Architecture complexity
     -in-channels 8        Number of input channels
     -epochs 100           Number of training epochs
@@ -22,9 +23,9 @@
     -loss mae             Loss function: mae or mse
     -batch-size 1         Batch size of the input
     -split 0.2            Test split fraction
-    -use-16bit True       Use 16-bit precision for training
+    -use-16bit True       Use 16-bit precision for training (train only)
     -gpus 1               Number of GPUs to use
-    -optim one_cycle      Leraning rate optimizer: one_cycle or cosine
+    -optim one_cycle      Leraning rate optimizer: one_cycle or cosine (train only)
     -model unet           Model to use: unet
     -out fwi_global       Output data for training
     -forecast-dir /nvme0/fwi-forecast

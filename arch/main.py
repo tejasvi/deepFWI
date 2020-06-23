@@ -64,7 +64,7 @@ def main(hparams):
         prefix=name + time.ctime(),
     )
 
-    model = Model(hparams).to(non_blocking=True)
+    model = Model(hparams)#.to(non_blocking=True)
     model.prepare_data(ModelDataset)
 
     # ------------------------
@@ -92,77 +92,99 @@ def main(hparams):
     # INIT TRAINER
     # ------------------------
 
-    if hparams.test:
-        trainer = pl.Trainer(gpus=hparams.gpus, logger=[wandb_logger, tb_logger],)
-        model.load_state_dict(torch.load(hparams.checkpoint)["state_dict"])
-        model.eval()
-        trainer.test(model)
+    trainer = pl.Trainer(
+        auto_lr_find=False,
+        show_progress_bar=False,
+        # Profiling the code to find bottlenecks
+        # profiler=pl.profiler.AdvancedProfiler('profile'),
+        max_epochs=hparams.epochs,
+        # CUDA trick to speed up training after the first epoch
+        # benchmark=True,
+        deterministic=False,
+        # Sanity checks
+        # fast_dev_run=False,
+        # overfit_pct=0.01,
+        gpus=hparams.gpus,
+        precision=16 if hparams.use_16bit else 32,
+        # Alternative method for 16-bit training
+        # amp_level="O2",
+        # logger=[wandb_logger, tb_logger],
+        # checkpoint_callback=checkpoint_callback,
+        # Using maximum GPU memory. NB: Learning rate should be adjusted according to
+        # the batch size
+        # auto_scale_batch_size='binsearch',
+    )
 
+    # ------------------------
+    # LR FINDER
+    # ------------------------
+
+    # # Run learning rate finder
+    # lr_finder = trainer.lr_find(model)
+
+    # # Results can be found in
+    # lr_finder.results
+
+    # # Plot with
+    # fig = lr_finder.plot(suggest=True)
+    # fig.show()
+
+    # # Pick point based on plot, or get suggestion
+    # new_lr = lr_finder.suggestion()
+
+    # ------------------------
+    # BATCH SIZE SEARCH
+    # ------------------------
+
+    # # update hparams of the model
+    # model.hparams.learning_rate = new_lr
+
+    # # Invoke the batch size search using more sophisticated paramters.
+    # new_batch_size = trainer.scale_batch_size(
+    #     model, mode="binary", steps_per_trial=50, init_val=1, max_trials=10
+    # )
+
+    # # Override old batch size
+    # model.hparams.batch_size = new_batch_size
+
+    # ------------------------
+    # 3 START TRAINING
+    # ------------------------
+
+    trainer.fit(model)
+
+    # # Manual saving the last model state (non needed ideally)
+    # torch.save(model.state_dict(), "model.pth")
+
+def str2num(s):
+    """
+    Converts parameter strings to appropriate types.
+
+    Parameters
+    ----------
+    s : str
+        Parameter value
+
+    Returns
+    -------
+    undefined
+        Type converted parameter
+    """
+    if (isinstance(s, bool)):
+        return s
+    if("." in s):
+        try:
+            res = float(s)
+        except:
+            res = s  
+    elif(s.isdigit()):
+        return int(s)
     else:
-        trainer = pl.Trainer(
-            auto_lr_find=False,
-            show_progress_bar=False,
-            # Profiling the code to find bottlenecks
-            # profiler=pl.profiler.AdvancedProfiler('profile'),
-            max_epochs=hparams.epochs,
-            # CUDA trick to speed up training after the first epoch
-            # benchmark=True,
-            deterministic=False,
-            # Sanity checks
-            # fast_dev_run=False,
-            # overfit_pct=0.01,
-            gpus=hparams.gpus,
-            precision=16 if hparams.use_16bit else 32,
-            # Alternative method for 16-bit training
-            # amp_level="O2",
-            logger=[wandb_logger, tb_logger],
-            checkpoint_callback=checkpoint_callback,
-            # Using maximum GPU memory. NB: Learning rate should be adjusted according to
-            # the batch size
-            # auto_scale_batch_size='binsearch',
-        )
-
-        # ------------------------
-        # LR FINDER
-        # ------------------------
-
-        # # Run learning rate finder
-        # lr_finder = trainer.lr_find(model)
-
-        # # Results can be found in
-        # lr_finder.results
-
-        # # Plot with
-        # fig = lr_finder.plot(suggest=True)
-        # fig.show()
-
-        # # Pick point based on plot, or get suggestion
-        # new_lr = lr_finder.suggestion()
-
-        # ------------------------
-        # BATCH SIZE SEARCH
-        # ------------------------
-
-        # # update hparams of the model
-        # model.hparams.learning_rate = new_lr
-
-        # # Invoke the batch size search using more sophisticated paramters.
-        # new_batch_size = trainer.scale_batch_size(
-        #     model, mode="binary", steps_per_trial=50, init_val=1, max_trials=10
-        # )
-
-        # # Override old batch size
-        # model.hparams.batch_size = new_batch_size
-
-        # ------------------------
-        # 3 START TRAINING
-        # ------------------------
-
-        trainer.fit(model)
-
-        # # Manual saving the last model state (non needed ideally)
-        # torch.save(model.state_dict(), "model.pth")
-
+        if s == 'True':
+            return True
+        elif s == 'False':
+            return False
+    return (res)
 
 def hparams(
     #
@@ -176,9 +198,9 @@ def hparams(
     loss: ("Loss function: mae or mse", "option") = "mse",
     batch_size: ("Batch size of the input", "option") = 1,
     split: ("Test split fraction", "option") = 0.2,
-    use_16bit: ("Use 16-bit precision for training", "option") = True,
+    use_16bit: ("Use 16-bit precision for training (train only)", "option") = True,
     gpus: ("Number of GPUs to use", "option") = 1,
-    optim: ("Learning rate optimizer: one_cycle or cosine", "option") = "one_cycle",
+    optim: ("Learning rate optimizer: one_cycle or cosine (train only)", "option") = "one_cycle",
     #
     # Run specific
     model: ("Model to use: unet or exp0_m", "option") = "exp0_m",
@@ -199,7 +221,6 @@ def hparams(
     comment: ("Used for logging", "option") = "None",
     #
     # Test run
-    test: ("Use model for evaluation", "option") = False,
     checkpoint: ("Path to the test model checkpoint", "option") = "",
 ):
     """
@@ -210,7 +231,7 @@ def hparams(
     Dict
         Dictionary containing configuration options.
     """
-    return locals()
+    return {k: str2num(v) for k, v in locals().items()}
 
 
 if __name__ == "__main__":
