@@ -26,8 +26,8 @@
     -use-16bit True       Use 16-bit precision for training (train only)
     -gpus 1               Number of GPUs to use
     -optim one_cycle      Leraning rate optimizer: one_cycle or cosine (train only)
-    -model unet           Model to use: unet
-    -out fwi_global       Output data for training
+    -model exp0_m         Model to use: unet or exp0_m
+    -out exp0             Output data for training: fwi_global or exp0
     -forecast-dir /nvme0/fwi-forecast
                           Directory containing forcast data
     -forcings-dir /nvme1/fwi-forcings

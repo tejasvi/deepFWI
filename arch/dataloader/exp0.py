@@ -58,8 +58,16 @@ class ModelDataset(BaseDataset):
             key=lambda x: int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
             + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]),
         )[:12]
+        inp_invalid = lambda x: not (
+            1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) <= 12
+            and 1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]) <= 31
+        )
+        assert not (
+            sum([inp_invalid(x) for x in out_files])
+        ), "Invalid date format for input file(s). The dates should be formatted as YYMMDD."
+
         with xr.open_mfdataset(
-            inp_files, preprocess=preprocess, engine="h5netcdf",# parallel=True,
+            inp_files, preprocess=preprocess, engine="h5netcdf",  # parallel=True,
         ) as ds:
             self.input = ds.load()
 
@@ -68,8 +76,15 @@ class ModelDataset(BaseDataset):
             # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x[-22:-20]) * 100 + int(x[-20:-18]),
         )[:3]
+        out_invalid = lambda x: not (
+            1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
+        )
+        assert not (
+            sum([out_invalid(x) for x in out_files])
+        ), "Invalid date format for output file(s). The dates should be formatted as YYMMDD."
+
         with xr.open_mfdataset(
-            out_files, preprocess=preprocess, engine="h5netcdf",# parallel=True,
+            out_files, preprocess=preprocess, engine="h5netcdf",  # parallel=True,
         ) as ds:
             self.output = ds.load()
 
