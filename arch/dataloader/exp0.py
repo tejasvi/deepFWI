@@ -57,7 +57,7 @@ class ModelDataset(BaseDataset):
             # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
             + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]),
-        )[:12]
+        )
         inp_invalid = lambda x: not (
             1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) <= 12
             and 1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]) <= 31
@@ -75,7 +75,7 @@ class ModelDataset(BaseDataset):
             glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
             # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x[-22:-20]) * 100 + int(x[-20:-18]),
-        )[:3]
+        )
         out_invalid = lambda x: not (
             1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
         )
