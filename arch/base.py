@@ -92,6 +92,20 @@ class BaseModel(LightningModule):
 
         return self.data.test_step(self, batch, batch_idx)
 
+    def training_epoch_end(self, outputs):
+        """
+        Called at the end of validation to aggregate outputs.
+        :param outputs: list of individual outputs of each validation step.
+        """
+        avg_loss = np.mean([x["_log"]["train_loss_unscaled"] for x in outputs])
+        tensorboard_logs = {
+            "train_loss": avg_loss,
+        }
+        return {
+            "val_loss": avg_loss,
+            "log": tensorboard_logs,
+        }
+
     def validation_epoch_end(self, outputs):
         """
         Called at the end of validation to aggregate outputs.
@@ -99,13 +113,16 @@ class BaseModel(LightningModule):
         """
         avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
         val_acc = np.mean([x["log"]["n_correct_pred_10"].item() for x in outputs])
+        val_acc_0 = np.mean([x["log"]["n_correct_pred"].item() for x in outputs])
+        val_acc_2 = np.mean([x["log"]["n_correct_pred_20"].item() for x in outputs])
         mean_error = np.mean([x["log"]["abs_error"].item() for x in outputs])
         tensorboard_logs = {
             "val_loss": avg_loss,
             "val_acc": val_acc,
+            "val_acc_0": val_acc_0,
+            "val_acc_2": val_acc_2,
             "abs_error": mean_error,
         }
-        # wandb.log(tensorboard_logs)
         return {
             "val_loss": avg_loss,
             "log": tensorboard_logs,

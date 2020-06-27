@@ -15,10 +15,10 @@ import numpy as np
 import torch
 
 import pytorch_lightning as pl
-
-from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning import Trainer
+
+# from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.loggers import WandbLogger
 import wandb
 
 # Setting seeds to ensure reproducibility. Setting CUDA to deterministic mode slows down
@@ -43,10 +43,12 @@ def main(hparams):
 
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
-        if hparams.out == 'fwi_global':
-            ModelDataset = importlib.import_module(f"dataloader.fwi_global").ModelDataset
-    elif hparams.model in ["exp0_m"]:
-        if hparams.out == 'exp0':
+        if hparams.out == "fwi_global":
+            ModelDataset = importlib.import_module(
+                f"dataloader.fwi_global"
+            ).ModelDataset
+    elif hparams.model in ["exp0_m", "unet_lite", "unet_tapered"]:
+        if hparams.out == "exp0":
             ModelDataset = importlib.import_module(f"dataloader.exp0").ModelDataset
 
     name = hparams.model + "-" + hparams.out
@@ -57,7 +59,7 @@ def main(hparams):
         filepath=f"model/checkpoints/{name}/bestmodel",
         monitor="val_loss",
         verbose=True,
-        save_top_k=2,
+        save_top_k=1,
         save_weights_only=False,
         mode="auto",
         period=1,
@@ -71,15 +73,15 @@ def main(hparams):
     # LOGGING SETUP
     # ------------------------
 
-    tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
-    tb_logger.experiment.add_graph(model, model.data[0][0].unsqueeze(0))
+    # tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
+    # tb_logger.experiment.add_graph(model, model.data[0][0].unsqueeze(0))
     wandb_logger = WandbLogger(
         name=hparams.comment if hparams.comment else time.ctime(),
         project=name,
         save_dir="logs",
     )
-    if not hparams.test:
-        wandb_logger.watch(model, log="all", log_freq=100)
+    # if not hparams.test:
+    #     wandb_logger.watch(model, log="all", log_freq=100)
     wandb_logger.log_hyperparams(model.hparams)
     for file in [
         i
@@ -184,12 +186,12 @@ def str2num(s):
             return True
         elif s == 'False':
             return False
-    return (res)
+    return res
 
-def hparams(
+def get_hparams(
     #
     # U-Net config
-    init_features: ("Architecture complexity", "option") = 11,
+    init_features: ("Architecture complexity", "option") = 20,
     in_channels: ("Number of input channels", "option") = 8,
     #
     # General
@@ -201,9 +203,13 @@ def hparams(
     use_16bit: ("Use 16-bit precision for training (train only)", "option") = True,
     gpus: ("Number of GPUs to use", "option") = 1,
     optim: ("Learning rate optimizer: one_cycle or cosine (train only)", "option") = "one_cycle",
+    min_data: ("Use small amount of data for sanity check", "option") = False,
     #
     # Run specific
-    model: ("Model to use: unet or exp0_m", "option") = "exp0_m",
+    model: (
+        "Model to use: unet or exp0_m or unet_lite or unet_tapered",
+        "option",
+    ) = "unet_tapered",
     out: ("Output data for training: fwi_global or exp0", "option") = "exp0",
     forecast_dir: (
         "Directory containing forecast data",
@@ -217,7 +223,7 @@ def hparams(
         "Directory containing reanalysis data",
         "option",
     ) = "/nvme0/fwi-reanalysis",
-    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 9.4, # 10.4, 9.4
+    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 9.4,  # 10.4, 9.4
     comment: ("Used for logging", "option") = "None",
     #
     # Test run
@@ -231,15 +237,16 @@ def hparams(
     Dict
         Dictionary containing configuration options.
     """
-    return {k: str2num(v) for k, v in locals().items()}
+    d = {k: str2num(v) for k, v in locals().items()}
+    for k, v in d.items():
+        print(f" |{k.replace('_', '-'):>15} -> {str(v):<15}")
+    return d
 
 
 if __name__ == "__main__":
 
     # Converting dictionary to namespace
-    hyperparams = Namespace(**plac.call(hparams, eager=False))
-    print(hyperparams)
-
+    hyperparams = Namespace(**plac.call(get_hparams, eager=False))
     # ---------------------
     # RUN TRAINING
     # ---------------------

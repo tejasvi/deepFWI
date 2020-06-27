@@ -184,8 +184,8 @@ class ModelDataset(Dataset):
         if loss != loss:
             breakpoint()
         tensorboard_logs = {"train_loss_unscaled": loss.item()}
-        model.logger.log_metrics(tensorboard_logs)
-        return {"loss": loss.true_divide(model.data.out_var), "log": tensorboard_logs}
+        # model.logger.log_metrics(tensorboard_logs)
+        return {"loss": loss.true_divide(model.data.out_var), "_log": tensorboard_logs}
 
     def validation_step(self, model, batch, batch_idx):
         """
@@ -217,7 +217,7 @@ class ModelDataset(Dataset):
             "n_correct_pred_20": n_correct_pred_20,
             "abs_error": abs_error,
         }
-        model.logger.log_metrics(tensorboard_logs)
+        # model.logger.log_metrics(tensorboard_logs)
         return {
             "val_loss": val_loss,
             "log": tensorboard_logs,

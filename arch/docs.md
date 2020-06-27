@@ -12,12 +12,12 @@ Primary training and evaluation script.
 
 
     
-### Function `hparams` {#main.hparams}
+### Function `get_hparams` {#main.get_hparams}
 
 
 
     
-> `def hparams(init_features: ('Architecture complexity', 'option') = 11, in_channels: ('Number of input channels', 'option') = 8, epochs: ('Number of training epochs', 'option') = 100, learning_rate: ('Maximum learning rate', 'option') = 0.001, loss: ('Loss function: mae or mse', 'option') = 'mse', batch_size: ('Batch size of the input', 'option') = 1, split: ('Test split fraction', 'option') = 0.2, use_16bit: ('Use 16-bit precision for training', 'option') = True, gpus: ('Number of GPUs to use', 'option') = 1, optim: ('Learning rate optimizer: one_cycle or cosine', 'option') = 'one_cycle', model: ('Model to use: unet or exp0_m', 'option') = 'exp0_m', out: ('Output data for training: fwi_global or exp0', 'option') = 'exp0', forecast_dir: ('Directory containing forecast data', 'option') = '/nvme0/fwi-forecast', forcings_dir: ('Directory containing forcings data', 'option') = '/nvme1/fwi-forcings', reanalysis_dir: ('Directory containing reanalysis data', 'option') = '/nvme0/fwi-reanalysis', thresh: ('Threshold for accuracy: Half of output MAD', 'option') = 9.4, comment: ('Used for logging', 'option') = 'None', test: ('Use model for evaluation', 'option') = False, checkpoint: ('Path to the test model checkpoint', 'option') = '')`
+> `def get_hparams(init_features:Â ('ArchitectureÂ complexity',Â 'option')Â =Â 20, in_channels:Â ('NumberÂ ofÂ inputÂ channels',Â 'option')Â =Â 8, epochs:Â ('NumberÂ ofÂ trainingÂ epochs',Â 'option')Â =Â 100, learning_rate:Â ('MaximumÂ learningÂ rate',Â 'option')Â =Â 0.001, loss:Â ('LossÂ function:Â maeÂ orÂ mse',Â 'option')Â =Â 'mse', batch_size:Â ('BatchÂ sizeÂ ofÂ theÂ input',Â 'option')Â =Â 1, split:Â ('TestÂ splitÂ fraction',Â 'option')Â =Â 0.2, use_16bit:Â ('UseÂ 16-bitÂ precisionÂ forÂ trainingÂ (trainÂ only)',Â 'option')Â =Â True, gpus:Â ('NumberÂ ofÂ GPUsÂ toÂ use',Â 'option')Â =Â 1, optim:Â ('LearningÂ rateÂ optimizer:Â one_cycleÂ orÂ cosineÂ (trainÂ only)',Â 'option')Â =Â 'one_cycle', min_data:Â ('UseÂ smallÂ amountÂ ofÂ dataÂ forÂ sanityÂ check',Â 'option')Â =Â False, model:Â ('ModelÂ toÂ use:Â unetÂ orÂ exp0_mÂ orÂ unet_liteÂ orÂ unet_tapered',Â 'option')Â =Â 'unet_tapered', out:Â ('OutputÂ dataÂ forÂ training:Â fwi_globalÂ orÂ exp0',Â 'option')Â =Â 'exp0', forecast_dir:Â ('DirectoryÂ containingÂ forecastÂ data',Â 'option')Â =Â '/nvme0/fwi-forecast', forcings_dir:Â ('DirectoryÂ containingÂ forcingsÂ data',Â 'option')Â =Â '/nvme1/fwi-forcings', reanalysis_dir:Â ('DirectoryÂ containingÂ reanalysisÂ data',Â 'option')Â =Â '/nvme0/fwi-reanalysis', thresh:Â ('ThresholdÂ forÂ accuracy:Â HalfÂ ofÂ outputÂ MAD',Â 'option')Â =Â 9.4, comment:Â ('UsedÂ forÂ logging',Â 'option')Â =Â 'None', checkpoint:Â ('PathÂ toÂ theÂ testÂ modelÂ checkpoint',Â 'option')Â =Â '')`
 
 
 The project wide arguments. Run `python main.py -h` for usage details.
@@ -42,13 +42,25 @@ Main training routine specific for this project
 :param hparams:
 
     
-### Function `s2num` {#main.s2num}
+### Function `str2num` {#main.str2num}
 
 
 
     
-> `def s2num(s)`
+> `def str2num(s)`
 
+
+Converts parameter strings to appropriate types.
+
+###### Parameters
+
+**```s```** :&ensp;<code>str</code>
+:   Parameter value
+
+###### Returns
+
+<code>undefined</code>
+:   Type converted parameter
 
 
 
@@ -96,7 +108,7 @@ training.
     
 # Module `fwi_global` {#fwi_global}
 
-Phase 2 Dataset class to be used with U-Net and FCN-ResNet101 models.
+Dataset class for fwi-forcings and fwi-forecast.
 
 
 
@@ -492,6 +504,18 @@ There is no need to set it yourself.
             shuffle=True
         )
         return loader
+
+    
+##### Method `training_epoch_end` {#base.BaseModel.training_epoch_end}
+
+
+
+    
+> `def training_epoch_end(self, outputs)`
+
+
+Called at the end of validation to aggregate outputs.
+:param outputs: list of individual outputs of each validation step.
 
     
 ##### Method `training_step` {#base.BaseModel.training_step}
