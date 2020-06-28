@@ -1,5 +1,6 @@
 """
-Modification in U-Net model for exp0.
+Modification in U-Net model for exp0. The upsampling layers towards the end are removed
+before the activation resolution gets higher than the output resolution.
 """
 import os
 from argparse import ArgumentParser

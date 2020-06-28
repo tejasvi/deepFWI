@@ -25,11 +25,13 @@
     -split 0.2            Test split fraction
     -use-16bit True       Use 16-bit precision for training (train only)
     -gpus 1               Number of GPUs to use
-    -optim one_cycle      Leraning rate optimizer: one_cycle or cosine (train only)
-    -model exp0_m         Model to use: unet or exp0_m
-    -out exp0             Output data for training: fwi_global or exp0
+    -optim one_cycle      Learning rate optimizer: one_cycle or cosine (train only)
+    -model unet_tapered_multi
+                          Model to use: unet, exp0_m, unet_lite, unet_tapered,
+                          exp1_m, unet_tapered_multi
+    -out exp1             Output data for training: fwi_global, exp0, exp1
     -forecast-dir /nvme0/fwi-forecast
-                          Directory containing forcast data
+                          Directory containing forecast data
     -forcings-dir /nvme1/fwi-forcings
                           Directory containing forcings data
     -thresh 10.4          Threshold for accuracy: Half of output MAD

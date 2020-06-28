@@ -1,5 +1,5 @@
 """
-U-Net model tapered at the end for low res output.
+Modification in U-Net model for exp0.
 """
 import os
 from argparse import ArgumentParser
@@ -24,7 +24,7 @@ from pytorch_lightning import _logger as log
 from pytorch_lightning.core import LightningModule
 import wandb
 
-from model.unet import Model as BaseModel
+from model.unet_tapered import Model as BaseModel
 
 
 class Model(BaseModel):
@@ -70,32 +70,9 @@ class Model(BaseModel):
 
         # init superclass
         super().__init__(hparams)
+        out_channels = 10
         features = self.hparams.init_features
-        delattr(self, "upconv2")
-        delattr(self, "upconv1")
 
-        self.res32 = nn.Conv2d((features * 2) * 2, features * 2, kernel_size=1)
-        self.res31 = nn.Conv2d((features * 2) * 2, features, kernel_size=1)
-        self.res21 = nn.Conv2d(features * 2, features, kernel_size=1)
-
-    def forward(self, x):
-        """
-        Forward pass
-        """
-        enc1 = self.encoder1(x)
-        enc2 = self.encoder2(self.pool1(enc1))
-        enc3 = self.encoder3(self.pool2(enc2))
-        enc4 = self.encoder4(self.pool3(enc3))
-
-        bottleneck = self.bottleneck(self.pool4(enc4))
-
-        dec4 = self.upconv4(bottleneck)
-        dec4 = torch.cat((dec4, enc4), dim=1)
-        dec4 = self.decoder4(dec4)
-        dec3 = self.upconv3(dec4)
-        dec3 = torch.cat((dec3, enc3), dim=1)
-        dec3 = self.decoder3(dec3)
-
-        dec2 = self.decoder2(dec3) + self.res32(dec3)
-        dec1 = self.decoder1(dec2) + self.res21(dec2) + self.res31(dec3)
-        return self.conv(dec1)
+        self.conv = nn.Conv2d(
+            in_channels=features, out_channels=out_channels, kernel_size=1,
+        )

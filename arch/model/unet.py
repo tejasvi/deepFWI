@@ -71,7 +71,6 @@ class Model(BaseModel):
         # init superclass
         super().__init__(hparams)
         self.hparams = hparams
-        self.batch_size = self.hparams.batch_size
         out_channels = 1
         features = self.hparams.init_features
 

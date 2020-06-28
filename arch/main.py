@@ -50,10 +50,13 @@ def main(hparams):
     elif hparams.model in ["exp0_m", "unet_lite", "unet_tapered"]:
         if hparams.out == "exp0":
             ModelDataset = importlib.import_module(f"dataloader.exp0").ModelDataset
+    elif hparams.model in ["exp1_m", "unet_tapered_multi"]:
+        if hparams.out == "exp1":
+            ModelDataset = importlib.import_module(f"dataloader.exp1").ModelDataset
+    else:
+        raise ImportError("{hparams.model} and {hparams.out} combination invalid.")
 
     name = hparams.model + "-" + hparams.out
-    if hparams.test:
-        name += "-test"
 
     checkpoint_callback = pl.callbacks.model_checkpoint.ModelCheckpoint(
         filepath=f"model/checkpoints/{name}/bestmodel",
@@ -66,29 +69,30 @@ def main(hparams):
         prefix=name + time.ctime(),
     )
 
-    model = Model(hparams)#.to(non_blocking=True)
+    model = Model(hparams)  # .to(non_blocking=True)
     model.prepare_data(ModelDataset)
 
     # ------------------------
     # LOGGING SETUP
     # ------------------------
 
-    # tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
-    # tb_logger.experiment.add_graph(model, model.data[0][0].unsqueeze(0))
-    wandb_logger = WandbLogger(
-        name=hparams.comment if hparams.comment else time.ctime(),
-        project=name,
-        save_dir="logs",
-    )
-    # if not hparams.test:
-    #     wandb_logger.watch(model, log="all", log_freq=100)
-    wandb_logger.log_hyperparams(model.hparams)
-    for file in [
-        i
-        for s in [glob(x) for x in ["*.py", "dataloader/*.py", "model/*.py"]]
-        for i in s
-    ]:
-        shutil.copy(file, wandb.run.dir)
+    if not hparams.min_data:
+        # tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
+        # tb_logger.experiment.add_graph(model, model.data[0][0].unsqueeze(0))
+        wandb_logger = WandbLogger(
+            name=hparams.comment if hparams.comment else time.ctime(),
+            project=name,
+            save_dir="logs",
+        )
+        # if not hparams.test:
+        #     wandb_logger.watch(model, log="all", log_freq=100)
+        wandb_logger.log_hyperparams(model.hparams)
+        for file in [
+            i
+            for s in [glob(x) for x in ["*.py", "dataloader/*.py", "model/*.py"]]
+            for i in s
+        ]:
+            shutil.copy(file, wandb.run.dir)
 
     # ------------------------
     # INIT TRAINER
@@ -158,6 +162,7 @@ def main(hparams):
     # # Manual saving the last model state (non needed ideally)
     # torch.save(model.state_dict(), "model.pth")
 
+
 def str2num(s):
     """
     Converts parameter strings to appropriate types.
@@ -172,21 +177,22 @@ def str2num(s):
     undefined
         Type converted parameter
     """
-    if (isinstance(s, bool)):
+    if isinstance(s, bool):
         return s
-    if("." in s):
+    if "." in s:
         try:
             res = float(s)
         except:
-            res = s  
-    elif(s.isdigit()):
+            res = s
+    elif s.isdigit():
         return int(s)
     else:
-        if s == 'True':
+        if s == "True":
             return True
-        elif s == 'False':
+        elif s == "False":
             return False
     return res
+
 
 def get_hparams(
     #
@@ -197,20 +203,23 @@ def get_hparams(
     # General
     epochs: ("Number of training epochs", "option") = 100,
     learning_rate: ("Maximum learning rate", "option") = 0.001,
-    loss: ("Loss function: mae or mse", "option") = "mse",
+    loss: ("Loss function: mae, mse", "option") = "mse",
     batch_size: ("Batch size of the input", "option") = 1,
     split: ("Test split fraction", "option") = 0.2,
     use_16bit: ("Use 16-bit precision for training (train only)", "option") = True,
     gpus: ("Number of GPUs to use", "option") = 1,
-    optim: ("Learning rate optimizer: one_cycle or cosine (train only)", "option") = "one_cycle",
+    optim: (
+        "Learning rate optimizer: one_cycle or cosine (train only)",
+        "option",
+    ) = "one_cycle",
     min_data: ("Use small amount of data for sanity check", "option") = False,
     #
     # Run specific
     model: (
-        "Model to use: unet or exp0_m or unet_lite or unet_tapered",
+        "Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi",
         "option",
-    ) = "unet_tapered",
-    out: ("Output data for training: fwi_global or exp0", "option") = "exp0",
+    ) = "unet_tapered_multi",
+    out: ("Output data for training: fwi_global, exp0, exp1", "option") = "exp1",
     forecast_dir: (
         "Directory containing forecast data",
         "option",

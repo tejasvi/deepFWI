@@ -67,7 +67,11 @@ class ModelDataset(BaseDataset):
         ), "Invalid date format for input file(s). The dates should be formatted as YYMMDD."
 
         with xr.open_mfdataset(
-            inp_files, preprocess=preprocess, engine="h5netcdf",  # parallel=True,
+            inp_files,
+            preprocess=preprocess,
+            engine="h5netcdf",
+            parallel=False if self.hparams.min_data else True,
+            combine="by_coords",
         ) as ds:
             self.input = ds.load()
 
@@ -84,27 +88,35 @@ class ModelDataset(BaseDataset):
         ), "Invalid date format for output file(s). The dates should be formatted as YYMMDD."
 
         with xr.open_mfdataset(
-            out_files, preprocess=preprocess, engine="h5netcdf",  # parallel=True,
+            out_files,
+            preprocess=preprocess,
+            engine="h5netcdf",
+            parallel=False if self.hparams.min_data else True,
+            combine="by_coords",
         ) as ds:
             self.output = ds.load()
 
+        # Ensure timestamp matches for both the input and output
         assert self.output.fwi.time.min(skipna=True) == self.input.rh.time.min(
             skipna=True
         )
         assert self.output.fwi.time.max(skipna=True) == self.input.rh.time.max(
             skipna=True
         )
+        assert len(self.input.time) == len(self.output.time)
 
         print(
-            {
-                "start_date": self.output.fwi.time.min(skipna=True),
-                "end_date": self.output.fwi.time.max(skipna=True),
-            }
+            f"Start date: {self.output.fwi.time.min(skipna=True)}",
+            f"\nEnd date: {self.output.fwi.time.max(skipna=True)}",
         )
 
         assert len(self.input.time) == len(self.output.time)
 
         self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
+
+        # Number of input and prediction days
+        self.n_input = 2
+        self.n_output = 1
 
         # Mean of output variable used for bias-initialization.
         self.out_mean = out_mean if out_mean else 15.292629
@@ -124,29 +136,22 @@ class ModelDataset(BaseDataset):
                 # Mean and standard deviation stats used to normalize the input data to
                 # the mean of zero and standard deviation of one.
                 transforms.Normalize(
-                    (
-                        72.47605,
-                        279.96622,
-                        2.4548044,
-                        6.4765906,
-                        72.47605,
-                        279.96622,
-                        2.4548044,
-                        6.4765906,
-                    ),
-                    (
-                        17.7426847,
-                        21.2802498,
-                        6.3852794,
-                        3.69688883,
-                        17.7426847,
-                        21.2802498,
-                        6.3852794,
-                        3.69688883,
-                    ),
+                    [
+                        x
+                        for i in range(self.n_input)
+                        for x in (72.47605, 279.96622, 2.4548044, 6.4765906,)
+                    ],
+                    [
+                        x
+                        for i in range(self.n_input)
+                        for x in (17.7426847, 21.2802498, 6.3852794, 3.69688883,)
+                    ],
                 ),
             ]
         )
+
+    def __len__(self):
+        return len(self.input.time) - self.n_output - self.n_input - 1
 
     def __getitem__(self, idx):
         """
@@ -157,19 +162,22 @@ class ModelDataset(BaseDataset):
             idx = idx.tolist()
 
         X = np.stack(
-            (
-                self.input["rh"][idx],
-                self.input["t2"][idx],
-                self.input["tp"][idx],
-                self.input["wspeed"][idx],
-                self.input["rh"][idx + 1],
-                self.input["t2"][idx + 1],
-                self.input["tp"][idx + 1],
-                self.input["wspeed"][idx + 1],
-            ),
+            [
+                self.input[v][idx + i]
+                for i in range(self.n_input)
+                for v in ["rh", "t2", "tp", "wspeed"]
+            ],
             axis=-1,
         )
-        y = torch.from_numpy(self.output["fwi"][idx + 1].values).unsqueeze(0)
+        y = torch.from_numpy(
+            np.stack(
+                [
+                    self.output["fwi"][idx + self.n_input - 1 + i].values
+                    for i in range(self.n_output)
+                ],
+                axis=0,
+            )
+        )
 
         if self.transform:
             X = self.transform(X)

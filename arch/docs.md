@@ -17,7 +17,7 @@ Primary training and evaluation script.
 
 
     
-> `def get_hparams(init_features: ('Architecture complexity', 'option') = 20, in_channels: ('Number of input channels', 'option') = 8, epochs: ('Number of training epochs', 'option') = 100, learning_rate: ('Maximum learning rate', 'option') = 0.001, loss: ('Loss function: mae or mse', 'option') = 'mse', batch_size: ('Batch size of the input', 'option') = 1, split: ('Test split fraction', 'option') = 0.2, use_16bit: ('Use 16-bit precision for training (train only)', 'option') = True, gpus: ('Number of GPUs to use', 'option') = 1, optim: ('Learning rate optimizer: one_cycle or cosine (train only)', 'option') = 'one_cycle', min_data: ('Use small amount of data for sanity check', 'option') = False, model: ('Model to use: unet or exp0_m or unet_lite or unet_tapered', 'option') = 'unet_tapered', out: ('Output data for training: fwi_global or exp0', 'option') = 'exp0', forecast_dir: ('Directory containing forecast data', 'option') = '/nvme0/fwi-forecast', forcings_dir: ('Directory containing forcings data', 'option') = '/nvme1/fwi-forcings', reanalysis_dir: ('Directory containing reanalysis data', 'option') = '/nvme0/fwi-reanalysis', thresh: ('Threshold for accuracy: Half of output MAD', 'option') = 9.4, comment: ('Used for logging', 'option') = 'None', checkpoint: ('Path to the test model checkpoint', 'option') = '')`
+> `def get_hparams(init_features: ('Architecture complexity', 'option') = 20, in_channels: ('Number of input channels', 'option') = 8, epochs: ('Number of training epochs', 'option') = 100, learning_rate: ('Maximum learning rate', 'option') = 0.001, loss: ('Loss function: mae, mse', 'option') = 'mse', batch_size: ('Batch size of the input', 'option') = 1, split: ('Test split fraction', 'option') = 0.2, use_16bit: ('Use 16-bit precision for training (train only)', 'option') = True, gpus: ('Number of GPUs to use', 'option') = 1, optim: ('Learning rate optimizer: one_cycle or cosine (train only)', 'option') = 'one_cycle', min_data: ('Use small amount of data for sanity check', 'option') = False, model: ('Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi', 'option') = 'unet_tapered_multi', out: ('Output data for training: fwi_global, exp0, exp1', 'option') = 'exp1', forecast_dir: ('Directory containing forecast data', 'option') = '/nvme0/fwi-forecast', forcings_dir: ('Directory containing forcings data', 'option') = '/nvme1/fwi-forcings', reanalysis_dir: ('Directory containing reanalysis data', 'option') = '/nvme0/fwi-reanalysis', thresh: ('Threshold for accuracy: Half of output MAD', 'option') = 9.4, comment: ('Used for logging', 'option') = 'None', checkpoint: ('Path to the test model checkpoint', 'option') = '')`
 
 
 The project wide arguments. Run `python main.py -h` for usage details.
@@ -102,6 +102,84 @@ training.
 
 
 
+
+
+
+    
+# Module `exp1` {#exp1}
+
+Experiment 1 dataset class to be used with U-Net model.
+
+
+
+
+
+    
+## Classes
+
+
+    
+### Class `ModelDataset` {#exp1.ModelDataset}
+
+
+
+> `class ModelDataset(out_var=None, out_mean=None, forecast_dir=None, forcings_dir=None, reanalysis_dir=None, transform=None, hparams=None, **kwargs)`
+
+
+The dataset class responsible for loading the data and providing the samples for
+training.
+
+
+    
+#### Ancestors (in MRO)
+
+* [dataloader.exp0.ModelDataset](#dataloader.exp0.ModelDataset)
+* [dataloader.fwi_global.ModelDataset](#dataloader.fwi_global.ModelDataset)
+* [torch.utils.data.dataset.Dataset](#torch.utils.data.dataset.Dataset)
+
+
+
+
+
+
+    
+#### Methods
+
+
+    
+##### Method `test_step` {#exp1.ModelDataset.test_step}
+
+
+
+    
+> `def test_step(self, model, batch, batch_idx)`
+
+
+Called during manual invocation on test data.
+
+    
+##### Method `training_step` {#exp1.ModelDataset.training_step}
+
+
+
+    
+> `def training_step(self, model, batch, batch_idx)`
+
+
+Called inside the training loop with the data from the training dataloader
+passed in as <code>batch</code>.
+
+    
+##### Method `validation_step` {#exp1.ModelDataset.validation_step}
+
+
+
+    
+> `def validation_step(self, model, batch, batch_idx)`
+
+
+Called inside the validation loop with the data from the validation dataloader
+passed in as <code>batch</code>.
 
 
 

@@ -205,9 +205,9 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.train_data,
             batch_size=self.hparams.batch_size,
-            num_workers=16,
+            num_workers=0 if self.hparams.min_data else 8,
             shuffle=True,
-            pin_memory=True,
+            pin_memory=True if self.hparams.gpus else False,
         )
 
     def val_dataloader(self):
@@ -215,8 +215,8 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.test_data,
             batch_size=self.hparams.batch_size,
-            num_workers=16,
-            pin_memory=True,
+            num_workers=0 if self.hparams.min_data else 8,
+            pin_memory=True if self.hparams.gpus else False,
         )
 
     def test_dataloader(self):
@@ -224,6 +224,6 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.test_data,
             batch_size=self.hparams.batch_size,
-            num_workers=16,
-            pin_memory=True,
+            num_workers=0 if self.hparams.min_data else 8,
+            pin_memory=True if self.hparams.gpus else False,
         )

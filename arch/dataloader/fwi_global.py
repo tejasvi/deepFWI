@@ -92,17 +92,36 @@ class ModelDataset(Dataset):
         self.out_mean = out_mean if out_mean else 18.389227
 
         # Variance of output variable used to scale the training loss.
-        self.out_var = out_var if out_var else 20.80943 if self.hparams.loss == 'mae' else 716.1736
+        self.out_var = (
+            out_var if out_var else 20.80943 if self.hparams.loss == "mae" else 716.1736
+        )
 
         self.transform = transforms.Compose(
             [
                 transforms.ToTensor(),
-                
                 # Mean and standard deviation stats used to normalize the input data to
                 # the mean of zero and standard deviation of one.
                 transforms.Normalize(
-                    (72.03445, 281.2624, 2.4925985, 6.5504117,72.03445, 281.2624, 2.4925985, 6.5504117,),
-                    (18.8233801, 21.9253515, 6.37190019, 3.73465273,18.8233801, 21.9253515, 6.37190019, 3.73465273,),
+                    (
+                        72.03445,
+                        281.2624,
+                        2.4925985,
+                        6.5504117,
+                        72.03445,
+                        281.2624,
+                        2.4925985,
+                        6.5504117,
+                    ),
+                    (
+                        18.8233801,
+                        21.9253515,
+                        6.37190019,
+                        3.73465273,
+                        18.8233801,
+                        21.9253515,
+                        6.37190019,
+                        3.73465273,
+                    ),
                 ),
             ]
         )
@@ -133,14 +152,14 @@ class ModelDataset(Dataset):
                     self.input["t2"][idx],
                     self.input["tp"][idx],
                     self.input["wspeed"][idx],
-                    self.input["rh"][idx+1],
-                    self.input["t2"][idx+1],
-                    self.input["tp"][idx+1],
-                    self.input["wspeed"][idx+1],
+                    self.input["rh"][idx + 1],
+                    self.input["t2"][idx + 1],
+                    self.input["tp"][idx + 1],
+                    self.input["wspeed"][idx + 1],
                 ),
                 axis=-1,
             )
-            y = torch.from_numpy(self.output["fwi"][idx+1].values).unsqueeze(0)
+            y = torch.from_numpy(self.output["fwi"][idx + 1].values).unsqueeze(0)
         else:
             X = np.stack(
                 (
@@ -148,14 +167,16 @@ class ModelDataset(Dataset):
                     self.input["t2"][idx][:, 2560:],
                     self.input["tp"][idx][:, 2560:],
                     self.input["wspeed"][idx][:, 2560:],
-                    self.input["rh"][idx+1][:, 2560:],
-                    self.input["t2"][idx+1][:, 2560:],
-                    self.input["tp"][idx+1][:, 2560:],
-                    self.input["wspeed"][idx+1][:, 2560:],
+                    self.input["rh"][idx + 1][:, 2560:],
+                    self.input["t2"][idx + 1][:, 2560:],
+                    self.input["tp"][idx + 1][:, 2560:],
+                    self.input["wspeed"][idx + 1][:, 2560:],
                 ),
                 axis=-1,
             )
-            y = torch.from_numpy(self.output["fwi"][idx+1].values[:, 2560:]).unsqueeze(0)
+            y = torch.from_numpy(
+                self.output["fwi"][idx + 1].values[:, 2560:]
+            ).unsqueeze(0)
 
         if self.transform:
             X = self.transform(X)
@@ -175,11 +196,17 @@ class ModelDataset(Dataset):
             breakpoint()
         y = y_pre[mask]
         y_hat = y_hat_pre[mask]
-        pre_loss = (y_hat - y).abs() if model.hparams.loss == 'mae' else (y_hat - y) ** 2
+        pre_loss = (
+            (y_hat - y).abs() if model.hparams.loss == "mae" else (y_hat - y) ** 2
+        )
         loss = pre_loss.mean()
         if model.aux:
             aux_y_hat = aux_y_hat[mask]
-            aux_pre_loss = (y_hat - y).abs() if model.hparams.loss == 'mae' else (y_hat - y) ** 2
+            aux_pre_loss = (
+                (aux_y_hat - y).abs()
+                if model.hparams.loss == "mae"
+                else (y_hat - y) ** 2
+            )
             loss += 0.3 * aux_pre_loss.mean()
         if loss != loss:
             breakpoint()
@@ -200,7 +227,9 @@ class ModelDataset(Dataset):
             breakpoint()
         y = y_pre[mask]
         y_hat = y_hat_pre[mask]
-        pre_loss = (y_hat - y).abs() if model.hparams.loss == 'mae' else (y_hat - y) ** 2
+        pre_loss = (
+            (y_hat - y).abs() if model.hparams.loss == "mae" else (y_hat - y) ** 2
+        )
         val_loss = pre_loss.mean()
 
         # Accuracy for multiple thresholds
@@ -209,7 +238,11 @@ class ModelDataset(Dataset):
         n_correct_pred_20 = (
             (((y - y_hat).abs() < model.hparams.thresh * 2)).float().mean()
         )
-        abs_error = (y - y_hat).abs().float().mean() if model.hparams.loss == 'mae' else (y - y_hat).abs().float().mean()
+        abs_error = (
+            (y - y_hat).abs().float().mean()
+            if model.hparams.loss == "mae"
+            else (y - y_hat).abs().float().mean()
+        )
         tensorboard_logs = {
             "val_loss": val_loss.item(),
             "n_correct_pred": n_correct_pred,
@@ -230,7 +263,9 @@ class ModelDataset(Dataset):
         mask = model.data.mask.expand_as(y)
         y = y[mask]
         y_hat = y_hat[mask]
-        pre_loss = (y_hat - y).abs() if model.hparams.loss == 'mae' else (y_hat - y) ** 2
+        pre_loss = (
+            (y_hat - y).abs() if model.hparams.loss == "mae" else (y_hat - y) ** 2
+        )
         test_loss = pre_loss.mean()
 
         # Accuracy for multiple thresholds
@@ -239,7 +274,11 @@ class ModelDataset(Dataset):
         n_correct_pred_20 = (
             (((y - y_hat).abs() < model.hparams.thresh * 2)).float().mean()
         )
-        abs_error = (y - y_hat).abs().float().mean() if model.hparams.loss == 'mae' else (y - y_hat).abs().float().mean()
+        abs_error = (
+            (y - y_hat).abs().float().mean()
+            if model.hparams.loss == "mae"
+            else (y - y_hat).abs().float().mean()
+        )
         tensorboard_logs = {
             "test_loss": test_loss.item(),
             "n_correct_pred": n_correct_pred,
