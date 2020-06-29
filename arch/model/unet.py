@@ -71,7 +71,7 @@ class Model(BaseModel):
         # init superclass
         super().__init__(hparams)
         self.hparams = hparams
-        out_channels = 1
+        out_channels = self.hparams.out_channels
         features = self.hparams.init_features
 
         self.encoder1 = Model._block(self.hparams.in_channels, features, name="enc1")
@@ -147,7 +147,7 @@ class Model(BaseModel):
                             kernel_size=3,
                             padding=1,
                             bias=True,
-                            padding_mode='circular',
+                            padding_mode="circular",
                         ),
                     ),
                     (name + "norm1", nn.BatchNorm2d(num_features=features)),
@@ -160,7 +160,7 @@ class Model(BaseModel):
                             kernel_size=3,
                             padding=1,
                             bias=True,
-                            padding_mode='circular',
+                            padding_mode="circular",
                         ),
                     ),
                     (name + "norm2", nn.BatchNorm2d(num_features=features)),

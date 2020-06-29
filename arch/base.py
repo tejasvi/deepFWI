@@ -193,6 +193,13 @@ class BaseModel(LightningModule):
                 self.data,
                 [len(self.data) * 8 // 10, len(self.data) - len(self.data) * 8 // 10,],
             )
+            if self.hparams.case_study:
+                assert (
+                    max(self.test_data.indices) > 214
+                ), "The data is outside the range of case study"
+                self.test_data.indices = list(
+                    set(self.test_data.indices) & set(range(214, 335))
+                )
 
             self.data_prepared = True
         else:

@@ -48,19 +48,25 @@ class ModelDataset(BaseDataset):
     ):
 
         self.hparams = hparams
-        self.out_mean = out_mean
-        self.out_var = out_var
+
+        # Number of input and prediction days
+        assert (
+            not self.hparams.in_channels % 4
+        ), "Give inp_channels in  multiple of four."
+        self.n_input = self.hparams.in_channels // 4
+        self.n_output = self.hparams.out_channels
 
         preprocess = lambda x: x.isel(time=slice(0, 1))
 
         inp_files = sorted(
             sorted(glob(f"{forcings_dir}/ECMWF_FO_20*.nc")),
             # Extracting the month and date from filenames to sort by time.
-            key=lambda x: int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
+            key=lambda x: int(x.split("_20")[1][:2]) * 10000
+            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
             + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]),
         )
         if self.hparams.min_data:
-            inp_files = inp_files[:32]
+            inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
         inp_invalid = lambda x: not (
             1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) <= 12
             and 1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]) <= 31
@@ -68,6 +74,23 @@ class ModelDataset(BaseDataset):
         assert not (
             sum([inp_invalid(x) for x in out_files])
         ), "Invalid date format for input file(s). The dates should be formatted as YYMMDD."
+
+        out_files = sorted(
+            glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
+            # Extracting the month and date from filenames to sort by time.
+            key=lambda x: int(x[-24:-22]) * 10000
+            + int(x[-22:-20]) * 100
+            + int(x[-20:-18]),
+        )
+        if self.hparams.min_data:
+            out_files = out_files[: 2 * (self.n_output + self.n_input)]
+        out_files = out_files[len(out_files) - len(inp_files) // 4 :]
+        out_invalid = lambda x: not (
+            1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
+        )
+        assert not (
+            sum([out_invalid(x) for x in out_files])
+        ), "Invalid date format for output file(s). The dates should be formatted as YYMMDD."
 
         with xr.open_mfdataset(
             inp_files,
@@ -77,20 +100,6 @@ class ModelDataset(BaseDataset):
             combine="by_coords",
         ) as ds:
             self.input = ds.load()
-
-        out_files = sorted(
-            glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
-            # Extracting the month and date from filenames to sort by time.
-            key=lambda x: int(x[-22:-20]) * 100 + int(x[-20:-18]),
-        )
-        if self.hparams.min_data:
-            out_files = out_files[:24]
-        out_invalid = lambda x: not (
-            1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
-        )
-        assert not (
-            sum([out_invalid(x) for x in out_files])
-        ), "Invalid date format for output file(s). The dates should be formatted as YYMMDD."
 
         with xr.open_mfdataset(
             out_files,
@@ -115,11 +124,23 @@ class ModelDataset(BaseDataset):
             f"\nEnd date: {self.output.fwi.time.max(skipna=True)}",
         )
 
-        self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
-
-        # Number of input and prediction days
-        self.n_input = 2
-        self.n_output = 10
+        self.mask = (
+            torch.nn.functional.max_pool2d(
+                (
+                    ~torch.from_numpy(
+                        np.load(self.hparams.mask)
+                        if self.hparams.mask
+                        else ~np.isnan(self.output["fwi"][0].values)
+                    )
+                )
+                .unsqueeze(0)
+                .float(),
+                kernel_size=3,
+                stride=1,
+                padding=1,
+            ).squeeze()
+            == 0
+        ).cuda()
 
         # Mean of output variable used for bias-initialization.
         self.out_mean = out_mean if out_mean else 15.292629
@@ -130,6 +151,8 @@ class ModelDataset(BaseDataset):
             if out_var
             else 18.819166
             if self.hparams.loss == "mae"
+            else 414.2136
+            if self.hparams.mask
             else 621.65894
         )
 
@@ -162,29 +185,16 @@ class ModelDataset(BaseDataset):
         x, y_pre = batch
         y_hat_pre, aux_y_hat = model(x) if model.aux else model(x), None
         mask = model.data.mask.expand_as(y_pre[0][0])
-        if y_pre.shape != y_hat_pre.shape:
-            breakpoint()
+        assert y_pre.shape == y_hat_pre.shape
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
                 y_hat = y_hat_pre[b][c][mask]
-                pre_loss = (
-                    (y_hat - y).abs()
-                    if model.hparams.loss == "mae"
-                    else (y_hat - y) ** 2
-                )
+                pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
-                if model.aux:
-                    aux_y_hat = aux_y_hat[b][c][mask]
-                    aux_pre_loss = (
-                        (aux_y_hat - y).abs()
-                        if model.hparams.loss == "mae"
-                        else (y_hat - y) ** 2
-                    )
-                    loss += 0.3 * aux_pre_loss.mean()
                 assert loss == loss
-                tensorboard_logs["train_loss_unscaled"][c] = loss
+                tensorboard_logs["train_loss_unscaled"][str(c)] = loss
         loss = torch.stack(
             list(tensorboard_logs["train_loss_unscaled"].values())
         ).mean()
@@ -204,42 +214,25 @@ class ModelDataset(BaseDataset):
         x, y_pre = batch
         y_hat_pre, aux_y_hat = model(x) if model.aux else model(x), None
         mask = model.data.mask.expand_as(y_pre[0][0])
-        if y_pre.shape != y_hat_pre.shape:
-            breakpoint()
+        assert y_pre.shape == y_hat_pre.shape
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
                 y_hat = y_hat_pre[b][c][mask]
-                pre_loss = (
-                    (y_hat - y).abs()
-                    if model.hparams.loss == "mae"
-                    else (y_hat - y) ** 2
-                )
+                pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
-                if model.aux:
-                    aux_y_hat = aux_y_hat[b][c][mask]
-                    aux_pre_loss = (
-                        (aux_y_hat - y).abs()
-                        if model.hparams.loss == "mae"
-                        else (y_hat - y) ** 2
-                    )
-                    loss += 0.3 * aux_pre_loss.mean()
                 assert loss == loss
 
-                # Accuracy for multiple thresholds
+                # Accuracy for a threshold
                 n_correct_pred = (
                     (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
                 )
-                abs_error = (
-                    (y - y_hat).abs().float().mean()
-                    if model.hparams.loss == "mae"
-                    else (y - y_hat).abs().float().mean()
-                )
+                abs_error = (y - y_hat).abs().float().mean()
 
-                tensorboard_logs["val_loss"][c] = loss
-                tensorboard_logs["n_correct_pred"][c] = n_correct_pred
-                tensorboard_logs["abs_error"][c] = abs_error
+                tensorboard_logs["val_loss"][str(c)] = loss
+                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
+                tensorboard_logs["abs_error"][str(c)] = abs_error
 
         val_loss = torch.stack(list(tensorboard_logs["val_loss"].values())).mean()
         tensorboard_logs["_val_loss"] = val_loss
@@ -251,31 +244,34 @@ class ModelDataset(BaseDataset):
 
     def test_step(self, model, batch, batch_idx):
         """ Called during manual invocation on test data."""
-        x, y = batch
-        y_hat, _ = model(x) if model.aux else model(x), None
-        mask = model.data.mask.expand_as(y)
+        x, y_pre = batch
+        y_hat_pre, _ = model(x) if model.aux else model(x), None
+        mask = model.data.mask.expand_as(y_pre[0][0])
+        if self.hparams.case_study:
+            mask = mask[355:480, 400:550]
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
+                y = y_pre[b][c]
+                y_hat = y_hat_pre[b][c]
+                if self.hparams.case_study:
+                    y = y[355:480, 400:550][mask]
+                    y_hat = y_hat[355:480, 400:550][mask]
+                else:
+                    y = y[mask]
+                    y_hat = y_hat[mask]
+                if self.hparams.clip_fwi:
+                    y = y[(y_hat < 60) & (0.5 < y_hat)]
+                    y_hat = [(y_hat < 60) & (0.5 < y_hat)]
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"
                     else (y_hat - y) ** 2
                 )
                 loss = pre_loss.mean()
-                if model.aux:
-                    aux_y_hat = aux_y_hat[b][c][mask]
-                    aux_pre_loss = (
-                        (aux_y_hat - y).abs()
-                        if model.hparams.loss == "mae"
-                        else (y_hat - y) ** 2
-                    )
-                    loss += 0.3 * aux_pre_loss.mean()
                 assert loss == loss
 
-                # Accuracy for multiple thresholds
+                # Accuracy for a threshold
                 n_correct_pred = (
                     (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
                 )
@@ -285,9 +281,9 @@ class ModelDataset(BaseDataset):
                     else (y - y_hat).abs().float().mean()
                 )
 
-                tensorboard_logs["test_loss"][c] = loss
-                tensorboard_logs["n_correct_pred"][c] = n_correct_pred
-                tensorboard_logs["abs_error"][c] = abs_error
+                tensorboard_logs["test_loss"][str(c)] = loss
+                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
+                tensorboard_logs["abs_error"][str(c)] = abs_error
 
         test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
         tensorboard_logs["_test_loss"] = test_loss
@@ -297,4 +293,3 @@ class ModelDataset(BaseDataset):
             "test_loss": test_loss,
             "log": tensorboard_logs,
         }
-

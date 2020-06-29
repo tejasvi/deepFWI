@@ -50,14 +50,21 @@ class ModelDataset(BaseDataset):
         self.out_mean = out_mean
         self.out_var = out_var
 
+        # Number of input and prediction days
+        self.n_input = 2
+        self.n_output = 1
+
         preprocess = lambda x: x.isel(time=slice(0, 1))
 
         inp_files = sorted(
             sorted(glob(f"{forcings_dir}/ECMWF_FO_20*.nc")),
             # Extracting the month and date from filenames to sort by time.
-            key=lambda x: int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
+            key=lambda x: int(x.split("_20")[1][:2]) * 10000
+            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
             + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]),
         )
+        if self.hparams.min_data:
+            inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
         inp_invalid = lambda x: not (
             1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) <= 12
             and 1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]) <= 31
@@ -80,6 +87,8 @@ class ModelDataset(BaseDataset):
             # Extracting the month and date from filenames to sort by time.
             key=lambda x: int(x[-22:-20]) * 100 + int(x[-20:-18]),
         )
+        if self.hparams.min_data:
+            out_files = out_files[: 2 * (self.n_output + self.n_input)]
         out_invalid = lambda x: not (
             1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
         )
@@ -151,7 +160,7 @@ class ModelDataset(BaseDataset):
         )
 
     def __len__(self):
-        return len(self.input.time) - self.n_output - self.n_input - 1
+        return len(self.input.time) - (self.n_input - 1) - (self.n_output - 1)
 
     def __getitem__(self, idx):
         """

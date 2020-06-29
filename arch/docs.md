@@ -17,7 +17,7 @@ Primary training and evaluation script.
 
 
     
-> `def get_hparams(init_features: ('Architecture complexity', 'option') = 20, in_channels: ('Number of input channels', 'option') = 8, epochs: ('Number of training epochs', 'option') = 100, learning_rate: ('Maximum learning rate', 'option') = 0.001, loss: ('Loss function: mae, mse', 'option') = 'mse', batch_size: ('Batch size of the input', 'option') = 1, split: ('Test split fraction', 'option') = 0.2, use_16bit: ('Use 16-bit precision for training (train only)', 'option') = True, gpus: ('Number of GPUs to use', 'option') = 1, optim: ('Learning rate optimizer: one_cycle or cosine (train only)', 'option') = 'one_cycle', min_data: ('Use small amount of data for sanity check', 'option') = False, model: ('Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi', 'option') = 'unet_tapered_multi', out: ('Output data for training: fwi_global, exp0, exp1', 'option') = 'exp1', forecast_dir: ('Directory containing forecast data', 'option') = '/nvme0/fwi-forecast', forcings_dir: ('Directory containing forcings data', 'option') = '/nvme1/fwi-forcings', reanalysis_dir: ('Directory containing reanalysis data', 'option') = '/nvme0/fwi-reanalysis', thresh: ('Threshold for accuracy: Half of output MAD', 'option') = 9.4, comment: ('Used for logging', 'option') = 'None', checkpoint: ('Path to the test model checkpoint', 'option') = '')`
+> `def get_hparams(init_features: ('Architecture complexity', 'option') = 16, in_channels: ('Number of input channels', 'option') = 16, out_channels: ('Number of output channels', 'option') = 1, epochs: ('Number of training epochs', 'option') = 100, learning_rate: ('Maximum learning rate', 'option') = 0.001, loss: ('Loss function: mae, mse', 'option') = 'mse', batch_size: ('Batch size of the input', 'option') = 1, split: ('Test split fraction', 'option') = 0.2, use_16bit: ('Use 16-bit precision for training (train only)', 'option') = True, gpus: ('Number of GPUs to use', 'option') = 1, optim: ('Learning rate optimizer: one_cycle or cosine (train only)', 'option') = 'one_cycle', min_data: ('Use small amount of data for sanity check', 'option') = False, case_study: ('Limit the analysis to Australian region (inference only)', 'option') = False, clip_fwi: ('Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)', 'option') = False, model: ('Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi', 'option') = 'unet_tapered_multi', out: ('Output data for training: fwi_global, exp0, exp1, exp2', 'option') = 'exp2', forecast_dir: ('Directory containing forecast data', 'option') = '/nvme0/fwi-forecast', forcings_dir: ('Directory containing forcings data', 'option') = '/nvme1/fwi-forcings', reanalysis_dir: ('Directory containing reanalysis data', 'option') = '/nvme0/fwi-reanalysis', mask: ('File containing the mask stored as the numpy array', 'option') = 'dataloader/mask.npy', thresh: ('Threshold for accuracy: Half of output MAD', 'option') = 9.4, comment: ('Used for logging', 'option') = 'Unet tapered - residual', checkpoint_file: ('Path to the test model checkpoint', 'option') = '')`
 
 
 The project wide arguments. Run `python main.py -h` for usage details.
@@ -26,6 +26,17 @@ The project wide arguments. Run `python main.py -h` for usage details.
 
 <code>Dict</code>
 :   Dictionary containing configuration options.
+
+
+
+    
+### Function `get_model` {#main.get_model}
+
+
+
+    
+> `def get_model(hparams)`
+
 
 
 
@@ -180,6 +191,46 @@ passed in as <code>batch</code>.
 
 Called inside the validation loop with the data from the validation dataloader
 passed in as <code>batch</code>.
+
+
+
+    
+# Module `exp2` {#exp2}
+
+Experiment 1 dataset class to be used with U-Net model.
+
+
+
+
+
+    
+## Classes
+
+
+    
+### Class `ModelDataset` {#exp2.ModelDataset}
+
+
+
+> `class ModelDataset(out_var=None, out_mean=None, forecast_dir=None, forcings_dir=None, reanalysis_dir=None, transform=None, hparams=None, **kwargs)`
+
+
+The dataset class responsible for loading the data and providing the samples for
+training.
+
+
+    
+#### Ancestors (in MRO)
+
+* [dataloader.exp1.ModelDataset](#dataloader.exp1.ModelDataset)
+* [dataloader.exp0.ModelDataset](#dataloader.exp0.ModelDataset)
+* [dataloader.fwi_global.ModelDataset](#dataloader.fwi_global.ModelDataset)
+* [torch.utils.data.dataset.Dataset](#torch.utils.data.dataset.Dataset)
+
+
+
+
+
 
 
 

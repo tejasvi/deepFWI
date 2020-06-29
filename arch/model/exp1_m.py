@@ -57,7 +57,7 @@ class Model(BaseModel):
         >>> model = Model(hparams)
     """
 
-    def __init__(self, hparams):
+    def __init__(self, hparams, out_channels=10):
         """
         Pass in hyperparameters as a `argparse.Namespace` or a `dict` to the
         model.
@@ -70,7 +70,7 @@ class Model(BaseModel):
 
         # init superclass
         super().__init__(hparams)
-        out_channels = 10
+        out_channels = self.hparams.out_channels
         features = self.hparams.init_features
 
         self.conv = nn.Conv2d(

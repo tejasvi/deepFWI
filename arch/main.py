@@ -5,7 +5,7 @@ import os
 from argparse import ArgumentParser
 from argparse import Namespace
 import random
-import time
+from datetime import datetime
 from glob import glob
 import shutil
 import importlib
@@ -41,36 +41,30 @@ def main(hparams):
     # 1 INIT MODEL
     # ------------------------
 
-    Model = importlib.import_module(f"model.{hparams.model}").Model
-    if hparams.model in ["unet"]:
-        if hparams.out == "fwi_global":
-            ModelDataset = importlib.import_module(
-                f"dataloader.fwi_global"
-            ).ModelDataset
-    elif hparams.model in ["exp0_m", "unet_lite", "unet_tapered"]:
-        if hparams.out == "exp0":
-            ModelDataset = importlib.import_module(f"dataloader.exp0").ModelDataset
-    elif hparams.model in ["exp1_m", "unet_tapered_multi"]:
-        if hparams.out == "exp1":
-            ModelDataset = importlib.import_module(f"dataloader.exp1").ModelDataset
-    else:
-        raise ImportError("{hparams.model} and {hparams.out} combination invalid.")
+    model = get_model(hparams)
 
     name = hparams.model + "-" + hparams.out
 
     checkpoint_callback = pl.callbacks.model_checkpoint.ModelCheckpoint(
-        filepath=f"model/checkpoints/{name}/bestmodel",
+        filepath=f"model/checkpoints/",
         monitor="val_loss",
         verbose=True,
         save_top_k=1,
         save_weights_only=False,
-        mode="auto",
+        mode="min",
         period=1,
-        prefix=name + time.ctime(),
+        prefix="-".join(
+            [
+                str(x)
+                for x in (
+                    name,
+                    hparams.in_channels,
+                    hparams.out_channels,
+                    datetime.now().strftime("-%m/%d-%H:%M"),
+                )
+            ]
+        ),
     )
-
-    model = Model(hparams)  # .to(non_blocking=True)
-    model.prepare_data(ModelDataset)
 
     # ------------------------
     # LOGGING SETUP
@@ -100,22 +94,22 @@ def main(hparams):
 
     trainer = pl.Trainer(
         auto_lr_find=False,
-        show_progress_bar=False,
+        # progress_bar_refresh_rate=0,
         # Profiling the code to find bottlenecks
         # profiler=pl.profiler.AdvancedProfiler('profile'),
-        max_epochs=hparams.epochs,
+        max_epochs=hparams.epochs if not hparams.min_data else 1,
         # CUDA trick to speed up training after the first epoch
-        # benchmark=True,
+        benchmark=True,
         deterministic=False,
         # Sanity checks
         # fast_dev_run=False,
         # overfit_pct=0.01,
         gpus=hparams.gpus,
-        precision=16 if hparams.use_16bit else 32,
+        precision=16 if hparams.use_16bit and hparams.gpus else 32,
         # Alternative method for 16-bit training
         # amp_level="O2",
-        # logger=[wandb_logger, tb_logger],
-        # checkpoint_callback=checkpoint_callback,
+        logger=None if hparams.min_data else [wandb_logger],  # , tb_logger],
+        checkpoint_callback=None if hparams.min_data else checkpoint_callback,
         # Using maximum GPU memory. NB: Learning rate should be adjusted according to
         # the batch size
         # auto_scale_batch_size='binsearch',
@@ -163,6 +157,34 @@ def main(hparams):
     # torch.save(model.state_dict(), "model.pth")
 
 
+def get_model(hparams):
+    Model = importlib.import_module(f"model.{hparams.model}").Model
+    if hparams.model in ["unet"]:
+        if hparams.out == "fwi_global":
+            ModelDataset = importlib.import_module(
+                f"dataloader.fwi_global"
+            ).ModelDataset
+    elif hparams.model in [
+        "exp0_m",
+        "unet_lite",
+        "unet_tapered",
+    ]:
+        if hparams.out == "exp0":
+            ModelDataset = importlib.import_module(f"dataloader.exp0").ModelDataset
+    elif hparams.model in ["exp1_m", "unet_tapered_multi"]:
+        if hparams.out == "exp1":
+            ModelDataset = importlib.import_module(f"dataloader.exp1").ModelDataset
+        elif hparams.out == "exp2":
+            ModelDataset = importlib.import_module(f"dataloader.exp2").ModelDataset
+    else:
+        raise ImportError("{hparams.model} and {hparams.out} combination invalid.")
+
+    model = Model(hparams)
+    model.prepare_data(ModelDataset)
+
+    return model
+
+
 def str2num(s):
     """
     Converts parameter strings to appropriate types.
@@ -179,11 +201,12 @@ def str2num(s):
     """
     if isinstance(s, bool):
         return s
+    s = str(s)
     if "." in s:
         try:
-            res = float(s)
+            return float(s)
         except:
-            res = s
+            return s
     elif s.isdigit():
         return int(s)
     else:
@@ -191,14 +214,15 @@ def str2num(s):
             return True
         elif s == "False":
             return False
-    return res
+    return s
 
 
 def get_hparams(
     #
     # U-Net config
-    init_features: ("Architecture complexity", "option") = 20,
-    in_channels: ("Number of input channels", "option") = 8,
+    init_features: ("Architecture complexity", "option") = 16,
+    in_channels: ("Number of input channels", "option") = 16,
+    out_channels: ("Number of output channels", "option") = 1,
     #
     # General
     epochs: ("Number of training epochs", "option") = 100,
@@ -213,13 +237,21 @@ def get_hparams(
         "option",
     ) = "one_cycle",
     min_data: ("Use small amount of data for sanity check", "option") = False,
+    case_study: (
+        "Limit the analysis to Australian region (inference only)",
+        "option",
+    ) = False,
+    clip_fwi: (
+        "Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)",
+        "option",
+    ) = False,
     #
     # Run specific
     model: (
         "Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi",
         "option",
     ) = "unet_tapered_multi",
-    out: ("Output data for training: fwi_global, exp0, exp1", "option") = "exp1",
+    out: ("Output data for training: fwi_global, exp0, exp1, exp2", "option") = "exp2",
     forecast_dir: (
         "Directory containing forecast data",
         "option",
@@ -232,11 +264,15 @@ def get_hparams(
         "Directory containing reanalysis data",
         "option",
     ) = "/nvme0/fwi-reanalysis",
+    mask: (
+        "File containing the mask stored as the numpy array",
+        "option",
+    ) = "dataloader/mask.npy",
     thresh: ("Threshold for accuracy: Half of output MAD", "option") = 9.4,  # 10.4, 9.4
-    comment: ("Used for logging", "option") = "None",
+    comment: ("Used for logging", "option") = "Unet tapered - residual",
     #
     # Test run
-    checkpoint: ("Path to the test model checkpoint", "option") = "",
+    checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
 ):
     """
     The project wide arguments. Run `python main.py -h` for usage details.

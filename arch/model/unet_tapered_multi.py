@@ -72,13 +72,14 @@ class Model(BaseModel):
         # init superclass
         super().__init__(hparams)
 
-
     def training_epoch_end(self, outputs):
         """
         Called at the end of validation to aggregate outputs.
         :param outputs: list of individual outputs of each validation step.
         """
-        avg_loss = torch.stack([x["_log"]["_train_loss_unscaled"] for x in outputs]).mean()
+        avg_loss = torch.stack(
+            [x["_log"]["_train_loss_unscaled"] for x in outputs]
+        ).mean()
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["train_loss"] = avg_loss
         return {
@@ -97,9 +98,15 @@ class Model(BaseModel):
         tensorboard_logs["val_loss"] = avg_loss
 
         for n in range(self.data.n_output):
-            tensorboard_logs[f"val_loss_{n}"] = torch.stack([d[n] for d in [x["log"]["val_loss"] for x in outputs]]).mean()
-            tensorboard_logs[f"val_acc_{n}"] = torch.stack([d[n] for d in [x["log"]["n_correct_pred"] for x in outputs]]).mean()
-            tensorboard_logs[f"abs_error_{n}"] = torch.stack([d[n] for d in [x["log"]["abs_error"] for x in outputs]]).mean()
+            tensorboard_logs[f"val_loss_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["val_loss"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"val_acc_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"abs_error_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]]
+            ).mean()
 
         return {
             "val_loss": avg_loss,
@@ -107,15 +114,25 @@ class Model(BaseModel):
         }
 
     def test_epoch_end(self, outputs):
+        """
+        Called at the end of validation to aggregate outputs.
+        :param outputs: list of individual outputs of each validation step.
+        """
         avg_loss = torch.stack([x["test_loss"] for x in outputs]).mean()
-        mean_error = np.mean([x["log"]["abs_error"].item() for x in outputs])
 
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["test_loss"] = avg_loss
 
         for n in range(self.data.n_output):
-            tensorboard_logs[f"val_acc_{n}"] = torch.stack([d[n] for d in [x["log"]["n_correct_pred"] for x in outputs]]).mean()
-            tensorboard_logs[f"abs_error_{n}"] = torch.stack([d[n] for d in [x["log"]["abs_error"] for x in outputs]]).mean()
+            tensorboard_logs[f"test_loss_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["test_loss"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"test_acc_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"abs_error_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]]
+            ).mean()
 
         return {
             "test_loss": avg_loss,

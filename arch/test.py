@@ -21,7 +21,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning import Trainer
 import wandb
 
-from main import str2num, hparams
+from main import str2num, get_hparams, get_model
 
 # Setting seeds to ensure reproducibility. Setting CUDA to deterministic mode slows down
 # the training.
@@ -42,20 +42,11 @@ def main(hparams):
     # ------------------------
     # 1 INIT MODEL
     # ------------------------
+    model = get_model(hparams)
+    model.load_state_dict(torch.load(hparams.checkpoint_file)["state_dict"])
+    model.eval()
 
-    Model = importlib.import_module(f"model.{hparams.model}").Model
-    if hparams.model in ["unet"]:
-        if hparams.out == 'fwi_global':
-            ModelDataset = importlib.import_module(f"dataloader.fwi_global").ModelDataset
-    elif hparams.model in ["exp0_m"]:
-        if hparams.out == 'exp0':
-            ModelDataset = importlib.import_module(f"dataloader.exp0").ModelDataset
-
-    checkpoint_callback = pl.callbacks.model_checkpoint.ModelCheckpoint(
-        filepath=hparams.checkpoint)
-
-    model = Model(hparams)#.to(non_blocking=True)
-    model.prepare_data(ModelDataset)
+    name = "-".join([hparams.model, hparams.out, "-test",])
 
     # ------------------------
     # LOGGING SETUP
@@ -68,8 +59,7 @@ def main(hparams):
         project=name,
         save_dir="logs",
     )
-    if not hparams.test:
-        wandb_logger.watch(model, log="all", log_freq=100)
+    wandb_logger.watch(model, log="all", log_freq=200)
     wandb_logger.log_hyperparams(model.hparams)
     for file in [
         i
@@ -78,25 +68,18 @@ def main(hparams):
     ]:
         shutil.copy(file, wandb.run.dir)
 
-    trainer = pl.Trainer(
-        max_epochs=hparams.epochs,
-        deterministic=False,
-        gpus=hparams.gpus,
-        checkpoint_callback=checkpoint_callback,
-        logger=[wandb_logger, tb_logger],
-    )
+    trainer = pl.Trainer(gpus=hparams.gpus, logger=[wandb_logger])  # , tb_logger],
     # ------------------------
     # 3 START TESTING
     # ------------------------
 
-    trainer.test(ckpt_path=hparams.checkpoint)
+    trainer.test(model)
+
 
 if __name__ == "__main__":
 
     # Converting dictionary to namespace
-    hyperparams = Namespace(**plac.call(hparams, eager=False))
-    print(hyperparams)
-
+    hyperparams = Namespace(**plac.call(get_hparams, eager=False))
     # ---------------------
     # RUN TESTING
     # ---------------------
