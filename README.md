@@ -1,47 +1,92 @@
-# deepFWI
-* The dependencies are present in [environment.yml](environment.yml). To create environment run:<br>
-`conda env create -f environment.yml`
-<br>`conda activate wildfire-dl`
+# deepFWI: Prediction of Fire Weather Index
 
-    >The setup is tested on Ubuntu 18.04 only. Other systems may have problems while creating the environment. See [this](https://github.com/conda/conda/issues/7311) issue for further details.
-* The entry point for training and inference is [arch/main.py](arch/main.py). After specifying the configuration in the script or through command line, run:
-`python main.py`
+## Getting Started:
+- **Clone this repo**: 
+<br> `git clone https://github.com/wikilimo/deepFWI.git`
+<br> `cd deepFWI`
 
-  * **Usage**: main/test.py `[-h] [-init-features 11] [-in-channels 8] [-epochs 100]
-               [-learning-rate 0.01] [-loss mae] [-batch-size 1] [-split 0.2]
-               [-use-16bit True] [-gpus 1] [-optim one_cycle] [-model unet]
-               [-out fwi_global] [-forecast-dir /nvme0/fwi-forecast]
-               [-forcings-dir /nvme1/fwi-forcings] [-thresh 10.4]
-               [-comment None] [-test False] [-checkpoint]`
+* **Install dependencies**: To create the environment, run
+<br> `conda env create -f environment.yml`
+<br> `conda activate wildfire-dl`
 
-  * **Optional arguments**:
+    >The setup is tested on Ubuntu 18.04 only and will not work on any non-Linux systems. See [this](https://github.com/conda/conda/issues/7311) issue for further details.
+## Running Inference
+* **Testing data**:<br>
+  Ensure the access to fwi-forcings and fwi-reanalysis data.
+* **Obtain pre-trained model**:<br>
+  Place the model checkpoint file somewhere in your system and note the filepath.
+* **Run the inference script**:<br>
+  `python arch/test.py -in-channels=8 -out-channels=1 -forcings-dir='path/to/forcings' -reanalysis-dir='path/to/reanalysis' -checkpoint-file='path/to/exp0-checkpoint'`
+    > The number of input channels is technically equal to four times number of input days and the number of output channels is equal to number of output days. The specification will change in future to specifying the number of days instead of number of channels.
+
+## Implementation overview
+* The entry point for training is [arch/main.py](arch/main.py)
+  * **Example Usage**: `python arch/main.py [-h]
+               [-init-features 16] [-in-channels 16] [-out-channels 1]
+               [-epochs 100] [-learning-rate 0.001] [-loss mse]
+               [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
+               [-optim one_cycle] [-min-data False]
+               [-clip-fwi False] [-model unet_tapered_multi] [-out exp2]
+               [-forcings-dir /nvme1/fwi-forcings]
+               [-reanalysis-dir /nvme0/fwi-reanalysis]
+               [-mask dataloader/mask.npy] [-thresh 9.4]
+               [-comment None]`
+               
+* The entry point for inference is [arch/test.py](arch/test.py)
+  * **Example Usage**: `python arch/test.py [-h]
+               [-init-features 16] [-in-channels 16] [-out-channels 1]
+               [-learning-rate 0.001] [-loss mse]
+               [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
+               [-min-data False] [-case-study False]
+               [-clip-fwi False] [-model unet_tapered_multi] [-out exp2]
+               [-forcings-dir /nvme1/fwi-forcings]
+               [-reanalysis-dir /nvme0/fwi-reanalysis]
+               [-mask dataloader/mask.npy] [-thresh 9.4]
+               [-comment None] [-checkpoint-file]`
+
+* **Configuration Details**:
+<br> Optional arguments:
     `  -h, --help            show this help message and exit`<pre>
-    -init-features 11     Architecture complexity
-    -in-channels 8        Number of input channels
+    -init-features 16     Architecture complexity
+    -in-channels 16       Number of input channels
+    -out-channels 1       Number of output channels
     -epochs 100           Number of training epochs
-    -learning-rate 0.01   Maximum learning rate
-    -loss mae             Loss function: mae or mse
+    -learning-rate 0.001  Maximum learning rate
+    -loss mse             Loss function: mae, mse
     -batch-size 1         Batch size of the input
     -split 0.2            Test split fraction
     -use-16bit True       Use 16-bit precision for training (train only)
     -gpus 1               Number of GPUs to use
-    -optim one_cycle      Learning rate optimizer: one_cycle or cosine (train only)
+    -optim one_cycle      Learning rate optimizer: one_cycle or cosine (train
+                          only)
+    -min-data False       Use small amount of data for sanity check
+    -case-study False     Limit the analysis to Australian region (inference
+                          only)
+    -clip-fwi False       Limit the analysis to the data points with 0.5 < fwi <
+                          60 (inference only)
     -model unet_tapered_multi
                           Model to use: unet, exp0_m, unet_lite, unet_tapered,
                           exp1_m, unet_tapered_multi
-    -out exp1             Output data for training: fwi_global, exp0, exp1
+    -out exp2             Output data for training: fwi_global, exp0, exp1, exp2
     -forecast-dir /nvme0/fwi-forecast
                           Directory containing forecast data
     -forcings-dir /nvme1/fwi-forcings
                           Directory containing forcings data
-    -thresh 10.4          Threshold for accuracy: Half of output MAD
-    -comment None         Used for logging
-    -test False           Use model for evaluation
-    -checkpoint           Path to the test model checkpoint</pre>
-* The [arch](arch) directory contains the architecture implementation.
-  * The [arch/dataloader](arch/dataloader) directory contains the implementation specific to the training data.
-  * The [arch/model](arch/model) contains the model implementation.
-  * The [arch/base.py](arch/base.py) has the common implementation used by every model.
+    -reanalysis-dir /nvme0/fwi-reanalysis
+                          Directory containing reanalysis data
+    -mask dataloader/mask.npy
+                          File containing the mask stored as the numpy array
+    -thresh 9.4           Threshold for accuracy: Half of output MAD
+    -comment Unet tapered - residual
+                          Used for logging
+    -checkpoint-file      Path to the test model checkpoint</pre>
+* The [arch/](arch) directory contains the architecture implementation.
+  * The [arch/dataloader/](arch/dataloader) directory contains the implementation specific to the training data.
+  * The [arch/model/](arch/model) directory contains the model implementation.
+  * The [arch/base.py](arch/base.py) directory has the common implementation used by every model.
+
 * Code documentation is present in [arch/docs.md](arch/docs.md).
-* The [data](data) contains the EDA and preprocessing done for each dataset.
-  * The [data/fwi_global](data/fwi_global) has Jupyter notebooks for input and output variables used for global FWI prediction.
+* The [data/](data) directory contains the Exploratory Data Analysis and Preprocessing required for each dataset demonstrated via Jupyter Notebooks.
+  * Forcings data: [data/fwi_global/fwi_forcings.ipynb](data/fwi_global/fwi_forcings.ipynb)
+  * Reanalysis data: [data/fwi_global/fwi_reanalysis.ipynb](data/fwi_global/fwi_reanalysis.ipynb)
+  * Forecast data: [data//fwi_global/fwi_forecast.ipynb](data/fwi_global/fwi_forecast.ipynb)
