@@ -72,7 +72,7 @@ class ModelDataset(BaseDataset):
             and 1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]) <= 31
         )
         assert not (
-            sum([inp_invalid(x) for x in out_files])
+            sum([inp_invalid(x) for x in inp_files])
         ), "Invalid date format for input file(s). The dates should be formatted as YYMMDD."
 
         out_files = sorted(
