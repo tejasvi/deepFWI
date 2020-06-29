@@ -27,8 +27,8 @@
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
                [-optim one_cycle] [-min-data False]
                [-clip-fwi False] [-model unet_tapered_multi] [-out exp2]
-               [-forcings-dir /nvme1/fwi-forcings]
-               [-reanalysis-dir /nvme0/fwi-reanalysis]
+               [-forcings-dir /path/to/forcings]
+               [-reanalysis-dir /path/to/reanalysis]
                [-mask dataloader/mask.npy] [-thresh 9.4]
                [-comment None]`
                
@@ -39,47 +39,39 @@
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
                [-min-data False] [-case-study False]
                [-clip-fwi False] [-model unet_tapered_multi] [-out exp2]
-               [-forcings-dir /nvme1/fwi-forcings]
-               [-reanalysis-dir /nvme0/fwi-reanalysis]
+               [-forcings-dir /path/to/forcings]
+               [-reanalysis-dir /path/to/reanalysis]
                [-mask dataloader/mask.npy] [-thresh 9.4]
                [-comment None] [-checkpoint-file]`
 
 * **Configuration Details**:
-<br> Optional arguments:
-    `  -h, --help            show this help message and exit`<pre>
-    -init-features 16     Architecture complexity
-    -in-channels 16       Number of input channels
-    -out-channels 1       Number of output channels
-    -epochs 100           Number of training epochs
-    -learning-rate 0.001  Maximum learning rate
-    -loss mse             Loss function: mae, mse
-    -batch-size 1         Batch size of the input
-    -split 0.2            Test split fraction
-    -use-16bit True       Use 16-bit precision for training (train only)
-    -gpus 1               Number of GPUs to use
-    -optim one_cycle      Learning rate optimizer: one_cycle or cosine (train
-                          only)
-    -min-data False       Use small amount of data for sanity check
-    -case-study False     Limit the analysis to Australian region (inference
-                          only)
-    -clip-fwi False       Limit the analysis to the data points with 0.5 < fwi <
-                          60 (inference only)
-    -model unet_tapered_multi
-                          Model to use: unet, exp0_m, unet_lite, unet_tapered,
-                          exp1_m, unet_tapered_multi
-    -out exp2             Output data for training: fwi_global, exp0, exp1, exp2
-    -forecast-dir /nvme0/fwi-forecast
-                          Directory containing forecast data
-    -forcings-dir /nvme1/fwi-forcings
-                          Directory containing forcings data
-    -reanalysis-dir /nvme0/fwi-reanalysis
-                          Directory containing reanalysis data
-    -mask dataloader/mask.npy
-                          File containing the mask stored as the numpy array
-    -thresh 9.4           Threshold for accuracy: Half of output MAD
-    -comment Unet tapered - residual
-                          Used for logging
-    -checkpoint-file      Path to the test model checkpoint</pre>
+<br> Optional arguments (default values indicated below):
+
+    `  -h, --help                   show this help message and exit`<pre>
+    -init-features 16                   Architecture complexity
+    -in-channels 16                     Number of input channels
+    -out-channels 1                     Number of output channels
+    -epochs 100                         Number of training epochs
+    -learning-rate 0.001                Maximum learning rate
+    -loss mse                           Loss function: mae, mse
+    -batch-size 1                       Batch size of the input
+    -split 0.2                          Test split fraction
+    -use-16bit True                     Use 16-bit precision for training (train only)
+    -gpus 1                             Number of GPUs to use
+    -optim one_cycle                    Learning rate optimizer: one_cycle or cosine (train only)
+    -min-data False                     Use small amount of data for sanity check
+    -case-study False                   Limit the analysis to Australian region (inference only)
+    -clip-fwi False                     Limit the analysis to the data points with 0.5 < fwi < 60 (inference only)
+    -model unet_tapered_multi           Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi
+    -out exp2                           Output data for training: fwi_global, exp0, exp1, exp2
+    -forecast-dir /path/to/forecast     Directory containing forecast data
+    -forcings-dir /path/to/forcings     Directory containing forcings data
+    -reanalysis-dir /path/to/reanalysis Directory containing reanalysis data
+    -mask dataloader/mask.npy           File containing the mask stored as the numpy array
+    -thresh 9.4                         Threshold for accuracy: Half of output MAD
+    -comment Comment of choice!         Used for logging
+    -checkpoint-file                    Path to the test model checkpoint</pre>
+    
 * The [arch/](arch) directory contains the architecture implementation.
   * The [arch/dataloader/](arch/dataloader) directory contains the implementation specific to the training data.
   * The [arch/model/](arch/model) directory contains the model implementation.
