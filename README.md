@@ -17,7 +17,7 @@
   Place the model checkpoint file somewhere in your system and note the filepath.
 * **Run the inference script**:<br>
   `python arch/test.py -in-channels=8 -out-channels=1 -forcings-dir='path/to/forcings' -reanalysis-dir='path/to/reanalysis' -checkpoint-file='path/to/exp0-checkpoint'`
-    > The number of input channels is technically equal to four times number of input days and the number of output channels is equal to number of output days. The specification will change in future to specifying the number of days instead of number of channels.
+    > The number of input channels is technically equal to four times the number of input days and the number of output channels is equal to number of output days. The specification will change in future to specifying the number of days instead of number of channels.
 
 ## Implementation overview
 * The entry point for training is [arch/main.py](arch/main.py)

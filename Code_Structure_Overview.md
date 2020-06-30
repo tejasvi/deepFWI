@@ -1,0 +1,20 @@
+## Overview of Code Structure
+[arch/main.py](arch/main.py) is a general-purpose training script. It works for variable length of input and prediction (with option `-in-channels` and `-out-channels`): Since there are four variables in FWI input, there are 4x number of input channels for each input day.
+
+[arch/test.py](arch/test.py) is a general-purpose test script. Once you have trained your model with `main.py`, you can use this script to test the model. It will load a saved model from `-checkpoint-file` and print and save the results to `logs` directory.
+
+
+[arch/dataloader](arch/dataloader) directory contains all the modules related to data loading and preprocessing. To add a custom dataset class called `dummy`, you need to add a file called `dummy_dataset.py` and define a subclass `DummyDataset` inherited from `ModelDataset` defined in [arch/dataloader/fwi_global.py](arch/dataloader/fwi_global.py). You need to optionally implement four functions: `__init__` (initialize the class), `__len__` (return the size of dataset), `__getitem__`　(get a data point), `training_step` (forward pass during training), `validation_step` (forward pass during validation), and `test_step` (forward pass during inference). Now you can use the dataset class by specifying flag `-out dummy`. See example dataset [class](arch/dataloader/exp1.py) for an example.
+
+* [exp0.py](arch/dataloader/exp0.py) implements `__len__` and `__getitem__` specific to FWI Forcings and Reanalysis data, which can be later used in subclasses.
+* [exp1.py](arch/dataloader/exp1.py) implements `__init__`, `training_step`, `validation_step`, and `test_step` specific to FWI Forcings and Reanalysis data.
+
+
+[model](arch/model) directory contains modules related to objective functions, optimizations, and network architectures. To add a custom model class called `dummy`, you need to add a file called `dummy_model.py` and define a subclass `DummyModel` inherited from `BaseModel` defined in [base.py](arch/base.py). You need to implement four functions: `__init__` (initialize the class; you need to first call `BaseModel.__init__(self, opt)`), `forward` (generate intermediate results), `training_epoch_end` (aggregation of training metrics and loss), `validation_epoch_end`(aggregation of validation metrics and validation loss), and `test_epoch_end` (Aggregation of inference metrics and test loss), and optionally `configure_optimizers` (tweak learning rate schedulers and optimizers). Now you can use the model class by specifying flag `-model dummy`. See example model [class](arch/model/unet.py).
+
+* [base.py](arch/model/base.py) implements an abstract base class for models. It also includes commonly used helper functions (e.g., `training_epoch_end`, `validation_epoch_end`, `test_epoch_end`, `configure_optimizers`, `add_bias`, `prepare_data`), `train_dataloader`, `val_dataloader`, and `test_dataloader` which can be later used in subclasses.
+* [unet.py](arch/model/unet.py) implements the original U-Net architecture.
+* [exp0_m.py](arch/model/exp0_m.py) modifies the unet [model](arch/model/unet.py), to produce the number of channels as specified in the script argument.
+* [unet_lite.py](arch/model/unet_lite.py) modifies the unet [model](arch/model/unet.py) by removing the up-sampling layers once activation resolution becomes 1/4th the resolution of input.
+* [unet_tapered.py](arch/model/unet_tapered.py) similar to [unet_lite](arch/model/unet_lite.py) modifies the unet [model](arch/model/unet.py) by removing the up-sampling layers once activation resolution becomes 1/4th the resolution of input. After the removal, features compression layers are added which keep the resolution constant throughout. The layers in the tapered end additionally have skip connections similar to [DenseNet](https://arxiv.org/abs/1608.06993).
+* [unet_tapered_multi.py](arch/model/unet_tapered_multi.py) module uses the architecture same as [unet_tapered](arch/model/unet_tapered.py) and additionally implements `training_epoch_end`, `validation_epoch_end`, and `test_epoch_end` methods specific to multi-channel output.
