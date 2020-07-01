@@ -7,6 +7,7 @@ from collections import OrderedDict
 import json
 from glob import glob
 from collections import defaultdict
+import pickle
 
 import xarray as xr
 import numpy as np
@@ -56,17 +57,65 @@ class ModelDataset(BaseDataset):
         self.n_input = self.hparams.in_channels // 4
         self.n_output = self.hparams.out_channels
 
-        preprocess = lambda x: x.isel(time=slice(0, 1))
-
+        # Generate the list of all valid files in the specified directories
+        get_inp_time = (
+            lambda x: int(x.split("_20")[1][:2]) * 10000
+            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
+            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:])
+        )
         inp_files = sorted(
             sorted(glob(f"{forcings_dir}/ECMWF_FO_20*.nc")),
             # Extracting the month and date from filenames to sort by time.
-            key=lambda x: int(x.split("_20")[1][:2]) * 10000
-            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
-            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]),
+            key=get_inp_time,
         )
+        get_out_time = (
+            lambda x: int(x[-24:-22]) * 10000 + int(x[-22:-20]) * 100 + int(x[-20:-18])
+        )
+        out_files = sorted(
+            glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
+            # Extracting the month and date from filenames to sort by time.
+            key=get_out_time,
+        )
+
+        # Loading list of test-set files
+        if self.hparams.test_set:
+            with open(self.hparams.test_set, "rb") as f:
+                test_out = pickle.load(f)
+                time_indices = set(map(get_inp_time, inp_files))
+                inp_index = {
+                    k: [x for x in inp_files if get_inp_time(x) == k]
+                    for k in time_indices
+                }
+                test_inp = sum(
+                    [inp_index[t] for f in test_out for t in (get_out_time(f),)], [],
+                )
+
+        # Handling the input and output files using test-set files
+        if not self.hparams.min_data and "test_inp" in locals():
+            if hasattr(self.hparams, "eval"):
+                inp_files = test_inp
+                out_files = test_out
+            else:
+                inp_files = list(set(inp_files) - set(test_inp))
+                out_files = list(set(out_files) - set(test_out))
+
         if self.hparams.min_data:
             inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
+            out_files = out_files[: 2 * (self.n_output + self.n_input)]
+
+        # Align the output files with the input files
+        offset = len(out_files) - len(inp_files) // 4
+        out_files = out_files[offset:] if offset > 0 else out_files
+
+        # Checking for valid date format
+        out_invalid = lambda x: not (
+            1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
+        )
+        assert not (
+            sum([out_invalid(x) for x in out_files])
+        ), "Invalid date format for output file(s). The dates should be formatted as YYMMDD."
+        self.out_files = out_files
+
         inp_invalid = lambda x: not (
             1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) <= 12
             and 1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]) <= 31
@@ -74,23 +123,10 @@ class ModelDataset(BaseDataset):
         assert not (
             sum([inp_invalid(x) for x in inp_files])
         ), "Invalid date format for input file(s). The dates should be formatted as YYMMDD."
+        self.inp_files = inp_files
 
-        out_files = sorted(
-            glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
-            # Extracting the month and date from filenames to sort by time.
-            key=lambda x: int(x[-24:-22]) * 10000
-            + int(x[-22:-20]) * 100
-            + int(x[-20:-18]),
-        )
-        if self.hparams.min_data:
-            out_files = out_files[: 2 * (self.n_output + self.n_input)]
-        out_files = out_files[len(out_files) - len(inp_files) // 4 :]
-        out_invalid = lambda x: not (
-            1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
-        )
-        assert not (
-            sum([out_invalid(x) for x in out_files])
-        ), "Invalid date format for output file(s). The dates should be formatted as YYMMDD."
+        # Consider only ground truth and discard forecast values
+        preprocess = lambda x: x.isel(time=slice(0, 1))
 
         with xr.open_mfdataset(
             inp_files,
@@ -262,7 +298,7 @@ class ModelDataset(BaseDataset):
                     y_hat = y_hat[mask]
                 if self.hparams.clip_fwi:
                     y = y[(y_hat < 60) & (0.5 < y_hat)]
-                    y_hat = [(y_hat < 60) & (0.5 < y_hat)]
+                    y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"

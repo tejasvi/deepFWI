@@ -46,7 +46,7 @@ def main(hparams):
     name = hparams.model + "-" + hparams.out
 
     checkpoint_callback = pl.callbacks.model_checkpoint.ModelCheckpoint(
-        filepath=f"model/checkpoints/",
+        filepath=f"model/checkpoints/{name}/",
         monitor="val_loss",
         verbose=True,
         save_top_k=1,
@@ -245,6 +245,10 @@ def get_hparams(
         "Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)",
         "option",
     ) = False,
+    test_set: (
+        "Load test-set filenames from specified file instead of random split",
+        "option",
+    ) = "dataloader/test_set.pkl",
     #
     # Run specific
     model: (
@@ -272,6 +276,10 @@ def get_hparams(
     comment: ("Used for logging", "option") = "Unet tapered - residual",
     #
     # Test run
+    save_test_set: (
+        "Save the test-set file names to the specified filepath",
+        "option",
+    ) = False,
     checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
 ):
     """

@@ -7,6 +7,7 @@ from collections import OrderedDict
 import json
 from glob import glob
 import types
+import pickle
 
 import xarray as xr
 import numpy as np
@@ -189,11 +190,29 @@ class BaseModel(LightningModule):
                 out=self.hparams.out,
             )
             self.add_bias(self.data.out_mean)
-            self.train_data, self.test_data = torch.utils.data.random_split(
-                self.data,
-                [len(self.data) * 8 // 10, len(self.data) - len(self.data) * 8 // 10,],
-            )
-            if self.hparams.case_study:
+            if self.hparams.test_set:
+                if hasattr(self.hparams, "eval"):
+                    self.train_data = self.test_data = self.data
+                else:
+                    self.train_data = self.data
+                    hparams = self.hparams
+                    hparams.eval = True
+                    self.test_data = ModelDataset(
+                        forecast_dir=self.hparams.forecast_dir,
+                        forcings_dir=self.hparams.forcings_dir,
+                        reanalysis_dir=self.hparams.reanalysis_dir,
+                        hparams=hparams,
+                        out=self.hparams.out,
+                    )
+            else:
+                self.train_data, self.test_data = torch.utils.data.random_split(
+                    self.data,
+                    [
+                        len(self.data) * 8 // 10,
+                        len(self.data) - len(self.data) * 8 // 10,
+                    ],
+                )
+            if self.hparams.case_study and not self.hparams.test_set:
                 assert (
                     max(self.test_data.indices) > 214
                 ), "The data is outside the range of case study"
@@ -201,11 +220,25 @@ class BaseModel(LightningModule):
                     set(self.test_data.indices) & set(range(214, 335))
                 )
 
+            # Saving list of test-set files
+            if self.hparams.save_test_set:
+                with open(self.hparams.save_test_set, "wb") as f:
+                    pickle.dump(
+                        [
+                            sum(
+                                [
+                                    self.data.inp_files[i : i + 4]
+                                    for i in self.test_data.indices
+                                ],
+                                [],
+                            ),
+                            [self.data.out_files[i] for i in self.test_data.indices],
+                        ],
+                        f,
+                    )
+
+            # Set flag to avoid resource intensive preparation during next call
             self.data_prepared = True
-        else:
-            raise TypeError(
-                "ModelDataset must be passed manually during the first run."
-            )
 
     def train_dataloader(self):
         log.info("Training data loader called.")

@@ -80,6 +80,8 @@ if __name__ == "__main__":
 
     # Converting dictionary to namespace
     hyperparams = Namespace(**plac.call(get_hparams, eager=False))
+    # Set the evaluation flag in hyperparamters
+    hyperparams.eval = True
     # ---------------------
     # RUN TESTING
     # ---------------------

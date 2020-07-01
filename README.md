@@ -62,6 +62,7 @@
     -min-data False                     Use small amount of data for sanity check
     -case-study False                   Limit the analysis to Australian region (inference only)
     -clip-fwi False                     Limit the analysis to the data points with 0.5 < fwi < 60 (inference only)
+    -test-set /path/to/pickled/list     Load test-set filenames from specified file instead of random split
     -model unet_tapered_multi           Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi
     -out exp2                           Output data for training: fwi_global, exp0, exp1, exp2
     -forecast-dir /path/to/forecast     Directory containing forecast data
@@ -70,6 +71,7 @@
     -mask dataloader/mask.npy           File containing the mask stored as the numpy array
     -thresh 9.4                         Threshold for accuracy: Half of output MAD
     -comment Comment of choice!         Used for logging
+    -save-test-set False                Save the test-set file names to the specified filepath 
     -checkpoint-file                    Path to the test model checkpoint</pre>
     
 * The [arch/](arch) directory contains the architecture implementation.
