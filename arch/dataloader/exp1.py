@@ -324,7 +324,6 @@ class ModelDataset(BaseDataset):
         test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
         tensorboard_logs["_test_loss"] = test_loss
 
-        model.logger.log_metrics(tensorboard_logs)
         return {
             "test_loss": test_loss,
             "log": tensorboard_logs,
