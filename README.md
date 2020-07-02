@@ -11,6 +11,8 @@
 
     >The setup is tested on Ubuntu 18.04 only and will not work on any non-Linux systems. See [this](https://github.com/conda/conda/issues/7311) issue for further details.
 ## Running Inference
+* **Quick example**:<br>
+  The [inference.ipynb](examples/inference.ipynb) demonstrates the end-to-end procedure of loading data, creating model from saved checkpoint, and getting the predictions.
 * **Testing data**:<br>
   Ensure the access to fwi-forcings and fwi-reanalysis data.
 * **Obtain pre-trained model**:<br>
