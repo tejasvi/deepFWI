@@ -254,8 +254,7 @@ def get_hparams(
     out: (
         "Output data for training: fwi_forecast or fwi_reanalysis",
         "option",
-    ) = "unet_tapered_multi",
-    out: ("Output data for training: fwi_global, exp0, exp1, exp2", "option") = "exp2",
+    ) = "fwi_reanalysis",
     forecast_dir: (
         "Directory containing forecast data",
         "option",
