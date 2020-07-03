@@ -174,7 +174,7 @@ def get_model(hparams):
                 f"dataloader.fwi_reanalysis"
             ).ModelDataset
     else:
-        raise ImportError("{hparams.model} and {hparams.out} combination invalid.")
+        raise ImportError(f"{hparams.model} and {hparams.out} combination invalid.")
 
     model = Model(hparams)
     model.prepare_data(ModelDataset)
