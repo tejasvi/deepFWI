@@ -24,7 +24,7 @@ from pytorch_lightning import _logger as log
 from pytorch_lightning.core import LightningModule
 import wandb
 
-from base import BaseModel
+from model.base_model import BaseModel
 
 
 class Model(BaseModel):
