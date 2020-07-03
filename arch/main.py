@@ -169,13 +169,10 @@ def get_model(hparams):
         "unet_snipped",
         "unet_tapered",
     ]:
-        if hparams.out == "exp0":
-            ModelDataset = importlib.import_module(f"dataloader.exp0").ModelDataset
-    elif hparams.model in ["exp1_m", "unet_tapered_multi"]:
-        if hparams.out == "exp1":
-            ModelDataset = importlib.import_module(f"dataloader.exp1").ModelDataset
-        elif hparams.out == "exp2":
-            ModelDataset = importlib.import_module(f"dataloader.exp2").ModelDataset
+        if hparams.out == "fwi_reanalysis":
+            ModelDataset = importlib.import_module(
+                f"dataloader.fwi_reanalysis"
+            ).ModelDataset
     else:
         raise ImportError("{hparams.model} and {hparams.out} combination invalid.")
 
