@@ -160,7 +160,7 @@ def main(hparams):
 def get_model(hparams):
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
-        if hparams.out == "fwi_global":
+        if hparams.out == "fwi_forecast":
             ModelDataset = importlib.import_module(
                 f"dataloader.fwi_global"
             ).ModelDataset
