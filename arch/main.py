@@ -178,7 +178,6 @@ def get_model(hparams):
 
     model = Model(hparams)
     model.prepare_data(ModelDataset)
-
     return model
 
 
