@@ -28,7 +28,7 @@
                [-epochs 100] [-learning-rate 0.001] [-loss mse]
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
                [-optim one_cycle] [-min-data False]
-               [-clip-fwi False] [-model unet_tapered_multi] [-out exp2]
+               [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
                [-forcings-dir /path/to/forcings]
                [-reanalysis-dir /path/to/reanalysis]
                [-mask dataloader/mask.npy] [-thresh 9.4]
@@ -40,7 +40,7 @@
                [-learning-rate 0.001] [-loss mse]
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
                [-min-data False] [-case-study False]
-               [-clip-fwi False] [-model unet_tapered_multi] [-out exp2]
+               [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
                [-forcings-dir /path/to/forcings]
                [-reanalysis-dir /path/to/reanalysis]
                [-mask dataloader/mask.npy] [-thresh 9.4]
@@ -65,8 +65,8 @@
     -case-study False                   Limit the analysis to Australian region (inference only)
     -clip-fwi False                     Limit the analysis to the data points with 0.5 < fwi < 60 (inference only)
     -test-set /path/to/pickled/list     Load test-set filenames from specified file instead of random split
-    -model unet_tapered_multi           Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi
-    -out exp2                           Output data for training: fwi_global, exp0, exp1, exp2
+    -model unet_tapered_multi           Model to use: unet, unet_downsampled, unet_snipped, unet_tapered
+    -out fwi_reanalysis                           Output data for training: fwi_forecast or fwi_reanalysis
     -forecast-dir /path/to/forecast     Directory containing forecast data
     -forcings-dir /path/to/forcings     Directory containing forcings data
     -reanalysis-dir /path/to/reanalysis Directory containing reanalysis data
