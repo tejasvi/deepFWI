@@ -162,7 +162,7 @@ def get_model(hparams):
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
             ModelDataset = importlib.import_module(
-                f"dataloader.fwi_global"
+                f"dataloader.fwi_forecast"
             ).ModelDataset
     elif hparams.model in [
         "unet_downsampled",
