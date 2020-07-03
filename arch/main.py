@@ -165,8 +165,8 @@ def get_model(hparams):
                 f"dataloader.fwi_global"
             ).ModelDataset
     elif hparams.model in [
-        "exp0_m",
-        "unet_lite",
+        "unet_downsampled",
+        "unet_snipped",
         "unet_tapered",
     ]:
         if hparams.out == "exp0":
