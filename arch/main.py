@@ -248,7 +248,11 @@ def get_hparams(
     #
     # Run specific
     model: (
-        "Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi",
+        "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered",
+        "option",
+    ) = "unet_tapered",
+    out: (
+        "Output data for training: fwi_forecast or fwi_reanalysis",
         "option",
     ) = "unet_tapered_multi",
     out: ("Output data for training: fwi_global, exp0, exp1, exp2", "option") = "exp2",
