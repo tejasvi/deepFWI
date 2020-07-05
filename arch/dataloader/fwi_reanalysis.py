@@ -100,7 +100,7 @@ class ModelDataset(BaseDataset):
                 )
 
         # Handling the input and output files using test-set files
-        if not self.hparams.min_data and "test_inp" in locals():
+        if not self.hparams.dry_run and "test_inp" in locals():
             if hasattr(self.hparams, "eval"):
                 inp_files = test_inp
                 out_files = test_out
@@ -108,7 +108,7 @@ class ModelDataset(BaseDataset):
                 inp_files = list(set(inp_files) - set(test_inp))
                 out_files = list(set(out_files) - set(test_out))
 
-        if self.hparams.min_data:
+        if self.hparams.dry_run:
             inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
             out_files = out_files[: 2 * (self.n_output + self.n_input)]
 
@@ -141,7 +141,7 @@ class ModelDataset(BaseDataset):
             inp_files,
             preprocess=preprocess,
             engine="h5netcdf",
-            parallel=False if self.hparams.min_data else True,
+            parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
             self.input = ds.load()
@@ -150,7 +150,7 @@ class ModelDataset(BaseDataset):
             out_files,
             preprocess=preprocess,
             engine="h5netcdf",
-            parallel=False if self.hparams.min_data else True,
+            parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
             self.output = ds.load()

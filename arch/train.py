@@ -70,7 +70,7 @@ def main(hparams):
     # LOGGING SETUP
     # ------------------------
 
-    if not hparams.min_data:
+    if not hparams.dry_run:
         # tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
         # tb_logger.experiment.add_graph(model, model.data[0][0].unsqueeze(0))
         wandb_logger = WandbLogger(
@@ -97,7 +97,7 @@ def main(hparams):
         # progress_bar_refresh_rate=0,
         # Profiling the code to find bottlenecks
         # profiler=pl.profiler.AdvancedProfiler('profile'),
-        max_epochs=hparams.epochs if not hparams.min_data else 1,
+        max_epochs=hparams.epochs if not hparams.dry_run else 1,
         # CUDA trick to speed up training after the first epoch
         benchmark=True,
         deterministic=False,
@@ -108,8 +108,8 @@ def main(hparams):
         precision=16 if hparams.use_16bit and hparams.gpus else 32,
         # Alternative method for 16-bit training
         # amp_level="O2",
-        logger=None if hparams.min_data else [wandb_logger],  # , tb_logger],
-        checkpoint_callback=None if hparams.min_data else checkpoint_callback,
+        logger=None if hparams.dry_run else [wandb_logger],  # , tb_logger],
+        checkpoint_callback=None if hparams.dry_run else checkpoint_callback,
         # Using maximum GPU memory. NB: Learning rate should be adjusted according to
         # the batch size
         # auto_scale_batch_size='binsearch',
@@ -232,7 +232,7 @@ def get_hparams(
         "Learning rate optimizer: one_cycle or cosine (train only)",
         "option",
     ) = "one_cycle",
-    min_data: ("Use small amount of data for sanity check", "option") = False,
+    dry_run: ("Use small amount of data for sanity check", "option") = False,
     case_study: (
         "Limit the analysis to Australian region (inference only)",
         "option",
