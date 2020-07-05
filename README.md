@@ -18,12 +18,12 @@
 * **Obtain pre-trained model**:<br>
   Place the model checkpoint file somewhere in your system and note the filepath.
 * **Run the inference script**:<br>
-  `python arch/test.py -in-channels=8 -out-channels=1 -forcings-dir='path/to/forcings' -reanalysis-dir='path/to/reanalysis' -checkpoint-file='path/to/exp0-checkpoint'`
+  `python src/test.py -in-channels=8 -out-channels=1 -forcings-dir='path/to/forcings' -reanalysis-dir='path/to/reanalysis' -checkpoint-file='path/to/exp0-checkpoint'`
     > The number of input channels is technically equal to four times the number of input days and the number of output channels is equal to number of output days. The specification will change in future to specifying the number of days instead of number of channels.
 
 ## Implementation overview
-* The entry point for training is [arch/train.py](arch/train.py)
-  * **Example Usage**: `python arch/train.py [-h]
+* The entry point for training is [src/train.py](src/train.py)
+  * **Example Usage**: `python src/train.py [-h]
                [-init-features 16] [-in-channels 16] [-out-channels 1]
                [-epochs 100] [-learning-rate 0.001] [-loss mse]
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
@@ -34,8 +34,8 @@
                [-mask dataloader/mask.npy] [-thresh 9.4]
                [-comment None]`
                
-* The entry point for inference is [arch/test.py](arch/test.py)
-  * **Example Usage**: `python arch/test.py [-h]
+* The entry point for inference is [src/test.py](src/test.py)
+  * **Example Usage**: `python src/test.py [-h]
                [-init-features 16] [-in-channels 16] [-out-channels 1]
                [-learning-rate 0.001] [-loss mse]
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
@@ -76,12 +76,12 @@
     -save-test-set False                Save the test-set file names to the specified filepath 
     -checkpoint-file                    Path to the test model checkpoint</pre>
     
-* The [arch/](arch) directory contains the architecture implementation.
-  * The [arch/dataloader/](arch/dataloader) directory contains the implementation specific to the training data.
-  * The [arch/model/](arch/model) directory contains the model implementation.
-  * The [arch/base.py](arch/base.py) directory has the common implementation used by every model.
+* The [src/](src) directory contains the architecture implementation.
+  * The [src/dataloader/](src/dataloader) directory contains the implementation specific to the training data.
+  * The [src/model/](src/model) directory contains the model implementation.
+  * The [src/base.py](src/base.py) directory has the common implementation used by every model.
 
-* Code documentation is present in [arch/docs.md](arch/docs.md).
+* Code documentation is present in [src/docs.md](src/docs.md).
 * The [data/](data) directory contains the Exploratory Data Analysis and Preprocessing required for each dataset demonstrated via Jupyter Notebooks.
   * Forcings data: [data/fwi_global/fwi_forcings.ipynb](data/fwi_global/fwi_forcings.ipynb)
   * Reanalysis data: [data/fwi_global/fwi_reanalysis.ipynb](data/fwi_global/fwi_reanalysis.ipynb)
