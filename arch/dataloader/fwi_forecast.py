@@ -46,7 +46,7 @@ class ModelDataset(BaseDataset):
         **kwargs,
     ):
 
-        super.__init__(
+        super().__init__(
             out_var=out_var,
             out_mean=out_mean,
             forecast_dir=forecast_dir,
