@@ -22,8 +22,8 @@
     > The number of input channels is technically equal to four times the number of input days and the number of output channels is equal to number of output days. The specification will change in future to specifying the number of days instead of number of channels.
 
 ## Implementation overview
-* The entry point for training is [arch/main.py](arch/main.py)
-  * **Example Usage**: `python arch/main.py [-h]
+* The entry point for training is [arch/train.py](arch/train.py)
+  * **Example Usage**: `python arch/train.py [-h]
                [-init-features 16] [-in-channels 16] [-out-channels 1]
                [-epochs 100] [-learning-rate 0.001] [-loss mse]
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
