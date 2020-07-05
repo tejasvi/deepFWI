@@ -27,7 +27,7 @@
                [-init-features 16] [-in-channels 16] [-out-channels 1]
                [-epochs 100] [-learning-rate 0.001] [-loss mse]
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
-               [-optim one_cycle] [-min-data False]
+               [-optim one_cycle] [-dry-run False]
                [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
                [-forcings-dir /path/to/forcings]
                [-reanalysis-dir /path/to/reanalysis]
@@ -39,7 +39,7 @@
                [-init-features 16] [-in-channels 16] [-out-channels 1]
                [-learning-rate 0.001] [-loss mse]
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
-               [-min-data False] [-case-study False]
+               [-dry-run False] [-case-study False]
                [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
                [-forcings-dir /path/to/forcings]
                [-reanalysis-dir /path/to/reanalysis]
@@ -61,7 +61,7 @@
     -use-16bit True                     Use 16-bit precision for training (train only)
     -gpus 1                             Number of GPUs to use
     -optim one_cycle                    Learning rate optimizer: one_cycle or cosine (train only)
-    -min-data False                     Use small amount of data for sanity check
+    -dry-run False                     Use small amount of data for sanity check
     -case-study False                   Limit the analysis to Australian region (inference only)
     -clip-fwi False                     Limit the analysis to the data points with 0.5 < fwi < 60 (inference only)
     -test-set /path/to/pickled/list     Load test-set filenames from specified file instead of random split
