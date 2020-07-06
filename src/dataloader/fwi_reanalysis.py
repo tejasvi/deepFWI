@@ -62,7 +62,7 @@ class ModelDataset(BaseDataset):
         # Number of input and prediction days
         assert (
             not self.hparams.in_channels % 4
-        ), "Give inp_channels in  multiple of four."
+        ), "Select in_channels in multiples of four."
         self.n_input = self.hparams.in_channels // 4
         self.n_output = self.hparams.out_channels
 
