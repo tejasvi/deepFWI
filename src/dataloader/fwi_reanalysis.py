@@ -61,10 +61,10 @@ class ModelDataset(BaseDataset):
 
         # Number of input and prediction days
         assert (
-            not self.hparams.in_channels % 4
-        ), "Select in_channels in multiples of four."
-        self.n_input = self.hparams.in_channels // 4
-        self.n_output = self.hparams.out_channels
+            not self.hparams.in_days > 0 and self.hparams.out_days > 0
+        ), "The number of input and output days must be > 0."
+        self.n_input = self.hparams.in_days
+        self.n_output = self.hparams.out_days
 
         # Generate the list of all valid files in the specified directories
         get_inp_time = (
