@@ -18,3 +18,4 @@
 .docs.sh
 Dockerfile
 logs
+.DS_Store
