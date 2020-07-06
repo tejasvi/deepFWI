@@ -50,7 +50,7 @@
 * **Configuration Details**:
 <br> Optional arguments (default values indicated below):
 
-    `  -h, --help                   show this help message and exit`<pre>
+    `  -h, --help                           show this help message and exit`<pre>
     -init-features 16                       Architecture complexity
     -in-channels 16                         Number of input channels
     -out-channels 1                         Number of output channels
@@ -66,7 +66,7 @@
     -case-study False                       Limit the analysis to Australian region (inference only)
     -clip-fwi False                         Limit the analysis to the data points with 0.5 < fwi < 60 (inference only)
     -test-set /path/to/pickled/list         Load test-set filenames from specified file instead of random split
-    -model unet_tapered               Model to use: unet, unet_downsampled, unet_snipped, unet_tapered
+    -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered
     -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis
     -forecast-dir ${FORECAST_DIR:-$PWD}     Directory containing forecast data. Alternatively set $FORECAST_DIR
     -forcings-dir ${FORCINGS_DIR:-$PWD}     Directory containing forcings data. Alternatively set $FORCINGS_DIR
