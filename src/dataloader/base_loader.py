@@ -132,7 +132,7 @@ class ModelDataset(Dataset):
 
                 # Accuracy for a threshold
                 n_correct_pred = (
-                    (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
+                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
                 )
                 abs_error = (y - y_hat).abs().float().mean()
 
