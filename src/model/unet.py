@@ -71,10 +71,11 @@ class Model(BaseModel):
         # init superclass
         super().__init__(hparams)
         self.hparams = hparams
-        out_channels = self.hparams.out_channels
+        out_channels = self.hparams.out_days
         features = self.hparams.init_features
+        in_channels = self.hparams.in_days * 4
 
-        self.encoder1 = Model._block(self.hparams.in_channels, features, name="enc1")
+        self.encoder1 = Model._block(in_channels, features, name="enc1")
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.encoder2 = Model._block(features, features * 2, name="enc2")
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
