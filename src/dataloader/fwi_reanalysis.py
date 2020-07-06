@@ -1,5 +1,5 @@
 """
-Experiment 1 dataset class to be used with U-Net model.
+The dataset class to be used with fwi-forcings and fwi-reanalysis data.
 """
 import os
 from argparse import ArgumentParser
@@ -27,7 +27,7 @@ from pytorch_lightning import _logger as log
 from pytorch_lightning.core import LightningModule
 import wandb
 
-from dataloader.exp0 import ModelDataset as BaseDataset
+from dataloader.base_loader import ModelDataset as BaseDataset
 
 
 class ModelDataset(BaseDataset):
@@ -48,14 +48,23 @@ class ModelDataset(BaseDataset):
         **kwargs,
     ):
 
-        self.hparams = hparams
+        super().__init__(
+            out_var=out_var,
+            out_mean=out_mean,
+            forecast_dir=forecast_dir,
+            forcings_dir=forcings_dir,
+            reanalysis_dir=reanalysis_dir,
+            transform=transform,
+            hparams=hparams,
+            **kwargs,
+        )
 
         # Number of input and prediction days
         assert (
-            not self.hparams.in_channels % 4
-        ), "Give inp_channels in  multiple of four."
-        self.n_input = self.hparams.in_channels // 4
-        self.n_output = self.hparams.out_channels
+            not self.hparams.in_days > 0 and self.hparams.out_days > 0
+        ), "The number of input and output days must be > 0."
+        self.n_input = self.hparams.in_days
+        self.n_output = self.hparams.out_days
 
         # Generate the list of all valid files in the specified directories
         get_inp_time = (
@@ -91,7 +100,7 @@ class ModelDataset(BaseDataset):
                 )
 
         # Handling the input and output files using test-set files
-        if not self.hparams.min_data and "test_inp" in locals():
+        if not self.hparams.dry_run and "test_inp" in locals():
             if hasattr(self.hparams, "eval"):
                 inp_files = test_inp
                 out_files = test_out
@@ -99,7 +108,7 @@ class ModelDataset(BaseDataset):
                 inp_files = list(set(inp_files) - set(test_inp))
                 out_files = list(set(out_files) - set(test_out))
 
-        if self.hparams.min_data:
+        if self.hparams.dry_run:
             inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
             out_files = out_files[: 2 * (self.n_output + self.n_input)]
 
@@ -132,7 +141,7 @@ class ModelDataset(BaseDataset):
             inp_files,
             preprocess=preprocess,
             engine="h5netcdf",
-            parallel=False if self.hparams.min_data else True,
+            parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
             self.input = ds.load()
@@ -141,7 +150,7 @@ class ModelDataset(BaseDataset):
             out_files,
             preprocess=preprocess,
             engine="h5netcdf",
-            parallel=False if self.hparams.min_data else True,
+            parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
             self.output = ds.load()
@@ -212,72 +221,6 @@ class ModelDataset(BaseDataset):
             ]
         )
 
-    def training_step(self, model, batch, batch_idx):
-        """
-        Called inside the training loop with the data from the training dataloader
-        passed in as `batch`.
-        """
-        # forward pass
-        x, y_pre = batch
-        y_hat_pre, aux_y_hat = model(x) if model.aux else model(x), None
-        mask = model.data.mask.expand_as(y_pre[0][0])
-        assert y_pre.shape == y_hat_pre.shape
-        tensorboard_logs = defaultdict(dict)
-        for b in range(y_pre.shape[0]):
-            for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
-                pre_loss = (y_hat - y) ** 2
-                loss = pre_loss.mean()
-                assert loss == loss
-                tensorboard_logs["train_loss_unscaled"][str(c)] = loss
-        loss = torch.stack(
-            list(tensorboard_logs["train_loss_unscaled"].values())
-        ).mean()
-        tensorboard_logs["_train_loss_unscaled"] = loss
-        # model.logger.log_metrics(tensorboard_logs)
-        return {
-            "loss": loss.true_divide(model.data.out_var * model.data.n_output),
-            "_log": tensorboard_logs,
-        }
-
-    def validation_step(self, model, batch, batch_idx):
-        """
-        Called inside the validation loop with the data from the validation dataloader
-        passed in as `batch`.
-        """
-        # forward pass
-        x, y_pre = batch
-        y_hat_pre, aux_y_hat = model(x) if model.aux else model(x), None
-        mask = model.data.mask.expand_as(y_pre[0][0])
-        assert y_pre.shape == y_hat_pre.shape
-        tensorboard_logs = defaultdict(dict)
-        for b in range(y_pre.shape[0]):
-            for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
-                pre_loss = (y_hat - y) ** 2
-                loss = pre_loss.mean()
-                assert loss == loss
-
-                # Accuracy for a threshold
-                n_correct_pred = (
-                    (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
-                )
-                abs_error = (y - y_hat).abs().float().mean()
-
-                tensorboard_logs["val_loss"][str(c)] = loss
-                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
-                tensorboard_logs["abs_error"][str(c)] = abs_error
-
-        val_loss = torch.stack(list(tensorboard_logs["val_loss"].values())).mean()
-        tensorboard_logs["_val_loss"] = val_loss
-        # model.logger.log_metrics(tensorboard_logs)
-        return {
-            "val_loss": val_loss,
-            "log": tensorboard_logs,
-        }
-
     def test_step(self, model, batch, batch_idx):
         """ Called during manual invocation on test data."""
         x, y_pre = batch
@@ -309,7 +252,7 @@ class ModelDataset(BaseDataset):
 
                 # Accuracy for a threshold
                 n_correct_pred = (
-                    (((y - y_hat).abs() < model.hparams.thresh)).float().mean()
+                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
                 )
                 abs_error = (
                     (y - y_hat).abs().float().mean()
@@ -324,7 +267,6 @@ class ModelDataset(BaseDataset):
         test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
         tensorboard_logs["_test_loss"] = test_loss
 
-        model.logger.log_metrics(tensorboard_logs)
         return {
             "test_loss": test_loss,
             "log": tensorboard_logs,

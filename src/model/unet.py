@@ -24,37 +24,13 @@ from pytorch_lightning import _logger as log
 from pytorch_lightning.core import LightningModule
 import wandb
 
-from base import BaseModel
+from model.base_model import BaseModel
 
 
 class Model(BaseModel):
     """
     The primary module containing all the training functionality. It is equivalent to
     PyTorch nn.Module in all aspects.
-
-    Usage
-    -----
-
-    Passing hyperparameters:
-
-        >>> div=3
-            x=269//div
-            y=183//div
-            params = dict(
-                in_width=x,
-                in_length=y,
-                in_depth=7,
-                output_size=x*y,
-                drop_prob=0.5,
-                learning_rate=0.001,
-                root_dir='/root/net/',
-                epochs=20,
-                optimizer_name="adam",
-                batch_size=1
-            )
-        >>> from argparse import Namespace
-        >>> hparams = Namespace(**params)
-        >>> model = Model(hparams)
     """
 
     def __init__(self, hparams):
@@ -71,10 +47,11 @@ class Model(BaseModel):
         # init superclass
         super().__init__(hparams)
         self.hparams = hparams
-        out_channels = self.hparams.out_channels
+        out_channels = self.hparams.out_days
         features = self.hparams.init_features
+        in_channels = self.hparams.in_days * 4
 
-        self.encoder1 = Model._block(self.hparams.in_channels, features, name="enc1")
+        self.encoder1 = Model._block(in_channels, features, name="enc1")
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.encoder2 = Model._block(features, features * 2, name="enc2")
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)

@@ -58,8 +58,8 @@ def main(hparams):
                 str(x)
                 for x in (
                     name,
-                    hparams.in_channels,
-                    hparams.out_channels,
+                    hparams.in_days,
+                    hparams.out_days,
                     datetime.now().strftime("-%m/%d-%H:%M"),
                 )
             ]
@@ -70,7 +70,7 @@ def main(hparams):
     # LOGGING SETUP
     # ------------------------
 
-    if not hparams.min_data:
+    if not hparams.dry_run:
         # tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
         # tb_logger.experiment.add_graph(model, model.data[0][0].unsqueeze(0))
         wandb_logger = WandbLogger(
@@ -97,7 +97,7 @@ def main(hparams):
         # progress_bar_refresh_rate=0,
         # Profiling the code to find bottlenecks
         # profiler=pl.profiler.AdvancedProfiler('profile'),
-        max_epochs=hparams.epochs if not hparams.min_data else 1,
+        max_epochs=hparams.epochs if not hparams.dry_run else 1,
         # CUDA trick to speed up training after the first epoch
         benchmark=True,
         deterministic=False,
@@ -108,8 +108,8 @@ def main(hparams):
         precision=16 if hparams.use_16bit and hparams.gpus else 32,
         # Alternative method for 16-bit training
         # amp_level="O2",
-        logger=None if hparams.min_data else [wandb_logger],  # , tb_logger],
-        checkpoint_callback=None if hparams.min_data else checkpoint_callback,
+        logger=None if hparams.dry_run else [wandb_logger],  # , tb_logger],
+        checkpoint_callback=None if hparams.dry_run else checkpoint_callback,
         # Using maximum GPU memory. NB: Learning rate should be adjusted according to
         # the batch size
         # auto_scale_batch_size='binsearch',
@@ -160,28 +160,24 @@ def main(hparams):
 def get_model(hparams):
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
-        if hparams.out == "fwi_global":
+        if hparams.out == "fwi_forecast":
             ModelDataset = importlib.import_module(
-                f"dataloader.fwi_global"
+                f"dataloader.fwi_forecast"
             ).ModelDataset
     elif hparams.model in [
-        "exp0_m",
-        "unet_lite",
+        "unet_downsampled",
+        "unet_snipped",
         "unet_tapered",
     ]:
-        if hparams.out == "exp0":
-            ModelDataset = importlib.import_module(f"dataloader.exp0").ModelDataset
-    elif hparams.model in ["exp1_m", "unet_tapered_multi"]:
-        if hparams.out == "exp1":
-            ModelDataset = importlib.import_module(f"dataloader.exp1").ModelDataset
-        elif hparams.out == "exp2":
-            ModelDataset = importlib.import_module(f"dataloader.exp2").ModelDataset
+        if hparams.out == "fwi_reanalysis":
+            ModelDataset = importlib.import_module(
+                f"dataloader.fwi_reanalysis"
+            ).ModelDataset
     else:
-        raise ImportError("{hparams.model} and {hparams.out} combination invalid.")
+        raise ImportError(f"{hparams.model} and {hparams.out} combination invalid.")
 
     model = Model(hparams)
     model.prepare_data(ModelDataset)
-
     return model
 
 
@@ -221,8 +217,8 @@ def get_hparams(
     #
     # U-Net config
     init_features: ("Architecture complexity", "option") = 16,
-    in_channels: ("Number of input channels", "option") = 16,
-    out_channels: ("Number of output channels", "option") = 1,
+    in_days: ("Number of input days", "option") = 4,
+    out_days: ("Number of output days", "option") = 1,
     #
     # General
     epochs: ("Number of training epochs", "option") = 100,
@@ -236,7 +232,7 @@ def get_hparams(
         "Learning rate optimizer: one_cycle or cosine (train only)",
         "option",
     ) = "one_cycle",
-    min_data: ("Use small amount of data for sanity check", "option") = False,
+    dry_run: ("Use small amount of data for sanity check", "option") = False,
     case_study: (
         "Limit the analysis to Australian region (inference only)",
         "option",
@@ -252,22 +248,25 @@ def get_hparams(
     #
     # Run specific
     model: (
-        "Model to use: unet, exp0_m, unet_lite, unet_tapered, exp1_m, unet_tapered_multi",
+        "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered",
         "option",
-    ) = "unet_tapered_multi",
-    out: ("Output data for training: fwi_global, exp0, exp1, exp2", "option") = "exp2",
+    ) = "unet_tapered",
+    out: (
+        "Output data for training: fwi_forecast or fwi_reanalysis",
+        "option",
+    ) = "fwi_reanalysis",
     forecast_dir: (
-        "Directory containing forecast data",
+        "Directory containing the forecast data. Alternatively set $FORECAST_DIR",
         "option",
-    ) = "/nvme0/fwi-forecast",
+    ) = os.environ.get("FORECAST_DIR", os.getcwd()),
     forcings_dir: (
-        "Directory containing forcings data",
+        "Directory containing the forcings data Alternatively set $FORCINGS_DIR",
         "option",
-    ) = "/nvme1/fwi-forcings",
+    ) = os.environ.get("FORCINGS_DIR", os.getcwd()),
     reanalysis_dir: (
-        "Directory containing reanalysis data",
+        "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR.",
         "option",
-    ) = "/nvme0/fwi-reanalysis",
+    ) = os.environ.get("REANALYSIS_DIR", os.getcwd()),
     mask: (
         "File containing the mask stored as the numpy array",
         "option",
@@ -283,7 +282,7 @@ def get_hparams(
     checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
 ):
     """
-    The project wide arguments. Run `python main.py -h` for usage details.
+    The project wide arguments. Run `python train.py -h` for usage details.
 
     Returns
     -------

@@ -1,5 +1,5 @@
 """
-Modification in U-Net model for exp0. The upsampling layers towards the end are removed
+Modification in U-Net model for fwi-reanalysis. The upsampling layers towards the end are removed
 before the activation resolution gets higher than the output resolution.
 """
 import os
@@ -32,30 +32,6 @@ class Model(BaseModel):
     """
     The primary module containing all the training functionality. It is equivalent to
     PyTorch nn.Module in all aspects.
-
-    Usage
-    -----
-
-    Passing hyperparameters:
-
-        >>> div=3
-            x=269//div
-            y=183//div
-            params = dict(
-                in_width=x,
-                in_length=y,
-                in_depth=7,
-                output_size=x*y,
-                drop_prob=0.5,
-                learning_rate=0.001,
-                root_dir='/root/net/',
-                epochs=20,
-                optimizer_name="adam",
-                batch_size=1
-            )
-        >>> from argparse import Namespace
-        >>> hparams = Namespace(**params)
-        >>> model = Model(hparams)
     """
 
     def __init__(self, hparams):

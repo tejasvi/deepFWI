@@ -8,6 +8,7 @@ import json
 from glob import glob
 import types
 import pickle
+from collections import defaultdict
 
 import xarray as xr
 import numpy as np
@@ -31,28 +32,6 @@ class BaseModel(LightningModule):
     """
     The primary module containing all the training functionality. It is equivalent to
     PyTorch nn.Module in all aspects.
-
-    Usage
-    -----
-
-    Passing hyperparameters:
-
-        >>> div=3
-            x=269//div
-            y=183//div
-            params = dict(
-                in_width=x,
-                in_length=y,
-                in_depth=7,
-                output_size=x*y,
-                drop_prob=0.5,
-                epochs=20,
-                optimizer_name="adam",
-                batch_size=1
-            )
-        >>> from argparse import Namespace
-        >>> hparams = Namespace(**params)
-        >>> model = Model(hparams)
     """
 
     def __init__(self, hparams):
@@ -98,12 +77,13 @@ class BaseModel(LightningModule):
         Called at the end of validation to aggregate outputs.
         :param outputs: list of individual outputs of each validation step.
         """
-        avg_loss = np.mean([x["_log"]["train_loss_unscaled"] for x in outputs])
-        tensorboard_logs = {
-            "train_loss": avg_loss,
-        }
+        avg_loss = torch.stack(
+            [x["_log"]["_train_loss_unscaled"] for x in outputs]
+        ).mean()
+        tensorboard_logs = defaultdict(dict)
+        tensorboard_logs["train_loss"] = avg_loss
         return {
-            "val_loss": avg_loss,
+            "train_loss": avg_loss,
             "log": tensorboard_logs,
         }
 
@@ -113,32 +93,47 @@ class BaseModel(LightningModule):
         :param outputs: list of individual outputs of each validation step.
         """
         avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
-        val_acc = np.mean([x["log"]["n_correct_pred_10"].item() for x in outputs])
-        val_acc_0 = np.mean([x["log"]["n_correct_pred"].item() for x in outputs])
-        val_acc_2 = np.mean([x["log"]["n_correct_pred_20"].item() for x in outputs])
-        mean_error = np.mean([x["log"]["abs_error"].item() for x in outputs])
-        tensorboard_logs = {
-            "val_loss": avg_loss,
-            "val_acc": val_acc,
-            "val_acc_0": val_acc_0,
-            "val_acc_2": val_acc_2,
-            "abs_error": mean_error,
-        }
+
+        tensorboard_logs = defaultdict(dict)
+        tensorboard_logs["val_loss"] = avg_loss
+
+        for n in range(self.data.n_output):
+            tensorboard_logs[f"val_loss_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["val_loss"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"val_acc_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"abs_error_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]]
+            ).mean()
+
         return {
             "val_loss": avg_loss,
             "log": tensorboard_logs,
         }
 
     def test_epoch_end(self, outputs):
+        """
+        Called at the end of validation to aggregate outputs.
+        :param outputs: list of individual outputs of each validation step.
+        """
         avg_loss = torch.stack([x["test_loss"] for x in outputs]).mean()
-        test_acc = np.mean([x["log"]["n_correct_pred_10"].item() for x in outputs])
-        mean_error = np.mean([x["log"]["abs_error"].item() for x in outputs])
-        tensorboard_logs = {
-            "test_loss": avg_loss,
-            "test_acc": test_acc,
-            "abs_error": mean_error,
-        }
-        # wandb.log(tensorboard_logs)
+
+        tensorboard_logs = defaultdict(dict)
+        tensorboard_logs["test_loss"] = avg_loss
+
+        for n in range(self.data.n_output):
+            tensorboard_logs[f"test_loss_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["test_loss"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"test_acc_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"abs_error_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]]
+            ).mean()
+
         return {
             "test_loss": avg_loss,
             "log": tensorboard_logs,
@@ -245,7 +240,7 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.train_data,
             batch_size=self.hparams.batch_size,
-            num_workers=0 if self.hparams.min_data else 8,
+            num_workers=0 if self.hparams.dry_run else 8,
             shuffle=True,
             pin_memory=True if self.hparams.gpus else False,
         )
@@ -255,7 +250,7 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.test_data,
             batch_size=self.hparams.batch_size,
-            num_workers=0 if self.hparams.min_data else 8,
+            num_workers=0 if self.hparams.dry_run else 8,
             pin_memory=True if self.hparams.gpus else False,
         )
 
@@ -264,6 +259,6 @@ class BaseModel(LightningModule):
         return DataLoader(
             self.test_data,
             batch_size=self.hparams.batch_size,
-            num_workers=0 if self.hparams.min_data else 8,
+            num_workers=0 if self.hparams.dry_run else 8,
             pin_memory=True if self.hparams.gpus else False,
         )
