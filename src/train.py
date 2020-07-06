@@ -58,8 +58,8 @@ def main(hparams):
                 str(x)
                 for x in (
                     name,
-                    hparams.in_channels,
-                    hparams.out_channels,
+                    hparams.in_days,
+                    hparams.out_days,
                     datetime.now().strftime("-%m/%d-%H:%M"),
                 )
             ]
@@ -217,8 +217,8 @@ def get_hparams(
     #
     # U-Net config
     init_features: ("Architecture complexity", "option") = 16,
-    in_channels: ("Number of input channels", "option") = 16,
-    out_channels: ("Number of output channels", "option") = 1,
+    in_days: ("Number of input days", "option") = 4,
+    out_days: ("Number of output days", "option") = 1,
     #
     # General
     epochs: ("Number of training epochs", "option") = 100,
