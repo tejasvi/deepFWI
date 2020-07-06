@@ -18,14 +18,13 @@
 * **Obtain pre-trained model**:<br>
   Place the model checkpoint file somewhere in your system and note the filepath.
 * **Run the inference script**:<br>
-  * Optionally set $FORCINGS_DIR and $REANALYSIS_DIR to override $PWD as the default location of data.
-  `python src/test.py -in-channels=8 -out-channels=1 -forcings-dir=${FORCINGS_DIR:-$PWD} -reanalysis-dir=${REANALYSIS_DIR:-$PWD} -checkpoint-file='path/to/checkpoint'`
-    > The number of input channels is technically equal to four times the number of input days and the number of output channels is equal to number of output days. The specification will change in future to specifying the number of days instead of number of channels.
+  * Optionally set `$FORCINGS_DIR` and `$REANALYSIS_DIR` to override `$PWD` as the default location of data.
+  `python src/test.py -in-days=2 -out-days=1 -forcings-dir=${FORCINGS_DIR:-$PWD} -reanalysis-dir=${REANALYSIS_DIR:-$PWD} -checkpoint-file='path/to/checkpoint'`
 
 ## Implementation overview
 * The entry point for training is [src/train.py](src/train.py)
   * **Example Usage**: `python src/train.py [-h]
-               [-init-features 16] [-in-channels 16] [-out-channels 1]
+               [-init-features 16] [-in-days 4] [-out-days 1]
                [-epochs 100] [-learning-rate 0.001] [-loss mse]
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
                [-optim one_cycle] [-dry-run False]
@@ -37,7 +36,7 @@
                
 * The entry point for inference is [src/test.py](src/test.py)
   * **Example Usage**: `python src/test.py [-h]
-               [-init-features 16] [-in-channels 16] [-out-channels 1]
+               [-init-features 16] [-in-days 4] [-out-days 1]
                [-learning-rate 0.001] [-loss mse]
                [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
                [-dry-run False] [-case-study False]
@@ -50,10 +49,10 @@
 * **Configuration Details**:
 <br> Optional arguments (default values indicated below):
 
-    `  -h, --help                           show this help message and exit`<pre>
-    -init-features 16                       Architecture complexity
-    -in-channels 16                         Number of input channels
-    -out-channels 1                         Number of output channels
+    `  -h, --help show this help message and exit`
+<pre>    -init-features 16                       Architecture complexity
+    -in-days 4                              Number of input days
+    -out-days 1                         Number of output channels
     -epochs 100                             Number of training epochs
     -learning-rate 0.001                    Maximum learning rate
     -loss mse                               Loss function: mae, mse
