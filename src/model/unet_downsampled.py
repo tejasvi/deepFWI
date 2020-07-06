@@ -70,7 +70,7 @@ class Model(BaseModel):
 
         # init superclass
         super().__init__(hparams)
-        out_channels = self.hparams.out_channels
+        out_channels = self.hparams.out_days
         features = self.hparams.init_features
 
         self.conv = nn.Conv2d(
