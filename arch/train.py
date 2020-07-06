@@ -256,17 +256,17 @@ def get_hparams(
         "option",
     ) = "fwi_reanalysis",
     forecast_dir: (
-        "Directory containing forecast data",
+        "Directory containing the forecast data. Alternatively set $FORECAST_DIR",
         "option",
-    ) = "/nvme0/fwi-forecast",
+    ) = os.environ.get("FORECAST_DIR", os.getcwd()),
     forcings_dir: (
-        "Directory containing forcings data",
+        "Directory containing the forcings data Alternatively set $FORCINGS_DIR",
         "option",
-    ) = "/nvme1/fwi-forcings",
+    ) = os.environ.get("FORCINGS_DIR", os.getcwd()),
     reanalysis_dir: (
-        "Directory containing reanalysis data",
+        "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR.",
         "option",
-    ) = "/nvme0/fwi-reanalysis",
+    ) = os.environ.get("REANALYSIS_DIR", os.getcwd()),
     mask: (
         "File containing the mask stored as the numpy array",
         "option",
