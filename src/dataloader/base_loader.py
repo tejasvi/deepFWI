@@ -82,7 +82,7 @@ class ModelDataset(Dataset):
 
         return X, y
 
-    def training_step(self, model, batch, batch_idx):
+    def training_step(self, model, batch):
         """
         Called inside the training loop with the data from the training dataloader
         passed in as `batch`.
@@ -111,7 +111,7 @@ class ModelDataset(Dataset):
             "_log": tensorboard_logs,
         }
 
-    def validation_step(self, model, batch, batch_idx):
+    def validation_step(self, model, batch):
         """
         Called inside the validation loop with the data from the validation dataloader
         passed in as `batch`.
@@ -148,7 +148,7 @@ class ModelDataset(Dataset):
             "log": tensorboard_logs,
         }
 
-    def test_step(self, model, batch, batch_idx):
+    def test_step(self, model, batch):
         """ Called during manual invocation on test data."""
         x, y_pre = batch
         y_hat_pre, _ = model(x) if model.aux else model(x), None
