@@ -1,31 +1,17 @@
 """
 Base model implementing helper methods.
 """
-import os
-from argparse import ArgumentParser
-from collections import OrderedDict
-import json
-from glob import glob
-import types
 import pickle
 from collections import defaultdict
 
-import xarray as xr
-import numpy as np
-
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.transforms as transforms
 from torch import optim
 from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
 
 # Logging helpers
 from pytorch_lightning import _logger as log
 from pytorch_lightning.core import LightningModule
-import wandb
 
 
 class BaseModel(LightningModule):

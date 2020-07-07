@@ -1,14 +1,11 @@
 """
 Primary testing script.
 """
-import os
-from argparse import ArgumentParser
 from argparse import Namespace
 import random
 import time
 from glob import glob
 import shutil
-import importlib
 import plac
 
 import numpy as np
@@ -18,10 +15,9 @@ import pytorch_lightning as pl
 
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning import Trainer
 import wandb
 
-from train import str2num, get_hparams, get_model
+from train import get_hparams, get_model
 
 # Setting seeds to ensure reproducibility. Setting CUDA to deterministic mode slows down
 # the training.
@@ -46,7 +42,7 @@ def main(hparams):
     model.load_state_dict(torch.load(hparams.checkpoint_file)["state_dict"])
     model.eval()
 
-    name = "-".join([hparams.model, hparams.out, "-test",])
+    name = "-".join([hparams.model, hparams.out, "-test"])
 
     # ------------------------
     # LOGGING SETUP

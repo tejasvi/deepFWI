@@ -7,8 +7,11 @@ channels:
   - defaults
 dependencies:
   - _libgcc_mutex=0.1
+  - alabaster=0.7.12
   - appdirs=1.4.3
+  - argh=0.26.2
   - attrs=19.3.0
+  - babel=2.8.0
   - backcall=0.1.0
   - beautifulsoup4=4.9.0
   - black=19.10b0
@@ -22,9 +25,11 @@ dependencies:
   - certifi=2020.6.20
   - cffi=1.14.0
   - cfgrib=0.9.8.2
+  - cfgv=3.1.0
   - chardet=3.0.4
   - click=7.1.2
   - cloudpickle=1.4.1
+  - commonmark=0.9.1
   - cryptography=2.9.2
   - cudatoolkit=10.2.89
   - curl=7.69.1
@@ -38,18 +43,25 @@ dependencies:
   - dbus=1.13.14
   - decorator=4.4.2
   - defusedxml=0.6.0
+  - distlib=0.3.0
   - distributed=2.17.0
+  - docopt=0.6.2
+  - docutils=0.16
   - eccodes=2.17.0
+  - editdistance=0.5.3
   - entrypoints=0.3
   - expat=2.2.6
   - fancycompleter=0.8
   - fastai=1.0.61
   - fastprogress=0.2.2
+  - filelock=3.0.12
   - fire=0.3.1
+  - flake8=3.8.3
   - fontconfig=2.13.0
   - freetype=2.9.1
   - fribidi=1.0.9
   - fsspec=0.7.4
+  - future=0.18.2
   - fzf=0.21.1
   - glib=2.63.1
   - gmp=6.1.2
@@ -64,7 +76,9 @@ dependencies:
   - hdf5=1.10.5
   - heapdict=1.0.1
   - icu=58.2
+  - identify=1.4.20
   - idna=2.9
+  - imagesize=1.2.0
   - importlib-metadata=1.6.0
   - importlib_metadata=1.6.0
   - intel-openmp=2020.1
@@ -99,6 +113,7 @@ dependencies:
   - libuuid=1.0.3
   - libxcb=1.13
   - libxml2=2.9.9
+  - livereload=2.6.2
   - locket=0.2.0
   - markupsafe=1.1.1
   - matplotlib=3.1.3
@@ -116,6 +131,7 @@ dependencies:
   - nbformat=5.0.6
   - ncurses=6.2
   - ninja=1.9.0
+  - nodeenv=1.4.0
   - notebook=6.0.3
   - numexpr=2.7.1
   - numpy=1.18.1
@@ -136,8 +152,11 @@ dependencies:
   - pickleshare=0.7.5
   - pillow=7.1.2
   - pip=20.0.2
+  - pipreqs=0.4.10
   - pixman=0.38.0
   - plac=0.9.6
+  - port-for=0.4
+  - pre-commit=2.5.1
   - preshed=2.0.1
   - prometheus_client=0.7.1
   - prompt-toolkit=3.0.4
@@ -167,8 +186,11 @@ dependencies:
   - qtconsole=4.7.4
   - qtpy=1.9.0
   - readline=8.0
+  - recommonmark=0.6.0
   - regex=2020.5.14
   - requests=2.23.0
+  - rope=0.17.0
+  - rstcheck=3.3.1
   - scipy=1.4.1
   - send2trash=1.5.0
   - setproctitle=1.1.10
@@ -180,6 +202,14 @@ dependencies:
   - sortedcontainers=2.1.0
   - soupsieve=2.0.1
   - spacy=2.1.8
+  - sphinx=3.1.1
+  - sphinx-autobuild=0.7.1
+  - sphinxcontrib-applehelp=1.0.2
+  - sphinxcontrib-devhelp=1.0.2
+  - sphinxcontrib-htmlhelp=1.0.3
+  - sphinxcontrib-jsmath=1.0.1
+  - sphinxcontrib-qthelp=1.0.3
+  - sphinxcontrib-serializinghtml=1.1.4
   - sqlite=3.31.1
   - srsly=0.1.0
   - tblib=1.6.0
@@ -197,6 +227,7 @@ dependencies:
   - typed-ast=1.4.1
   - typing_extensions=3.7.4.1
   - urllib3=1.25.8
+  - virtualenv=20.0.20
   - wasabi=0.2.2
   - wcwidth=0.1.9
   - webencodings=0.5.1
@@ -207,6 +238,7 @@ dependencies:
   - xonsh=0.9.18
   - xz=5.2.5
   - yaml=0.1.7
+  - yarg=0.1.9
   - zeromq=4.3.1
   - zict=2.0.0
   - zipp=3.1.0
@@ -230,7 +262,6 @@ dependencies:
     - ecmwf-api-client==1.5.4
     - ffsend==0.1.3
     - flask==1.1.2
-    - future==0.18.2
     - gitdb==4.0.5
     - gitpython==3.1.3
     - google-auth==1.16.0
@@ -244,6 +275,7 @@ dependencies:
     - markdown==3.2.2
     - msal==1.3.0
     - netcdf4==1.5.3
+    - nonechucks==0.4.0
     - nvidia-ml-py3==7.352.0
     - oauthlib==3.1.0
     - pathtools==0.1.2
@@ -270,4 +302,3 @@ dependencies:
     - watchdog==0.10.2
     - werkzeug==1.0.1
 prefix: /home/esowc/anaconda3/envs/wildfire-dl
-

@@ -2,7 +2,6 @@
 Primary training and evaluation script.
 """
 import os
-from argparse import ArgumentParser
 from argparse import Namespace
 import random
 from datetime import datetime
@@ -10,12 +9,12 @@ from glob import glob
 import shutil
 import importlib
 import plac
+import time
 
 import numpy as np
 import torch
 
 import pytorch_lightning as pl
-from pytorch_lightning import Trainer
 
 # from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers import WandbLogger
@@ -162,7 +161,7 @@ def get_model(hparams):
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
             ModelDataset = importlib.import_module(
-                f"dataloader.fwi_forecast"
+                "dataloader.fwi_forecast"
             ).ModelDataset
     elif hparams.model in [
         "unet_downsampled",
@@ -171,7 +170,7 @@ def get_model(hparams):
     ]:
         if hparams.out == "fwi_reanalysis":
             ModelDataset = importlib.import_module(
-                f"dataloader.fwi_reanalysis"
+                "dataloader.fwi_reanalysis"
             ).ModelDataset
     else:
         raise ImportError(f"{hparams.model} and {hparams.out} combination invalid.")

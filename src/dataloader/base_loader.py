@@ -1,29 +1,12 @@
 """
 Base Dataset class to work with fwi-forcings data.
 """
-import os
-from argparse import ArgumentParser
-from collections import OrderedDict
-import json
-from glob import glob
+from collections import defaultdict
 
-import xarray as xr
 import numpy as np
 
-
 import torch
-import torch.nn as nn
-from torch.nn import Sequential, MaxPool2d, ReLU, BatchNorm2d, Conv2d
-import torch.nn.functional as F
-import torchvision.transforms as transforms
-from torch import optim
-from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
-
-# Logging helpers
-from pytorch_lightning import _logger as log
-from pytorch_lightning.core import LightningModule
-import wandb
 
 
 class ModelDataset(Dataset):
@@ -89,7 +72,7 @@ class ModelDataset(Dataset):
         """
         # forward pass
         x, y_pre = batch
-        y_hat_pre, aux_y_hat = model(x) if model.aux else model(x), None
+        y_hat_pre = model(x)
         mask = model.data.mask.expand_as(y_pre[0][0])
         assert y_pre.shape == y_hat_pre.shape
         tensorboard_logs = defaultdict(dict)
@@ -118,7 +101,7 @@ class ModelDataset(Dataset):
         """
         # forward pass
         x, y_pre = batch
-        y_hat_pre, aux_y_hat = model(x) if model.aux else model(x), None
+        y_hat_pre = model(x)
         mask = model.data.mask.expand_as(y_pre[0][0])
         assert y_pre.shape == y_hat_pre.shape
         tensorboard_logs = defaultdict(dict)

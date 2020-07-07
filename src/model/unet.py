@@ -1,28 +1,10 @@
 """
 Original U-Net model.
 """
-import os
-from argparse import ArgumentParser
 from collections import OrderedDict
-import json
-from glob import glob
-
-import xarray as xr
-import numpy as np
-
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.transforms as transforms
-from torch import optim
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-
-# Logging helpers
-from pytorch_lightning import _logger as log
-from pytorch_lightning.core import LightningModule
-import wandb
 
 from model.base_model import BaseModel
 
@@ -41,7 +23,8 @@ class Model(BaseModel):
         Parameters
         ----------
         hparams : Namespace
-            It contains all the major hyperparameters altering the training in some manner.
+            It contains all the major hyperparameters altering the training in some
+            manner.
         """
 
         # init superclass

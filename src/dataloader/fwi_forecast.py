@@ -1,29 +1,12 @@
 """
 The dataset class to be used with fwi-forcings and fwi-forecast data.
 """
-import os
-from argparse import ArgumentParser
-from collections import OrderedDict
-import json
 from glob import glob
 
 import xarray as xr
-import numpy as np
-
 
 import torch
-import torch.nn as nn
-from torch.nn import Sequential, MaxPool2d, ReLU, BatchNorm2d, Conv2d
-import torch.nn.functional as F
 import torchvision.transforms as transforms
-from torch import optim
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-
-# Logging helpers
-from pytorch_lightning import _logger as log
-from pytorch_lightning.core import LightningModule
-import wandb
 
 from dataloader.base_loader import ModelDataset as BaseDataset
 
@@ -69,9 +52,10 @@ class ModelDataset(BaseDataset):
             1 <= int(x.split("2019")[1].split("_1200_hr_")[0][:2]) <= 12
             and 1 <= int(x.split("2019")[1].split("_1200_hr_")[0][2:]) <= 31
         )
-        assert not (
-            sum([inp_invalid(x) for x in out_files])
-        ), "Invalid date format for input file(s). The dates should be formatted as YYMMDD."
+        assert not (sum([inp_invalid(x) for x in inp_files])), (
+            "Invalid date format for input file(s)."
+            "The dates should be formatted as YYMMDD."
+        )
         with xr.open_mfdataset(
             inp_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
@@ -85,9 +69,10 @@ class ModelDataset(BaseDataset):
         out_invalid = lambda x: not (
             1 <= int(x[-19:-17]) <= 12 and 1 <= int(x[-17:-15]) <= 31
         )
-        assert not (
-            sum([out_invalid(x) for x in out_files])
-        ), "Invalid date format for output file(s). The dates should be formatted as YYMMDD."
+        assert not (sum([out_invalid(x) for x in out_files])), (
+            "Invalid date format for output file(s)."
+            "The dates should be formatted as YYMMDD."
+        )
         with xr.open_mfdataset(
             out_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
