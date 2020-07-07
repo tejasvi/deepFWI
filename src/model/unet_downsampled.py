@@ -1,5 +1,6 @@
 """
-Modification in U-Net model for exp0.
+The original U-Net model with a downsampling layer at the end to match with the
+FWI-Reanalysis resolution.
 """
 import torch.nn as nn
 
