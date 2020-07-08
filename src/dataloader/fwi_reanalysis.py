@@ -16,8 +16,11 @@ from dataloader.base_loader import ModelDataset as BaseDataset
 
 class ModelDataset(BaseDataset):
     """
-    The dataset class responsible for loading the data and providing the samples for
-    training.
+    The dataset class responsible for loading the data and providing the samples for \
+training.
+
+    :param BaseDataset: Base Dataset class to inherit from
+    :type BaseDataset: base_loader.BaseDataset
     """
 
     def __init__(
@@ -31,6 +34,27 @@ class ModelDataset(BaseDataset):
         hparams=None,
         **kwargs,
     ):
+        """
+        Constructor for the ModelDataset class
+
+        :param out_var: Variance of the output variable, defaults to None
+        :type out_var: float, optional
+        :param out_mean: Mean of the output variable, defaults to None
+        :type out_mean: float, optional
+        :param forecast_dir: The directory containing the FWI-Forecast data, defaults \
+to None
+        :type forecast_dir: str, optional
+        :param forcings_dir: The directory containing the FWI-Forcings data, defaults \
+to None
+        :type forcings_dir: str, optional
+        :param reanalysis_dir: The directory containing the FWI-Reanalysis data, \
+to defaults to None
+        :type reanalysis_dir: str, optional
+        :param transform: Custom transform for the input variable, defaults to None
+        :type transform: torch.transforms, optional
+        :param hparams: Holds configuration values, defaults to None
+        :type hparams: Namespace, optional
+        """
 
         super().__init__(
             out_var=out_var,
@@ -150,11 +174,12 @@ class ModelDataset(BaseDataset):
         )
         assert len(self.input.time) == len(self.output.time)
 
-        print(
+        log.info(
             f"Start date: {self.output.fwi.time.min(skipna=True)}",
             f"\nEnd date: {self.output.fwi.time.max(skipna=True)}",
         )
 
+        # Loading the mask for output variable if provided as generating from NaN mask
         self.mask = (
             torch.nn.functional.max_pool2d(
                 (
@@ -187,28 +212,43 @@ class ModelDataset(BaseDataset):
             else 621.65894
         )
 
-        self.transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                # Mean and standard deviation stats used to normalize the input data to
-                # the mean of zero and standard deviation of one.
-                transforms.Normalize(
-                    [
-                        x
-                        for i in range(self.n_input)
-                        for x in (72.47605, 279.96622, 2.4548044, 6.4765906,)
-                    ],
-                    [
-                        x
-                        for i in range(self.n_input)
-                        for x in (17.7426847, 21.2802498, 6.3852794, 3.69688883,)
-                    ],
-                ),
-            ]
+        # Input transforms including mean and std normalization
+        self.transform = (
+            transform
+            if transform
+            else transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    # Mean and standard deviation stats used to normalize the input data
+                    # to the mean of zero and standard deviation of one.
+                    transforms.Normalize(
+                        [
+                            x
+                            for i in range(self.n_input)
+                            for x in (72.47605, 279.96622, 2.4548044, 6.4765906,)
+                        ],
+                        [
+                            x
+                            for i in range(self.n_input)
+                            for x in (17.7426847, 21.2802498, 6.3852794, 3.69688883,)
+                        ],
+                    ),
+                ]
+            )
         )
 
-    def test_step(self, model, batch, batch_idx):
-        """ Called during manual invocation on test data."""
+    def test_step(self, model, batch):
+        """
+        Called inside the testing loop with the data from the testing dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
         x, y_pre = batch
         y_hat_pre, _ = model(x) if model.aux else model(x), None
         mask = model.data.mask.expand_as(y_pre[0][0])

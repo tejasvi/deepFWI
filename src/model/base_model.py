@@ -16,14 +16,21 @@ from pytorch_lightning.core import LightningModule
 
 class BaseModel(LightningModule):
     """
-    The primary module containing all the training functionality. It is equivalent to
-    PyTorch nn.Module in all aspects.
+    The primary class containing all the training functionality. It is equivalent to\
+PyTorch nn.Module in all aspects.
+
+    :param LightningModule: The Pytorch-Lightning module derived from nn.module with\
+useful hooks
+    :type LightningModule: nn.Module
+    :raises NotImplementedError: Some methods must be overridden
     """
 
     def __init__(self, hparams):
         """
-        Pass in hyperparameters as a `argparse.Namespace` or a `dict` to the
-        model.
+        Constructor for BaseModel.
+
+        :param hparams: Holds configuration values
+        :type hparams: Namespace
         """
 
         # init superclass
@@ -33,35 +40,70 @@ class BaseModel(LightningModule):
         self.data_prepared = False
         self.aux = False
 
-    def forward(self, x):
+    def forward(self):
         """
-        Forward pass
+        Dummy method to do forward pass on the model.
+
+        :raises NotImplementedError: The method must be overridden in the derived models
         """
         raise NotImplementedError
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch):
         """
-        Called inside the training loop with the data from the training dataloader
-        passed in as `batch`.
-        """
-        return self.data.training_step(self, batch, batch_idx)
+        Called inside the testing loop with the data from the testing dataloader \
+passed in as `batch`. The implementation is delegated to the dataloader instead.
 
-    def validation_step(self, batch, batch_idx):
-        """
-        Called inside the validation loop with the data from the validation dataloader
-        passed in as `batch`.
-        """
-        return self.data.validation_step(self, batch, batch_idx)
+        For performance critical usecase prefer monkey-patching instead.
 
-    def test_step(self, batch, batch_idx):
-        """ Called during manual invocation on test data."""
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+        return self.data.training_step(self, batch)
 
-        return self.data.test_step(self, batch, batch_idx)
+    def validation_step(self, batch):
+        """
+        Called inside the validation loop with the data from the validation dataloader \
+passed in as `batch`. The implementation is delegated to the dataloader instead.
+
+        For performance critical usecase prefer monkey-patching instead.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+        return self.data.validation_step(self, batch)
+
+    def test_step(self, batch):
+        """
+        Called inside the testing loop with the data from the testing dataloader \
+passed in as `batch`. The implementation is delegated to the dataloader instead.
+
+        For performance critical usecase prefer monkey-patching instead.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+        return self.data.test_step(self, batch)
 
     def training_epoch_end(self, outputs):
         """
-        Called at the end of validation to aggregate outputs.
-        :param outputs: list of individual outputs of each validation step.
+        Called at the end of training epoch to aggregate outputs.
+
+        :param outputs: List of individual outputs of each training step.
+        :type outputs: list
+        :return: Loss and logs.
+        :rtype: dict
         """
         avg_loss = torch.stack(
             [x["_log"]["_train_loss_unscaled"] for x in outputs]
@@ -75,8 +117,12 @@ class BaseModel(LightningModule):
 
     def validation_epoch_end(self, outputs):
         """
-        Called at the end of validation to aggregate outputs.
-        :param outputs: list of individual outputs of each validation step.
+        Called at the end of validation epoch to aggregate outputs.
+
+        :param outputs: List of individual outputs of each validation step.
+        :type outputs: list
+        :return: Loss and logs.
+        :rtype: dict
         """
         avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
 
@@ -101,8 +147,12 @@ class BaseModel(LightningModule):
 
     def test_epoch_end(self, outputs):
         """
-        Called at the end of validation to aggregate outputs.
-        :param outputs: list of individual outputs of each validation step.
+        Called at the end of testing epoch to aggregate outputs.
+
+        :param outputs: List of individual outputs of each testing step.
+        :type outputs: list
+        :return: Loss and logs.
+        :rtype: dict
         """
         avg_loss = torch.stack([x["test_loss"] for x in outputs]).mean()
 
@@ -130,8 +180,12 @@ class BaseModel(LightningModule):
     # ---------------------
     def configure_optimizers(self):
         """
-        Return optimizers and learning rate schedulers.
+        Decide optimizers and learning rate schedulers.
+
         At least one optimizer is required.
+
+        :return: Optimizer and the schedular
+        :rtype: tuple
         """
         optimizer = optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         if self.hparams.optim == "cosine":
@@ -151,6 +205,12 @@ class BaseModel(LightningModule):
         return [optimizer], [scheduler]
 
     def add_bias(self, bias):
+        """
+        Initialize bias parameter of the last layer with the output variable's mean.
+
+        :param bias: Mean of the output variable.
+        :type bias: float
+        """
         for w in reversed(self.state_dict().keys()):
             if "bias" in w:
                 self.state_dict()[w].fill_(bias)
@@ -158,7 +218,15 @@ class BaseModel(LightningModule):
 
     def prepare_data(self, ModelDataset=None, force=False):
         """
-        Load and split the data for training and test.
+        Load and split the data for training and test during the first call. Behavior \
+on second call determined by the `force` parameter.
+
+        :param ModelDataset: The dataset class to be used with the model, defaults to
+            None
+        :type ModelDataset: class, optional
+        :param force: Force the data preperation even if already prepared, defaults to
+            False
+        :type force: bool, optional
         """
         if self.data_prepared and not force:
             pass
@@ -218,10 +286,16 @@ class BaseModel(LightningModule):
                         f,
                     )
 
-            # Set flag to avoid resource intensive preparation during next call
+            # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
 
     def train_dataloader(self):
+        """
+        Create the training dataloader from the training dataset.
+
+        :return: The training dataloader
+        :rtype: Dataloader
+        """
         log.info("Training data loader called.")
         return DataLoader(
             self.train_data,
@@ -232,6 +306,12 @@ class BaseModel(LightningModule):
         )
 
     def val_dataloader(self):
+        """
+        Create the validation dataloader from the validation dataset.
+
+        :return: The validation dataloader
+        :rtype: Dataloader
+        """
         log.info("Validation data loader called.")
         return DataLoader(
             self.test_data,
@@ -241,6 +321,12 @@ class BaseModel(LightningModule):
         )
 
     def test_dataloader(self):
+        """
+        Create the testing dataloader from the testing dataset.
+
+        :return: The testing dataloader
+        :rtype: Dataloader
+        """
         log.info("Test data loader called.")
         return DataLoader(
             self.test_data,

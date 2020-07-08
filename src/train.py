@@ -1,5 +1,6 @@
 """
-Primary training and evaluation script.
+Primary training and evaluation script. Run ``python3 train.py -h`` to see available
+options.
 """
 import os
 from argparse import Namespace
@@ -34,16 +35,22 @@ random.seed(SEED)
 def main(hparams):
     """
     Main training routine specific for this project
-    :param hparams:
+
+    :param hparams: Namespace containing configuration values
+    :type hparams: Namespace
     """
+
     # ------------------------
     # 1 INIT MODEL
     # ------------------------
 
+    # Prepare model and link it with the data
     model = get_model(hparams)
 
+    # Categorize logging
     name = hparams.model + "-" + hparams.out
 
+    # Callback to save checkpoint of best performing model
     checkpoint_callback = pl.callbacks.model_checkpoint.ModelCheckpoint(
         filepath=f"model/checkpoints/{name}/",
         monitor="val_loss",
@@ -69,6 +76,7 @@ def main(hparams):
     # LOGGING SETUP
     # ------------------------
 
+    # Enable logging only during training
     if not hparams.dry_run:
         # tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
         # tb_logger.experiment.add_graph(model, model.data[0][0].unsqueeze(0))
@@ -118,33 +126,35 @@ def main(hparams):
     # LR FINDER
     # ------------------------
 
-    # # Run learning rate finder
-    # lr_finder = trainer.lr_find(model)
+    if hparams.find_lr:
+        # Run learning rate finder
+        lr_finder = trainer.lr_find(model)
 
-    # # Results can be found in
-    # lr_finder.results
+        # Results can be found in
+        lr_finder.results
 
-    # # Plot with
-    # fig = lr_finder.plot(suggest=True)
-    # fig.show()
+        # Plot with
+        fig = lr_finder.plot(suggest=True)
+        fig.show()
 
-    # # Pick point based on plot, or get suggestion
-    # new_lr = lr_finder.suggestion()
+        # Pick point based on plot, or get suggestion
+        new_lr = lr_finder.suggestion()
+
+        # update hparams of the model
+        model.hparams.learning_rate = new_lr
 
     # ------------------------
     # BATCH SIZE SEARCH
     # ------------------------
 
-    # # update hparams of the model
-    # model.hparams.learning_rate = new_lr
+    if hparams.search_bs:
+        # Invoke the batch size search using a sophisticated algorithm.
+        new_batch_size = trainer.scale_batch_size(
+            model, mode="binary", steps_per_trial=50, init_val=1, max_trials=10
+        )
 
-    # # Invoke the batch size search using more sophisticated paramters.
-    # new_batch_size = trainer.scale_batch_size(
-    #     model, mode="binary", steps_per_trial=50, init_val=1, max_trials=10
-    # )
-
-    # # Override old batch size
-    # model.hparams.batch_size = new_batch_size
+        # Override old batch size
+        model.hparams.batch_size = new_batch_size
 
     # ------------------------
     # 3 START TRAINING
@@ -152,11 +162,17 @@ def main(hparams):
 
     trainer.fit(model)
 
-    # # Manual saving the last model state (non needed ideally)
-    # torch.save(model.state_dict(), "model.pth")
-
 
 def get_model(hparams):
+    """
+    Prepare model and the data.
+
+    :param hparams: Holds configuration values.
+    :type hparams: Namespace
+    :raises ImportError: The requested model and prediction data must be compatible.
+    :return: Model with the linked data.
+    :rtype: Model
+    """
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
@@ -184,15 +200,10 @@ def str2num(s):
     """
     Converts parameter strings to appropriate types.
 
-    Parameters
-    ----------
-    s : str
-        Parameter value
-
-    Returns
-    -------
-    undefined
-        Type converted parameter
+    :param s: Parameter value
+    :type s: str
+    :return: Appropriately converted value
+    :rtype: Varying
     """
     if isinstance(s, bool):
         return s
@@ -234,6 +245,8 @@ def get_hparams(
         "option",
     ) = "one_cycle",
     dry_run: ("Use small amount of data for sanity check", "option") = False,
+    find_lr: ("Automatically search for an ideal learning rate", "option") = False,
+    search_bs: ("Scale the batch dynamically for full GPU usage") = False,
     case_study: (
         "Limit the analysis to Australian region (inference only)",
         "option",
@@ -283,12 +296,10 @@ def get_hparams(
     checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
 ):
     """
-    The project wide arguments. Run `python train.py -h` for usage details.
+    Process and print the dictionary of project wide arguments.
 
-    Returns
-    -------
-    Dict
-        Dictionary containing configuration options.
+    :return: Dictionary containing configuration options.
+    :rtype: dict
     """
     d = {k: str2num(v) for k, v in locals().items()}
     for k, v in d.items():
@@ -297,6 +308,9 @@ def get_hparams(
 
 
 if __name__ == "__main__":
+    """
+    Script entrypoint.
+    """
 
     # Converting dictionary to namespace
     hyperparams = Namespace(**plac.call(get_hparams, eager=False))

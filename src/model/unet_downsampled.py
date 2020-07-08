@@ -8,21 +8,20 @@ from model.unet import Model as BaseModel
 
 
 class Model(BaseModel):
-    """
-    The primary module containing all the training functionality. It is equivalent to
-    PyTorch nn.Module in all aspects.
+    """This class implements modified U-Net module by downsampling the output to match \
+with the resolution of fwi-reanalysis. It is equivalent to PyTorch's nn.Module in all \
+aspects.
+
+    :param LightningModule: The Pytorch-Lightning module derived from nn.module with
+useful hooks
+    :type LightningModule: nn.Module
     """
 
     def __init__(self, hparams):
-        """
-        Pass in hyperparameters as a `argparse.Namespace` or a `dict` to the
-        model.
+        """Constructor for Model.
 
-        Parameters
-        ----------
-        hparams : Namespace
-            It contains all the major hyperparameters altering the training in some
-            manner.
+        :param hparams: Holds configuration values
+        :type hparams: Namespace
         """
 
         # init superclass

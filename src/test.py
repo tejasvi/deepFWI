@@ -1,5 +1,6 @@
 """
-Primary testing script.
+Primary inference and testing script. Run ``python3 test.py -h`` to see available
+options.
 """
 from argparse import Namespace
 import random
@@ -33,11 +34,15 @@ random.seed(SEED)
 def main(hparams):
     """
     Main testing routine specific for this project
-    :param hparams:
+
+    :param hparams: Namespace containing configuration values
+    :type hparams: Namespace
     """
+
     # ------------------------
     # 1 INIT MODEL
     # ------------------------
+
     model = get_model(hparams)
     model.load_state_dict(torch.load(hparams.checkpoint_file)["state_dict"])
     model.eval()
@@ -65,6 +70,7 @@ def main(hparams):
         shutil.copy(file, wandb.run.dir)
 
     trainer = pl.Trainer(gpus=hparams.gpus, logger=[wandb_logger])  # , tb_logger],
+
     # ------------------------
     # 3 START TESTING
     # ------------------------
@@ -73,6 +79,9 @@ def main(hparams):
 
 
 if __name__ == "__main__":
+    """
+    Script entrypoint.
+    """
 
     # Converting dictionary to namespace
     hyperparams = Namespace(**plac.call(get_hparams, eager=False))

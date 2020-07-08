@@ -9,20 +9,23 @@ from model.unet import Model as BaseModel
 
 class Model(BaseModel):
     """
-    The primary module containing all the training functionality. It is equivalent to
-    PyTorch nn.Module in all aspects.
+    This class implements modified U-Net module by removing the up-sampling layers \
+once activation resolution becomes 1/4th the resolution of input. After the removal, \
+feature compression layers are added which keep the resolution constant all along. The \
+layers in the tapered end additionally have skip connections similar to DenseNet. It \
+is equivalent to PyTorch's nn.Module in all aspects.
+
+    :param LightningModule: The Pytorch-Lightning module derived from nn.module with \
+useful hooks
+    :type LightningModule: nn.Module
     """
 
     def __init__(self, hparams):
         """
-        Pass in hyperparameters as a `argparse.Namespace` or a `dict` to the
-        model.
+        Constructor for Model
 
-        Parameters
-        ----------
-        hparams : Namespace
-            It contains all the major hyperparameters altering the training in some
-            manner.
+        :param hparams: Holds configuration values
+        :type hparams: Namespace
         """
 
         # init superclass
@@ -37,7 +40,12 @@ class Model(BaseModel):
 
     def forward(self, x):
         """
-        Forward pass
+        Does the forward pass on the model.
+
+        :param x: Input tensor batch.
+        :type x: torch.Tensor
+        :return: Output activations.
+        :rtype: torch.Tensor
         """
         enc1 = self.encoder1(x)
         enc2 = self.encoder2(self.pool1(enc1))
