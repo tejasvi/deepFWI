@@ -204,6 +204,8 @@ def str2num(s):
             return s
     elif s.isdigit():
         return int(s)
+    elif s == "None":
+        return None
     else:
         if s == "True":
             return True
