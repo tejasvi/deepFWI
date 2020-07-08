@@ -250,17 +250,18 @@ def get_hparams(
     test_set: (
         "Load test-set filenames from specified file instead of random split",
         "option",
-    ) = "dataloader/test_set.pkl",
+    ) = "dataloader/test_set_frp.pkl",
     #
     # Run specific
     model: (
-        "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered",
+        "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered,"
+        " unet_downsampled_frp",
         "option",
-    ) = "unet_tapered",
+    ) = "unet_downsampled_frp",
     out: (
-        "Output data for training: fwi_forecast or fwi_reanalysis",
+        "Output data for training: fwi_forecast or fwi_reanalysis or gfas_frp",
         "option",
-    ) = "fwi_reanalysis",
+    ) = "gfas_frp",
     forecast_dir: (
         "Directory containing the forecast data. Alternatively set $FORECAST_DIR",
         "option",
@@ -273,12 +274,16 @@ def get_hparams(
         "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR.",
         "option",
     ) = os.environ.get("REANALYSIS_DIR", os.getcwd()),
+    frp_dir: (
+        "Directory containing the FRP data. Alternatively set $FRP_DIR.",
+        "option",
+    ) = os.environ.get("FRP_DIR", os.getcwd()),
     mask: (
         "File containing the mask stored as the numpy array",
         "option",
-    ) = "dataloader/mask.npy",
-    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 9.4,  # 10.4, 9.4
-    comment: ("Used for logging", "option") = "Unet tapered - residual",
+    ) = "dataloader/mask_frp.npy",
+    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 0.00084291565,
+    comment: ("Used for logging", "option") = "FRP",
     #
     # Test run
     save_test_set: (
