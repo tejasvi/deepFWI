@@ -222,7 +222,7 @@ def str2num(s):
 def get_hparams(
     #
     # U-Net config
-    init_features: ("Architecture complexity", "option") = 16,
+    init_features: ("Architecture complexity", "option") = 10,
     in_days: ("Number of input days", "option") = 4,
     out_days: ("Number of output days", "option") = 1,
     #
