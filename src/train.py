@@ -161,7 +161,7 @@ def get_model(hparams):
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
             ModelDataset = importlib.import_module(
-                "dataloader.fwi_forecast"
+                f"dataloader.{hparams.out}"
             ).ModelDataset
     elif hparams.model in [
         "unet_downsampled",
@@ -170,7 +170,12 @@ def get_model(hparams):
     ]:
         if hparams.out == "fwi_reanalysis":
             ModelDataset = importlib.import_module(
-                "dataloader.fwi_reanalysis"
+                f"dataloader.{hparams.out}"
+            ).ModelDataset
+    elif hparams.model in ["unet_downsampled_frp"]:
+        if hparams.out == "gfas_frp":
+            ModelDataset = importlib.import_module(
+                f"dataloader.{hparams.out}"
             ).ModelDataset
     else:
         raise ImportError(f"{hparams.model} and {hparams.out} combination invalid.")
