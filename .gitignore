@@ -19,3 +19,4 @@
 Dockerfile
 logs
 .DS_Store
+docs/build
