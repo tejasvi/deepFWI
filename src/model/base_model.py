@@ -44,19 +44,19 @@ class BaseModel(LightningModule):
         Called inside the training loop with the data from the training dataloader
         passed in as `batch`.
         """
-        return self.data.training_step(self, batch, batch_idx)
+        return self.data.training_step(self, batch)
 
     def validation_step(self, batch, batch_idx):
         """
         Called inside the validation loop with the data from the validation dataloader
         passed in as `batch`.
         """
-        return self.data.validation_step(self, batch, batch_idx)
+        return self.data.validation_step(self, batch)
 
     def test_step(self, batch, batch_idx):
         """ Called during manual invocation on test data."""
 
-        return self.data.test_step(self, batch, batch_idx)
+        return self.data.test_step(self, batch)
 
     def training_epoch_end(self, outputs):
         """
@@ -167,6 +167,7 @@ class BaseModel(LightningModule):
                 forecast_dir=self.hparams.forecast_dir,
                 forcings_dir=self.hparams.forcings_dir,
                 reanalysis_dir=self.hparams.reanalysis_dir,
+                frp_dir=self.hparams.frp_dir,
                 hparams=self.hparams,
                 out=self.hparams.out,
             )
@@ -182,6 +183,7 @@ class BaseModel(LightningModule):
                         forecast_dir=self.hparams.forecast_dir,
                         forcings_dir=self.hparams.forcings_dir,
                         reanalysis_dir=self.hparams.reanalysis_dir,
+                        frp_dir=None,
                         hparams=hparams,
                         out=self.hparams.out,
                     )
@@ -206,6 +208,7 @@ class BaseModel(LightningModule):
                 with open(self.hparams.save_test_set, "wb") as f:
                     pickle.dump(
                         [
+                            self.test_data.indices,
                             sum(
                                 [
                                     self.data.inp_files[i : i + 4]
