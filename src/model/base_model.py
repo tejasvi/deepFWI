@@ -235,6 +235,7 @@ on second call determined by the `force` parameter.
                 forecast_dir=self.hparams.forecast_dir,
                 forcings_dir=self.hparams.forcings_dir,
                 reanalysis_dir=self.hparams.reanalysis_dir,
+                frp_dir=self.hparams.frp_dir,
                 hparams=self.hparams,
                 out=self.hparams.out,
             )
@@ -250,6 +251,7 @@ on second call determined by the `force` parameter.
                         forecast_dir=self.hparams.forecast_dir,
                         forcings_dir=self.hparams.forcings_dir,
                         reanalysis_dir=self.hparams.reanalysis_dir,
+                        frp_dir=None,
                         hparams=hparams,
                         out=self.hparams.out,
                     )
@@ -274,6 +276,7 @@ on second call determined by the `force` parameter.
                 with open(self.hparams.save_test_set, "wb") as f:
                     pickle.dump(
                         [
+                            self.test_data.indices,
                             sum(
                                 [
                                     self.data.inp_files[i : i + 4]

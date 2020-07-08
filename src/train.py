@@ -177,7 +177,7 @@ def get_model(hparams):
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
             ModelDataset = importlib.import_module(
-                "dataloader.fwi_forecast"
+                f"dataloader.{hparams.out}"
             ).ModelDataset
     elif hparams.model in [
         "unet_downsampled",
@@ -186,7 +186,12 @@ def get_model(hparams):
     ]:
         if hparams.out == "fwi_reanalysis":
             ModelDataset = importlib.import_module(
-                "dataloader.fwi_reanalysis"
+                f"dataloader.{hparams.out}"
+            ).ModelDataset
+    elif hparams.model in ["unet_downsampled_frp"]:
+        if hparams.out == "gfas_frp":
+            ModelDataset = importlib.import_module(
+                f"dataloader.{hparams.out}"
             ).ModelDataset
     else:
         raise ImportError(f"{hparams.model} and {hparams.out} combination invalid.")
@@ -228,7 +233,7 @@ def str2num(s):
 def get_hparams(
     #
     # U-Net config
-    init_features: ("Architecture complexity", "option") = 16,
+    init_features: ("Architecture complexity", "option") = 10,
     in_days: ("Number of input days", "option") = 4,
     out_days: ("Number of output days", "option") = 1,
     #
@@ -258,17 +263,18 @@ def get_hparams(
     test_set: (
         "Load test-set filenames from specified file instead of random split",
         "option",
-    ) = "dataloader/test_set.pkl",
+    ) = "dataloader/test_set_frp.pkl",
     #
     # Run specific
     model: (
-        "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered",
+        "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered,"
+        " unet_downsampled_frp",
         "option",
-    ) = "unet_tapered",
+    ) = "unet_downsampled_frp",
     out: (
-        "Output data for training: fwi_forecast or fwi_reanalysis",
+        "Output data for training: fwi_forecast or fwi_reanalysis or gfas_frp",
         "option",
-    ) = "fwi_reanalysis",
+    ) = "gfas_frp",
     forecast_dir: (
         "Directory containing the forecast data. Alternatively set $FORECAST_DIR",
         "option",
@@ -281,12 +287,16 @@ def get_hparams(
         "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR.",
         "option",
     ) = os.environ.get("REANALYSIS_DIR", os.getcwd()),
+    frp_dir: (
+        "Directory containing the FRP data. Alternatively set $FRP_DIR.",
+        "option",
+    ) = os.environ.get("FRP_DIR", os.getcwd()),
     mask: (
         "File containing the mask stored as the numpy array",
         "option",
-    ) = "dataloader/mask.npy",
-    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 9.4,  # 10.4, 9.4
-    comment: ("Used for logging", "option") = "Unet tapered - residual",
+    ) = "dataloader/mask_frp.npy",
+    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 0.00084291565,
+    comment: ("Used for logging", "option") = "FRP",
     #
     # Test run
     save_test_set: (
