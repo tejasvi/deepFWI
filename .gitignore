@@ -19,4 +19,7 @@
 Dockerfile
 logs
 .DS_Store
+**/dataloader/*.pkl
+**/dataloader/*.npy
+.DS_St
 docs/build

@@ -11,8 +11,11 @@ from torch.utils.data import Dataset
 
 class ModelDataset(Dataset):
     """
-    The dataset class responsible for loading the data and providing the samples for
-    training.
+    The dataset class responsible for loading the data and providing the samples for \
+training.
+
+    :param Dataset: Base Dataset class to use with PyTorch models
+    :type Dataset: torch.utils.data.Dataset
     """
 
     def __init__(
@@ -26,17 +29,49 @@ class ModelDataset(Dataset):
         hparams=None,
         **kwargs,
     ):
+        """
+        Constructor for the ModelDataset class
+
+        :param out_var: Variance of the output variable, defaults to None
+        :type out_var: float, optional
+        :param out_mean: Mean of the output variable, defaults to None
+        :type out_mean: float, optional
+        :param forecast_dir: The directory containing the FWI-Forecast data, defaults \
+to None
+        :type forecast_dir: str, optional
+        :param forcings_dir: The directory containing the FWI-Forcings data, defaults \
+to None
+        :type forcings_dir: str, optional
+        :param reanalysis_dir: The directory containing the FWI-Reanalysis data, \
+defaults to None
+        :type reanalysis_dir: str, optional
+        :param transform: Custom transform for the input variable, defaults to None
+        :type transform: torch.transforms, optional
+        :param hparams: Holds configuration values, defaults to None
+        :type hparams: Namespace, optional
+        """
 
         self.hparams = hparams
         self.out_mean = out_mean
         self.out_var = out_var
 
     def __len__(self):
+        """
+        The internal method used to obtain the number of iteration samples.
+
+        :return: The maximum possible interations with the provided data.
+        :rtype: int
+        """
         return len(self.input.time) - (self.n_input - 1) - (self.n_output - 1)
 
     def __getitem__(self, idx):
         """
         Internal method used by pytorch to fetch input and corresponding output tensors.
+
+        :param idx: The index number of data sample.
+        :type idx: int
+        :return: Batch of data containing input and output tensors
+        :rtype: tuple
         """
 
         if torch.is_tensor(idx):
@@ -67,9 +102,17 @@ class ModelDataset(Dataset):
 
     def training_step(self, model, batch):
         """
-        Called inside the training loop with the data from the training dataloader
-        passed in as `batch`.
+        Called inside the training loop with the data from the training dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
         """
+
         # forward pass
         x, y_pre = batch
         y_hat_pre = model(x)
@@ -96,9 +139,17 @@ class ModelDataset(Dataset):
 
     def validation_step(self, model, batch):
         """
-        Called inside the validation loop with the data from the validation dataloader
-        passed in as `batch`.
+        Called inside the validation loop with the data from the validation dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
         """
+
         # forward pass
         x, y_pre = batch
         y_hat_pre = model(x)
@@ -132,7 +183,18 @@ class ModelDataset(Dataset):
         }
 
     def test_step(self, model, batch):
-        """ Called during manual invocation on test data."""
+        """
+        Called inside the testing loop with the data from the testing dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+
         x, y_pre = batch
         y_hat_pre, _ = model(x) if model.aux else model(x), None
         mask = model.data.mask.expand_as(y_pre[0][0])

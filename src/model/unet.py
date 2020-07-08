@@ -1,5 +1,5 @@
 """
-Original U-Net model.
+Original U-Net model implementation.
 """
 from collections import OrderedDict
 
@@ -11,20 +11,20 @@ from model.base_model import BaseModel
 
 class Model(BaseModel):
     """
-    The primary module containing all the training functionality. It is equivalent to
-    PyTorch nn.Module in all aspects.
+    This class implements U-Net module and its training functionality. It is equivalent
+        to PyTorch's nn.Module in all aspects.
+
+    :param LightningModule: The Pytorch-Lightning module derived from nn.module with
+        useful hooks
+    :type LightningModule: nn.Module
     """
 
     def __init__(self, hparams):
         """
-        Pass in hyperparameters as a `argparse.Namespace` or a `dict` to the
-        model.
+        Constructor for Model.
 
-        Parameters
-        ----------
-        hparams : Namespace
-            It contains all the major hyperparameters altering the training in some
-            manner.
+        :param hparams: Holds configuration values
+        :type hparams: Namespace
         """
 
         # init superclass
@@ -68,7 +68,12 @@ class Model(BaseModel):
 
     def forward(self, x):
         """
-        Forward pass
+        Does the forward pass on the model.
+
+        :param x: Input tensor batch.
+        :type x: torch.Tensor
+        :return: Output activations.
+        :rtype: torch.Tensor
         """
         enc1 = self.encoder1(x)
         enc2 = self.encoder2(self.pool1(enc1))
@@ -95,6 +100,15 @@ class Model(BaseModel):
     def _block(in_channels, features, name):
         """
         Generates a U-Net block.
+
+        :param in_channels: Number of input channels.
+        :type in_channels: int
+        :param features: Feature number of the layers.
+        :type features: int
+        :param name: Layer name.
+        :type name: str
+        :return: Sequention module for the U-Net.
+        :rtype: nn.Sequential
         """
         return nn.Sequential(
             OrderedDict(
