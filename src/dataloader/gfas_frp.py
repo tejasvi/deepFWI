@@ -2,7 +2,6 @@
 The dataset class to be used with fwi-forcings and gfas-frp data.
 """
 from glob import glob
-from collections import defaultdict
 import pickle
 
 import xarray as xr
@@ -32,6 +31,27 @@ class ModelDataset(BaseDataset):
         hparams=None,
         **kwargs,
     ):
+        """
+        Constructor for the ModelDataset class
+
+        :param out_var: Variance of the output variable, defaults to None
+        :type out_var: float, optional
+        :param out_mean: Mean of the output variable, defaults to None
+        :type out_mean: float, optional
+        :param forecast_dir: The directory containing the FWI-Forecast data, defaults \
+to None
+        :type forecast_dir: str, optional
+        :param forcings_dir: The directory containing the FWI-Forcings data, defaults \
+to None
+        :type forcings_dir: str, optional
+        :param reanalysis_dir: The directory containing the FWI-Reanalysis data, \
+to defaults to None
+        :type reanalysis_dir: str, optional
+        :param transform: Custom transform for the input variable, defaults to None
+        :type transform: torch.transforms, optional
+        :param hparams: Holds configuration values, defaults to None
+        :type hparams: Namespace, optional
+        """
 
         super().__init__(
             out_var=out_var,
@@ -202,6 +222,11 @@ class ModelDataset(BaseDataset):
     def __getitem__(self, idx):
         """
         Internal method used by pytorch to fetch input and corresponding output tensors.
+
+        :param idx: The index number of data sample.
+        :type idx: int
+        :return: Batch of data containing input and output tensors
+        :rtype: tuple
         """
 
         if torch.is_tensor(idx):
@@ -234,54 +259,3 @@ class ModelDataset(BaseDataset):
             X = self.transform(X)
 
         return X, y
-
-    def test_step(self, model, batch, batch_idx):
-        """ Called during manual invocation on test data."""
-        x, y_pre = batch
-        y_hat_pre, _ = model(x) if model.aux else model(x), None
-        mask = model.data.mask.expand_as(y_pre[0][0])
-        if self.hparams.case_study:
-            mask = mask[355:480, 400:550]
-        tensorboard_logs = defaultdict(dict)
-        for b in range(y_pre.shape[0]):
-            for c in range(y_pre.shape[1]):
-                y = y_pre[b][c]
-                y_hat = y_hat_pre[b][c]
-                if self.hparams.case_study:
-                    y = y[355:480, 400:550][mask]
-                    y_hat = y_hat[355:480, 400:550][mask]
-                else:
-                    y = y[mask]
-                    y_hat = y_hat[mask]
-                if self.hparams.clip_fwi:
-                    y = y[(y_hat < 60) & (0.5 < y_hat)]
-                    y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
-                pre_loss = (
-                    (y_hat - y).abs()
-                    if model.hparams.loss == "mae"
-                    else (y_hat - y) ** 2
-                )
-                loss = pre_loss.mean()
-                assert loss == loss
-
-                # Accuracy for a threshold
-                n_correct_pred = (
-                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
-                )
-                abs_error = (
-                    (y - y_hat).abs().float().mean()
-                    if model.hparams.loss == "mae"
-                    else (y - y_hat).abs().float().mean()
-                )
-
-                tensorboard_logs["test_loss"][str(c)] = loss
-                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
-                tensorboard_logs["abs_error"][str(c)] = abs_error
-
-        test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
-        tensorboard_logs["_test_loss"] = test_loss
-
-        return {
-            "test_loss": test_loss,
-            "log": tensorboard_logs,
-        }
