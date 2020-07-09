@@ -2,6 +2,8 @@
 Modification in U-Net model for low resolution gfas-frp data which requires \
 interpolation due to non-whole number scaling required in the final layer.
 """
+from collections import defaultdict
+
 import torch
 import torch.nn as nn
 
@@ -53,3 +55,33 @@ class Model(BaseModel):
         dec1 = torch.cat((dec1, enc1), dim=1)
         dec1 = self.decoder1(dec1)
         return nn.functional.interpolate(self.conv(dec1), size=(1800, 3600))
+
+    def test_epoch_end(self, outputs):
+        """
+        Called at the end of testing epoch to aggregate outputs.
+
+        :param outputs: List of individual outputs of each testing step.
+        :type outputs: list
+        :return: Loss and logs.
+        :rtype: dict
+        """
+        avg_loss = torch.stack([x["test_loss"] for x in outputs]).mean()
+
+        tensorboard_logs = defaultdict(dict)
+        tensorboard_logs["test_loss"] = avg_loss
+
+        for n in range(self.data.n_output):
+            tensorboard_logs[f"test_loss_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["test_loss"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"test_acc_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["n_correct_pred_test"] for x in outputs]]
+            ).mean()
+            tensorboard_logs[f"abs_error_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["abs_error_test"] for x in outputs]]
+            ).mean()
+
+        return {
+            "test_loss": avg_loss,
+            "log": tensorboard_logs,
+        }
