@@ -11,6 +11,7 @@ import shutil
 import importlib
 import plac
 import time
+import signal
 
 import numpy as np
 import torch
@@ -160,7 +161,11 @@ def main(hparams):
     # 3 START TRAINING
     # ------------------------
 
+    # Interrupt training anytime and continue to test
+    signal.signal(signal.SIGINT, trainer.test)
+
     trainer.fit(model)
+    trainer.test()
 
 
 def get_model(hparams):
@@ -188,7 +193,7 @@ def get_model(hparams):
             ModelDataset = importlib.import_module(
                 f"dataloader.{hparams.out}"
             ).ModelDataset
-    elif hparams.model in ["unet_downsampled_frp"]:
+    elif hparams.model in ["unet_interpolated"]:
         if hparams.out == "gfas_frp":
             ModelDataset = importlib.import_module(
                 f"dataloader.{hparams.out}"
@@ -213,12 +218,12 @@ def str2num(s):
     if isinstance(s, bool):
         return s
     s = str(s)
-    if "." in s:
+    if "." in s or "e-" in s:
         try:
             return float(s)
         except:
-            return s
-    elif s.isdigit():
+            pass
+    if s.isdigit():
         return int(s)
     elif s == "None":
         return None
@@ -234,12 +239,12 @@ def get_hparams(
     #
     # U-Net config
     init_features: ("Architecture complexity", "option") = 10,
-    in_days: ("Number of input days", "option") = 4,
+    in_days: ("Number of input days", "option") = 2,
     out_days: ("Number of output days", "option") = 1,
     #
     # General
     epochs: ("Number of training epochs", "option") = 100,
-    learning_rate: ("Maximum learning rate", "option") = 0.001,
+    learning_rate: ("Maximum learning rate", "option") = 1e-3,
     loss: ("Loss function: mae, mse", "option") = "mse",
     batch_size: ("Batch size of the input", "option") = 1,
     split: ("Test split fraction", "option") = 0.2,
@@ -260,17 +265,13 @@ def get_hparams(
         "Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)",
         "option",
     ) = False,
-    test_set: (
-        "Load test-set filenames from specified file instead of random split",
-        "option",
-    ) = "dataloader/test_set_frp.pkl",
     #
     # Run specific
     model: (
         "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered,"
-        " unet_downsampled_frp",
+        " unet_interpolated",
         "option",
-    ) = "unet_downsampled_frp",
+    ) = "unet_interpolated",
     out: (
         "Output data for training: fwi_forecast or fwi_reanalysis or gfas_frp",
         "option",
@@ -295,14 +296,18 @@ def get_hparams(
         "File containing the mask stored as the numpy array",
         "option",
     ) = "dataloader/mask_frp.npy",
-    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 0.00084291565,
-    comment: ("Used for logging", "option") = "FRP",
+    test_set: (
+        "Load test-set filenames from specified file instead of random split",
+        "option",
+    ) = False,
+    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 0.23654805,
+    comment: ("Used for logging", "option") = "FRP 0 clipping, box cox",
     #
     # Test run
     save_test_set: (
         "Save the test-set file names to the specified filepath",
         "option",
-    ) = False,
+    ) = "dataloader/test_set_frp.pkl",
     checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
 ):
     """
