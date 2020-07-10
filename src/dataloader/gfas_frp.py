@@ -3,9 +3,12 @@ The dataset class to be used with fwi-forcings and gfas-frp data.
 """
 from glob import glob
 import pickle
+from collections import defaultdict
 
 import xarray as xr
 import numpy as np
+from scipy import stats
+from scipy.special import inv_boxcox
 
 import torch
 import torchvision.transforms as transforms
@@ -73,7 +76,7 @@ to defaults to None
         self.n_output = self.hparams.out_days
 
         # Generate the list of all valid files in the specified directories
-        get_inp_time = (
+        inp_time = (
             lambda x: int(x.split("_20")[1][:2]) * 10000
             + int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
             + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:])
@@ -81,7 +84,7 @@ to defaults to None
         inp_files = sorted(
             sorted(glob(f"{forcings_dir}/ECMWF_FO_20*.nc")),
             # Extracting the month and date from filenames to sort by time.
-            key=get_inp_time,
+            key=inp_time,
         )
         out_time = lambda x: int(x[-8:-6]) * 100 + int(x[-5:-3])
         out_files_orig = sorted(
@@ -92,7 +95,7 @@ to defaults to None
 
         if self.hparams.save_test_set:
             # Create out_files list of size same as inp_list
-            time_indices = set(map(get_inp_time, inp_files))
+            time_indices = set(map(inp_time, inp_files))
             out_files = sorted(
                 [
                     f
@@ -117,7 +120,6 @@ to defaults to None
                 out_files = test_out
             else:
                 inp_files = list(set(inp_files) - set(test_inp))
-                out_files = list(set(out_files) - set(test_out))
 
         if self.hparams.dry_run:
             inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
@@ -132,14 +134,14 @@ to defaults to None
             "Invalid date format for input file(s)."
             "The dates should be formatted as YYMMDD."
         )
-        self.inp_files = inp_files
+        self.inp_files = sorted(inp_files, key=inp_time)
 
         out_invalid = lambda x: not (1 <= int(x[-5:-3]) <= 12)
         assert not (sum([out_invalid(x) for x in out_files])), (
             "Invalid date format for input file(s)."
             "The dates should be formatted as YY_MM."
         )
-        self.out_files = out_files
+        self.out_files = sorted(out_files, key=out_time)
 
         # Consider only ground truth and discard forecast values
         preprocess = lambda x: x.isel(time=slice(0, 1))
@@ -161,6 +163,10 @@ to defaults to None
             combine="by_coords",
         ) as ds:
             self.output = ds.load()
+            # Set values in range (0, 0.5) to small positive number
+            self.output.frpfire.values[
+                (self.output.frpfire.values >= 0) & (self.output.frpfire.values < 0.5)
+            ] = 1e-10
 
         # Ensure timestamp matches for both the input and output
         assert self.output.frpfire.time.min(skipna=True) <= self.input.rh.time.max(
@@ -181,11 +187,7 @@ to defaults to None
 
         # Mean of output variable used for bias-initialization.
         self.out_mean = (
-            out_mean
-            if out_mean
-            else 0.0008449411
-            if self.hparams.mask
-            else 0.00021382833
+            out_mean if out_mean else -0.06211442 if self.hparams.mask else 0.0002138283
         )
 
         # Variance of output variable used to scale the training loss.
@@ -194,7 +196,7 @@ to defaults to None
             if out_var
             else 18.819166
             if self.hparams.loss == "mae"
-            else 0.0051485044
+            else 0.30641195
             if self.hparams.mask
             else 0.0012904834002256393
         )
@@ -234,7 +236,7 @@ to defaults to None
 
         X = np.stack(
             [
-                self.input[v].sel(time=self.min_date + np.timedelta64(idx + 1, "D"))
+                self.input[v].sel(time=self.min_date + np.timedelta64(idx + i, "D"))
                 for i in range(self.n_input)
                 for v in ["rh", "t2", "tp", "wspeed"]
             ],
@@ -259,3 +261,149 @@ to defaults to None
             X = self.transform(X)
 
         return X, y
+
+    def training_step(self, model, batch):
+        """
+        Called inside the training loop with the data from the training dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+
+        # forward pass
+        x, y_pre = batch
+        y_hat_pre = model(x)
+        mask = model.data.mask.expand_as(y_pre[0][0])
+        assert y_pre.shape == y_hat_pre.shape
+        tensorboard_logs = defaultdict(dict)
+        for b in range(y_pre.shape[0]):
+            for c in range(y_pre.shape[1]):
+                y = y_pre[b][c][mask]
+                y_hat = y_hat_pre[b][c][mask][y > 0]
+                y = y[y > 0]
+                y = torch.from_numpy(
+                    stats.yeojohnson(y.cpu(), lmbda=-0.8397658852658973)
+                ).cuda()
+                pre_loss = (y_hat - y) ** 2
+                loss = pre_loss.mean()
+                assert loss == loss
+                tensorboard_logs["train_loss_unscaled"][str(c)] = loss
+        loss = torch.stack(
+            list(tensorboard_logs["train_loss_unscaled"].values())
+        ).mean()
+        tensorboard_logs["_train_loss_unscaled"] = loss
+        # model.logger.log_metrics(tensorboard_logs)
+        return {
+            "loss": loss.true_divide(model.data.out_var * model.data.n_output),
+            "_log": tensorboard_logs,
+        }
+
+    def validation_step(self, model, batch):
+        """
+        Called inside the validation loop with the data from the validation dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+
+        # forward pass
+        x, y_pre = batch
+        y_hat_pre = model(x)
+        mask = model.data.mask.expand_as(y_pre[0][0])
+        assert y_pre.shape == y_hat_pre.shape
+        tensorboard_logs = defaultdict(dict)
+        for b in range(y_pre.shape[0]):
+            for c in range(y_pre.shape[1]):
+                y = y_pre[b][c][mask]
+                y_hat = y_hat_pre[b][c][mask][y > 0]
+                y = y[y > 0]
+                y = torch.from_numpy(
+                    stats.yeojohnson(y.cpu(), lmbda=-0.8397658852658973)
+                ).cuda()
+                pre_loss = (y_hat - y) ** 2
+                loss = pre_loss.mean()
+                assert loss == loss
+
+                # Accuracy for a threshold
+                n_correct_pred = (
+                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
+                )
+                abs_error = (y - y_hat).abs().float().mean()
+
+                tensorboard_logs["val_loss"][str(c)] = loss
+                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
+                tensorboard_logs["abs_error"][str(c)] = abs_error
+
+        val_loss = torch.stack(list(tensorboard_logs["val_loss"].values())).mean()
+        tensorboard_logs["_val_loss"] = val_loss
+        # model.logger.log_metrics(tensorboard_logs)
+        return {
+            "val_loss": val_loss,
+            "log": tensorboard_logs,
+        }
+
+    def test_step(self, model, batch):
+        """
+        Called inside the testing loop with the data from the testing dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+
+        x, y_pre = batch
+        y_hat_pre, _ = model(x) if model.aux else model(x), None
+        mask = model.data.mask.expand_as(y_pre[0][0])
+        tensorboard_logs = defaultdict(dict)
+        for b in range(y_pre.shape[0]):
+            for c in range(y_pre.shape[1]):
+                y = y_pre[b][c][mask]
+                y_hat = y_hat_pre[b][c][mask][y > 0]
+                y = y[y > 0]
+                y = torch.from_numpy(
+                    inv_boxcox(y_hat.cpu().numpy(), -0.8397658852658973)
+                ).cuda()
+                if self.hparams.clip_fwi:
+                    y = y[(y_hat < 60) & (0.5 < y_hat)]
+                    y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
+                pre_loss = (
+                    (y_hat - y).abs()
+                    if model.hparams.loss == "mae"
+                    else (y_hat - y) ** 2
+                )
+                loss = pre_loss.mean()
+                assert loss == loss
+
+                # Accuracy for a threshold
+                n_correct_pred = ((y - y_hat).abs() < 0.6959872).float().mean()
+                abs_error = (
+                    (y - y_hat).abs().float().mean()
+                    if model.hparams.loss == "mae"
+                    else (y - y_hat).abs().float().mean()
+                )
+
+                tensorboard_logs["test_loss"][str(c)] = loss
+                tensorboard_logs["n_correct_pred_test"][str(c)] = n_correct_pred
+                tensorboard_logs["abs_error_test"][str(c)] = abs_error
+
+        test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
+        tensorboard_logs["_test_loss"] = test_loss
+
+        return {
+            "test_loss": test_loss,
+            "log": tensorboard_logs,
+        }

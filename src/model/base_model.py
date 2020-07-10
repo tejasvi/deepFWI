@@ -48,7 +48,7 @@ useful hooks
         """
         raise NotImplementedError
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_idx):
         """
         Called inside the testing loop with the data from the testing dataloader \
 passed in as `batch`. The implementation is delegated to the dataloader instead.
@@ -64,7 +64,7 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         """
         return self.data.training_step(self, batch)
 
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_idx):
         """
         Called inside the validation loop with the data from the validation dataloader \
 passed in as `batch`. The implementation is delegated to the dataloader instead.
@@ -80,7 +80,7 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         """
         return self.data.validation_step(self, batch)
 
-    def test_step(self, batch):
+    def test_step(self, batch, batch_idx):
         """
         Called inside the testing loop with the data from the testing dataloader \
 passed in as `batch`. The implementation is delegated to the dataloader instead.
@@ -251,7 +251,7 @@ on second call determined by the `force` parameter.
                         forecast_dir=self.hparams.forecast_dir,
                         forcings_dir=self.hparams.forcings_dir,
                         reanalysis_dir=self.hparams.reanalysis_dir,
-                        frp_dir=None,
+                        frp_dir=self.hparams.frp_dir,
                         hparams=hparams,
                         out=self.hparams.out,
                     )
@@ -288,6 +288,7 @@ on second call determined by the `force` parameter.
                         ],
                         f,
                     )
+            print()
 
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
