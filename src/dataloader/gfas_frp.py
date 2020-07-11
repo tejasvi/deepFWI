@@ -305,8 +305,13 @@ passed in as `batch`.
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask][y > 0]
-                y = y[y > 0]
+                y_hat = y_hat_pre[b][c][mask][y > 0.5]
+                if y_hat.nelement() == 0:
+                    return {
+                        "loss": torch.zeros(1, requires_grad=True),
+                        "_log": None,
+                    }
+                y = y[y > 0.5]
                 y = torch.from_numpy(
                     stats.yeojohnson(y.cpu(), lmbda=-0.8397658852658973)
                 ).cuda()
