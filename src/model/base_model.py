@@ -126,7 +126,9 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Loss and logs.
         :rtype: dict
         """
-        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        if outputs == [{}] * len(outputs):
+            return {}
+        avg_loss = torch.stack([x["val_loss"] for x in outputs if x]).mean()
 
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["val_loss"] = avg_loss
