@@ -225,6 +225,23 @@ to defaults to None
             ]
         )
 
+    def generate_isolated_mask(self, x):
+        """
+        Generate the mask for value which have no fire occurrences for the day before \
+and after.
+
+        :param x: The numpy array to create the mask for
+        :type x: ndarray
+        :return: Mask for isolated values
+        :rtype: ndarray
+        """
+        mask = x.copy()
+        mask[0] = mask[0] & (x[0] | x[1])
+        for i in range(1, x.shape[0] - 1):
+            mask[i] = x[i] & (x[i - 1] | x[i + 1])
+        mask[-1] = mask[-1] & (x[-1] | x[-2])
+        return mask
+
     def __getitem__(self, idx):
         """
         Internal method used by pytorch to fetch input and corresponding output tensors.
