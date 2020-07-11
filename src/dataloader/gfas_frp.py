@@ -164,9 +164,13 @@ to defaults to None
         ) as ds:
             self.output = ds.load()
             # Set values in range (0, 0.5) to small positive number
+            # self.output.frpfire.values[
+            #     (self.output.frpfire.values >= 0) & (self.output.frpfire.values < 0.5)
+            # ] = 1e-10
+            # Setting isolated fire occurrence FRP to 0
             self.output.frpfire.values[
-                (self.output.frpfire.values >= 0) & (self.output.frpfire.values < 0.5)
-            ] = 1e-10
+                self.generate_isolated_mask(self.output.frpfire.values > 0)
+            ] = 0
 
         # Ensure timestamp matches for both the input and output
         assert self.output.frpfire.time.min(skipna=True) <= self.input.rh.time.max(
