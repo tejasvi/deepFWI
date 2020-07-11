@@ -429,7 +429,7 @@ passed in as `batch`.
                 assert loss == loss
 
                 # Accuracy for a threshold
-                n_correct_pred = ((y - y_hat).abs() < 0.6959872).float().mean()
+                n_correct_pred = ((y - y_hat).abs() < 0.49710548).float().mean()
                 abs_error = (
                     (y - y_hat).abs().float().mean()
                     if model.hparams.loss == "mae"
