@@ -191,7 +191,7 @@ to defaults to None
 
         # Mean of output variable used for bias-initialization.
         self.out_mean = (
-            out_mean if out_mean else -0.06211442 if self.hparams.mask else 0.0002138283
+            out_mean if out_mean else -0.07325175 if self.hparams.mask else 0.0002138283
         )
 
         # Variance of output variable used to scale the training loss.
