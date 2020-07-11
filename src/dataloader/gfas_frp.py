@@ -361,8 +361,13 @@ passed in as `batch`.
                     return {}
                 y = y[y > 0.5]
                 y = torch.from_numpy(
-                    stats.yeojohnson(y.cpu(), lmbda=-0.8397658852658973)
-                ).cuda()
+                    stats.boxcox(
+                        y.cpu()
+                        if y.nelement() > 1
+                        else np.concatenate([y.cpu(), y.cpu() + 1]),
+                        lmbda=-0.8427360417396217,
+                    )
+                )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
