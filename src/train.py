@@ -162,7 +162,7 @@ def main(hparams):
     # ------------------------
 
     # Interrupt training anytime and continue to test
-    signal.signal(signal.SIGINT, trainer.test)
+    signal.signal(signal.SIGINT or 255, trainer.test)
 
     trainer.fit(model)
     trainer.test()
