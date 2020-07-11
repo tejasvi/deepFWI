@@ -108,7 +108,7 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         if outputs == [{}] * len(outputs):
             return {"loss": torch.zeros(1, requires_grad=True)}
         avg_loss = torch.stack(
-            [x["_log"]["_train_loss_unscaled"] for x in outputs]
+            [x["_log"]["_train_loss_unscaled"] for x in outputs if x["_log"]]
         ).mean()
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["train_loss"] = avg_loss
