@@ -200,7 +200,7 @@ to defaults to None
             if out_var
             else 18.819166
             if self.hparams.loss == "mae"
-            else 0.30641195
+            else 0.29613134
             if self.hparams.mask
             else 0.0012904834002256393
         )
