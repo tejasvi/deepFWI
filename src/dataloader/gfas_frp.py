@@ -122,8 +122,8 @@ to defaults to None
                 inp_files = list(set(inp_files) - set(test_inp))
 
         if self.hparams.dry_run:
-            inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
-            out_files = out_files[: 2 * (self.n_output + self.n_input)]
+            inp_files = inp_files[: 32 * (self.n_output + self.n_input)]
+            # out_files = out_files[: 2 * (self.n_output + self.n_input)]
 
         # Checking for valid date format
         inp_invalid = lambda x: not (
