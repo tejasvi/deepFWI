@@ -163,7 +163,7 @@ to defaults to None
             combine="by_coords",
         ) as ds:
             self.output = ds.load()
-            # Set values in range (0, 0.5) to small positive number
+            # # Set values in range (0, 0.5) to small positive number
             # self.output.frpfire.values[
             #     (self.output.frpfire.values >= 0) & (self.output.frpfire.values < 0.5)
             # ] = 1e-10

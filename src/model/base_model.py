@@ -294,6 +294,7 @@ on second call determined by the `force` parameter.
                         ],
                         f,
                     )
+            print()
 
             # Log test indices regardless
             log.info(self.test_data.indices)
