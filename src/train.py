@@ -265,6 +265,12 @@ def get_hparams(
         "Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)",
         "option",
     ) = False,
+    round_frp_to_zero: (
+        "Round off the the values below the specified threshold to zero",
+        "option",
+    ) = 0.5,
+    isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = True,
+    transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = True,
     #
     # Run specific
     model: (
