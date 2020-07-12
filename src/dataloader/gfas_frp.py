@@ -363,18 +363,21 @@ passed in as `batch`.
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask][y > 0.5]
+                y_hat = y_hat_pre[b][c][mask]
+                if self.hparams.round_frp_to_zero:
+                    y_hat = y_hat[y > self.hparams.round_frp_to_zero]
+                    y = y[y > 0.5]
                 if y_hat.nelement() == 0:
                     return {}
-                y = y[y > 0.5]
-                y = torch.from_numpy(
-                    stats.boxcox(
-                        y.cpu()
-                        if y.nelement() > 1
-                        else np.concatenate([y.cpu(), y.cpu() + 1]),
-                        lmbda=-0.8427360417396217,
-                    )
-                )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
+                if self.hparams.transform_frp:
+                    y = torch.from_numpy(
+                        stats.boxcox(
+                            y.cpu()
+                            if y.nelement() > 1
+                            else np.concatenate([y.cpu(), y.cpu() + 1]),
+                            lmbda=-0.8427360417396217,
+                        )
+                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
