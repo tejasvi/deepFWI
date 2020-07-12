@@ -420,13 +420,16 @@ passed in as `batch`.
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask][y > 0.5]
+                y_hat = y_hat_pre[b][c][mask]
+                if self.hparams.round_frp_to_zero:
+                    y_hat = y_hat[y > self.hparams.round_frp_to_zero]
+                    y = y[y > 0.5]
                 if y_hat.nelement() == 0:
                     return {}
-                y = y[y > 0.5]
-                y_hat = torch.from_numpy(
-                    inv_boxcox(y_hat.cpu().numpy(), -0.8427360417396217)
-                ).cuda()
+                if self.hparams.transform_frp:
+                    y_hat = torch.from_numpy(
+                        inv_boxcox(y_hat.cpu().numpy(), -0.8427360417396217)
+                    ).cuda()
                 if self.hparams.clip_fwi:
                     y = y[(y_hat < 60) & (0.5 < y_hat)]
                     y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
