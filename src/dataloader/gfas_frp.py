@@ -163,14 +163,17 @@ to defaults to None
             combine="by_coords",
         ) as ds:
             self.output = ds.load()
-            # # Set values in range (0, 0.5) to small positive number
-            # self.output.frpfire.values[
-            #     (self.output.frpfire.values >= 0) & (self.output.frpfire.values < 0.5)
-            # ] = 1e-10
-            # Setting isolated fire occurrence FRP to 0
-            self.output.frpfire.values[
-                self.generate_isolated_mask(self.output.frpfire.values > 0)
-            ] = 0
+            if self.hparams.round_frp_to_zero:
+                # Set values in range (0, `round_to_zero`) to small positive number
+                self.output.frpfire.values[
+                    (self.output.frpfire.values >= 0)
+                    & (self.output.frpfire.values < self.hparams.round_frp_to_zero)
+                ] = 1e-10
+            if self.hparams.isolate_frp:
+                # Setting isolated fire occurrence FRP to -1
+                self.output.frpfire.values[
+                    self.generate_isolated_mask(self.output.frpfire.values > 0)
+                ] = -1
 
         # Ensure timestamp matches for both the input and output
         assert self.output.frpfire.time.min(skipna=True) <= self.input.rh.time.max(
