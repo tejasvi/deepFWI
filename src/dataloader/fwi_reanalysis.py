@@ -198,9 +198,9 @@ to defaults to None
             if out_var
             else 18.819166
             if self.hparams.loss == "mae"
-            else 414.2136
+            else 10.813191
             if self.hparams.mask
-            else 621.65894
+            else 10.813191
         )
 
         # Input transforms including mean and std normalization
