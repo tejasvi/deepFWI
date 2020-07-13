@@ -265,6 +265,11 @@ def get_hparams(
         "Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)",
         "option",
     ) = False,
+    boxcox: (
+        "Apply boxcox transformation with specified lambda while training and the "
+        "inverse boxcox transformation during the inference.",
+        "option",
+    ) = 0.11816128080329039,
     #
     # Run specific
     model: (
