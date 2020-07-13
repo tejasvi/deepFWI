@@ -228,6 +228,47 @@ to defaults to None
             )
         )
 
+    def __getitem__(self, idx):
+        """
+        Internal method used by pytorch to fetch input and corresponding output tensors.
+
+        :param idx: The index number of data sample.
+        :type idx: int
+        :return: Batch of data containing input and output tensors
+        :rtype: tuple
+        """
+
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        X = np.stack(
+            [
+                self.input[v].sel(time=self.min_date + np.timedelta64(idx + i, "D"))
+                for i in range(self.n_input)
+                for v in ["rh", "t2", "tp", "wspeed"]
+            ],
+            axis=-1,
+        )
+        y = torch.from_numpy(
+            np.stack(
+                [
+                    self.output["fwi"]
+                    .sel(
+                        time=self.min_date
+                        + np.timedelta64(idx + self.n_input - 1 + i, "D")
+                    )
+                    .values
+                    for i in range(self.n_output)
+                ],
+                axis=0,
+            )
+        )
+
+        if self.transform:
+            X = self.transform(X)
+
+        return X, y
+
     def test_step(self, model, batch):
         """
         Called inside the testing loop with the data from the testing dataloader \
