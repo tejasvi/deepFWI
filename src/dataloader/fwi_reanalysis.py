@@ -7,6 +7,7 @@ import pickle
 
 import xarray as xr
 import numpy as np
+from scipy.stats import boxcox
 from scipy.special import inv_boxcox
 
 import torch
@@ -269,6 +270,96 @@ to defaults to None
             X = self.transform(X)
 
         return X, y
+
+    def training_step(self, model, batch):
+        """
+        Called inside the training loop with the data from the training dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+
+        # forward pass
+        x, y_pre = batch
+        y_hat_pre = model(x)
+        mask = model.data.mask.expand_as(y_pre[0][0])
+        assert y_pre.shape == y_hat_pre.shape
+        tensorboard_logs = defaultdict(dict)
+        for b in range(y_pre.shape[0]):
+            for c in range(y_pre.shape[1]):
+                y = y_pre[b][c][mask]
+                if self.hparams.boxcox:
+                    y = torch.from_numpy(
+                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
+                    ).cuda()
+                y_hat = y_hat_pre[b][c][mask]
+                pre_loss = (y_hat - y) ** 2
+                loss = pre_loss.mean()
+                assert loss == loss
+                tensorboard_logs["train_loss_unscaled"][str(c)] = loss
+        loss = torch.stack(
+            list(tensorboard_logs["train_loss_unscaled"].values())
+        ).mean()
+        tensorboard_logs["_train_loss_unscaled"] = loss
+        # model.logger.log_metrics(tensorboard_logs)
+        return {
+            "loss": loss.true_divide(model.data.out_var * model.data.n_output),
+            "_log": tensorboard_logs,
+        }
+
+    def validation_step(self, model, batch):
+        """
+        Called inside the validation loop with the data from the validation dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+
+        # forward pass
+        x, y_pre = batch
+        y_hat_pre = model(x)
+        mask = model.data.mask.expand_as(y_pre[0][0])
+        assert y_pre.shape == y_hat_pre.shape
+        tensorboard_logs = defaultdict(dict)
+        for b in range(y_pre.shape[0]):
+            for c in range(y_pre.shape[1]):
+                y = y_pre[b][c][mask]
+                if self.hparams.boxcox:
+                    y = torch.from_numpy(
+                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
+                    ).cuda()
+                y_hat = y_hat_pre[b][c][mask]
+                pre_loss = (y_hat - y) ** 2
+                loss = pre_loss.mean()
+                assert loss == loss
+
+                # Accuracy for a threshold
+                n_correct_pred = (
+                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
+                )
+                abs_error = (y - y_hat).abs().float().mean()
+
+                tensorboard_logs["val_loss"][str(c)] = loss
+                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
+                tensorboard_logs["abs_error"][str(c)] = abs_error
+
+        val_loss = torch.stack(list(tensorboard_logs["val_loss"].values())).mean()
+        tensorboard_logs["_val_loss"] = val_loss
+        # model.logger.log_metrics(tensorboard_logs)
+        return {
+            "val_loss": val_loss,
+            "log": tensorboard_logs,
+        }
 
     def test_step(self, model, batch):
         """
