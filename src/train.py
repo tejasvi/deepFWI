@@ -238,7 +238,7 @@ def str2num(s):
 def get_hparams(
     #
     # U-Net config
-    init_features: ("Architecture complexity", "option") = 10,
+    init_features: ("Architecture complexity", "option") = 16,
     in_days: ("Number of input days", "option") = 2,
     out_days: ("Number of output days", "option") = 1,
     #
@@ -271,11 +271,11 @@ def get_hparams(
         "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered,"
         " unet_interpolated",
         "option",
-    ) = "unet_interpolated",
+    ) = "unet_tapered",
     out: (
         "Output data for training: fwi_forecast or fwi_reanalysis or gfas_frp",
         "option",
-    ) = "gfas_frp",
+    ) = "fwi_reanalysis",
     forecast_dir: (
         "Directory containing the forecast data. Alternatively set $FORECAST_DIR",
         "option",
@@ -295,7 +295,7 @@ def get_hparams(
     mask: (
         "File containing the mask stored as the numpy array",
         "option",
-    ) = "dataloader/mask_frp.npy",
+    ) = "dataloader/mask_reanalysis.npy",
     test_set: (
         "Load test-set filenames from specified file instead of random split",
         "option",
@@ -307,7 +307,7 @@ def get_hparams(
     save_test_set: (
         "Save the test-set file names to the specified filepath",
         "option",
-    ) = "dataloader/test_set_frp.pkl",
+    ) = "dataloader/test_set_reanalysis.pkl",
     checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
 ):
     """
