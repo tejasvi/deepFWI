@@ -190,7 +190,7 @@ to defaults to None
         ).cuda()
 
         # Mean of output variable used for bias-initialization.
-        self.out_mean = out_mean if out_mean else 15.292629
+        self.out_mean = out_mean if out_mean else 0.6757456
 
         # Variance of output variable used to scale the training loss.
         self.out_var = (
