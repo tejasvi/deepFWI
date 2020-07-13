@@ -175,6 +175,8 @@ to defaults to None
         )
         assert len(self.input.time) == len(self.output.time)
 
+        self.min_date = self.input.rh.time.min().values
+
         log.info(
             f"Start date: {self.output.fwi.time.min(skipna=True)}",
             f"\nEnd date: {self.output.fwi.time.max(skipna=True)}",
