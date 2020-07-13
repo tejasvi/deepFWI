@@ -7,7 +7,7 @@ import pickle
 
 import xarray as xr
 import numpy as np
-from scipy.stats import boxcox
+from scipy.special import inv_boxcox
 
 import torch
 import torchvision.transforms as transforms
@@ -298,7 +298,10 @@ passed in as `batch`.
                 else:
                     y = y[mask]
                     y_hat = y_hat[mask]
-                y = torch.from_numpy(boxcox(y.cpu(), lmbda=0.11816128080329039,)).cuda()
+                if self.hparams.boxcox:
+                    y_hat = torch.from_numpy(
+                        inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
+                    ).cuda()
                 if self.hparams.clip_fwi:
                     y = y[(y_hat < 60) & (0.5 < y_hat)]
                     y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
