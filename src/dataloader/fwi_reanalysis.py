@@ -13,6 +13,7 @@ import torch
 import torchvision.transforms as transforms
 
 from dataloader.base_loader import ModelDataset as BaseDataset
+from pytorch_lightning import _logger as log
 
 
 class ModelDataset(BaseDataset):
