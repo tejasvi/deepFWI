@@ -288,7 +288,7 @@ on second call determined by the `force` parameter.
                         ],
                         f,
                     )
-            print()
+            log.info(self.test_data.indices, self.data.inp_files, self.data.out_files)
 
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
