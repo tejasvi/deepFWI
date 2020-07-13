@@ -183,22 +183,10 @@ to defaults to None
         )
 
         # Loading the mask for output variable if provided as generating from NaN mask
-        self.mask = (
-            torch.nn.functional.max_pool2d(
-                (
-                    ~torch.from_numpy(
-                        np.load(self.hparams.mask)
-                        if self.hparams.mask
-                        else ~np.isnan(self.output["fwi"][0].values)
-                    )
-                )
-                .unsqueeze(0)
-                .float(),
-                kernel_size=3,
-                stride=1,
-                padding=1,
-            ).squeeze()
-            == 0
+        self.mask = torch.from_numpy(
+            np.load(self.hparams.mask)
+            if self.hparams.mask
+            else ~np.isnan(self.output["fwi"][0].values)
         ).cuda()
 
         # Mean of output variable used for bias-initialization.
