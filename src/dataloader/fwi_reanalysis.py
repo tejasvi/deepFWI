@@ -406,6 +406,8 @@ passed in as `batch`.
                 )
 
                 loss = lambda low, high: pre_loss[(y > low) & (y <= high)].mean()
+                assert loss(y.min(), y.max()) == loss(y.min(), y.max())
+
                 # Accuracy for a threshold
                 n_correct_pred = (
                     ((y - y_hat).abs() < model.hparams.thresh).float().mean()
