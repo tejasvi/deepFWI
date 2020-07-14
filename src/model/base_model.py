@@ -212,6 +212,7 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
                         )
                     ).mean()
 
+        self.logger.experiment[0].log(tensorboard_logs)
         return {
             "test_loss": avg_loss,
             "log": tensorboard_logs,
