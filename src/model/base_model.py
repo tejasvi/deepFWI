@@ -288,13 +288,6 @@ on second call determined by the `force` parameter.
                         len(self.data) - len(self.data) * 8 // 10,
                     ],
                 )
-            if self.hparams.case_study and not self.hparams.test_set:
-                assert (
-                    max(self.test_data.indices) > 214
-                ), "The data is outside the range of case study"
-                self.test_data.indices = list(
-                    set(self.test_data.indices) & set(range(214, 335))
-                )
 
             # Saving list of test-set files
             if self.hparams.save_test_set:
@@ -317,6 +310,14 @@ on second call determined by the `force` parameter.
 
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
+
+        if self.hparams.case_study and not self.hparams.test_set:
+            assert (
+                max(self.test_data.indices) > 214
+            ), "The data is outside the range of case study"
+            self.test_data.indices = list(
+                set(self.test_data.indices) & set(range(214, 335))
+            )
 
     def train_dataloader(self):
         """
