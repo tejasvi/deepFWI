@@ -260,6 +260,15 @@ passed in as `batch`.
                         tensorboard_logs[f"abs_error_{low}_{high}"][str(c)] = abs_error(
                             low, high
                         )
+                    tensorboard_logs[f"test_loss_{self.bin_intervals[-1]}_max"][
+                        str(c)
+                    ] = loss(self.bin_intervals[-1], y.max())
+                    tensorboard_logs[f"n_correct_pred_{self.bin_intervals[-1]}_max"][
+                        str(c)
+                    ] = n_correct_pred(self.bin_intervals[-1], y.max())
+                    tensorboard_logs[f"abs_error_{self.bin_intervals[-1]}_max"][
+                        str(c)
+                    ] = abs_error(self.bin_intervals[-1], y.max())
 
         test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
         tensorboard_logs["_test_loss"] = test_loss
