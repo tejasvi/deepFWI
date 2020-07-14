@@ -425,12 +425,16 @@ passed in as `batch`.
                     .float()
                     .mean()
                     if model.hparams.loss == "mae"
-                    else (y - y_hat).abs().float().mean()
+                    else (y - y_hat)[(y > low) & (y <= high)].abs().float().mean()
                 )
 
-                tensorboard_logs["test_loss"][str(c)] = loss
-                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
-                tensorboard_logs["abs_error"][str(c)] = abs_error
+                tensorboard_logs["test_loss"][str(c)] = loss(y.min(), y.max())
+                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred(
+                    y.min(), y.max()
+                )
+                tensorboard_logs["abs_error"][str(c)] = abs_error(y.min(), y.max())
+
+                # Inference on binned values
 
         test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
         tensorboard_logs["_test_loss"] = test_loss
