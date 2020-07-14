@@ -105,8 +105,10 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Loss and logs.
         :rtype: dict
         """
+        if outputs == [{}] * len(outputs):
+            return {"loss": torch.zeros(1, requires_grad=True)}
         avg_loss = torch.stack(
-            [x["_log"]["_train_loss_unscaled"] for x in outputs]
+            [x["_log"]["_train_loss_unscaled"] for x in outputs if x["_log"]]
         ).mean()
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["train_loss"] = avg_loss
@@ -124,20 +126,22 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Loss and logs.
         :rtype: dict
         """
-        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        if outputs == [{}] * len(outputs):
+            return {}
+        avg_loss = torch.stack([x["val_loss"] for x in outputs if x]).mean()
 
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["val_loss"] = avg_loss
 
         for n in range(self.data.n_output):
             tensorboard_logs[f"val_loss_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["val_loss"] for x in outputs]]
+                [d[str(n)] for d in [x["log"]["val_loss"] for x in outputs if x]]
             ).mean()
             tensorboard_logs[f"val_acc_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
+                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs if x]]
             ).mean()
             tensorboard_logs[f"abs_error_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]]
+                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs if x]]
             ).mean()
 
         return {
@@ -154,20 +158,22 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Loss and logs.
         :rtype: dict
         """
-        avg_loss = torch.stack([x["test_loss"] for x in outputs]).mean()
+        if outputs == [{}] * len(outputs):
+            return {}
+        avg_loss = torch.stack([x["test_loss"] for x in outputs if x]).mean()
 
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["test_loss"] = avg_loss
 
         for n in range(self.data.n_output):
             tensorboard_logs[f"test_loss_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["test_loss"] for x in outputs]]
+                [d[str(n)] for d in [x["log"]["test_loss"] for x in outputs if x]]
             ).mean()
             tensorboard_logs[f"test_acc_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
+                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs if x]]
             ).mean()
             tensorboard_logs[f"abs_error_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]]
+                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs if x]]
             ).mean()
 
         return {
@@ -289,6 +295,9 @@ on second call determined by the `force` parameter.
                         f,
                     )
             print()
+
+            # Log test indices regardless
+            log.info(self.test_data.indices)
 
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True

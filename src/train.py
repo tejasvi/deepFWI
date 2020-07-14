@@ -162,7 +162,7 @@ def main(hparams):
     # ------------------------
 
     # Interrupt training anytime and continue to test
-    signal.signal(signal.SIGINT, trainer.test)
+    signal.signal(signal.SIGINT or 255, trainer.test)
 
     trainer.fit(model)
     trainer.test()
@@ -265,6 +265,12 @@ def get_hparams(
         "Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)",
         "option",
     ) = False,
+    round_frp_to_zero: (
+        "Round off the the values below the specified threshold to zero",
+        "option",
+    ) = 0.5,
+    isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = True,
+    transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = True,
     #
     # Run specific
     model: (
@@ -300,7 +306,7 @@ def get_hparams(
         "Load test-set filenames from specified file instead of random split",
         "option",
     ) = False,
-    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 0.23654805,
+    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 0.232943,
     comment: ("Used for logging", "option") = "FRP 0 clipping, box cox",
     #
     # Test run
