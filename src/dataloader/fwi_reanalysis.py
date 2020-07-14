@@ -437,7 +437,10 @@ passed in as `batch`.
                 # Inference on binned values
                 if self.hparams.binned:
                     for i in range(len(self.bin_intervals) - 1):
-                        low, high = bin_intervals[i], bin_intervals[i + 1]
+                        low, high = (
+                            self.bin_intervals[i],
+                            self.bin_intervals[i + 1],
+                        )
                         tensorboard_logs[f"test_loss_{low}_{high}"][str(c)] = loss(
                             low, high
                         )
