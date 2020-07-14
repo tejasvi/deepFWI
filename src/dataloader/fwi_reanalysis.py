@@ -404,9 +404,8 @@ passed in as `batch`.
                     if model.hparams.loss == "mae"
                     else (y_hat - y) ** 2
                 )
-                loss = pre_loss.mean()
-                assert loss == loss
 
+                loss = lambda low, high: pre_loss[(y > low) & (y <= high)].mean()
                 # Accuracy for a threshold
                 n_correct_pred = (
                     ((y - y_hat).abs() < model.hparams.thresh).float().mean()
