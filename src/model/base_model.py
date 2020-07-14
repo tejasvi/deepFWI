@@ -170,6 +170,31 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
                 [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]]
             ).mean()
 
+        # Inference on binned values
+        if self.hparams.binned:
+            for i in range(len(self.bin_intervals) - 1):
+                low, high = bin_intervals[i], bin_intervals[i + 1]
+                tensorboard_logs[f"test_loss_{low}_{high}_{n}"] = torch.stack(
+                    [
+                        d[str(n)]
+                        for d in [x["log"][f"test_loss_{low}_{high}"] for x in outputs]
+                    ]
+                ).mean()
+                tensorboard_logs[f"test_acc_{low}_{high}_{n}"] = torch.stack(
+                    [
+                        d[str(n)]
+                        for d in [
+                            x["log"][f"n_correct_pred_{low}_{high}"] for x in outputs
+                        ]
+                    ]
+                ).mean()
+                tensorboard_logs[f"abs_error_{low}_{high}_{n}"] = torch.stack(
+                    [
+                        d[str(n)]
+                        for d in [x["log"][f"abs_error_{low}_{high}"] for x in outputs]
+                    ]
+                ).mean()
+
         return {
             "test_loss": avg_loss,
             "log": tensorboard_logs,
