@@ -410,8 +410,15 @@ passed in as `batch`.
 
                 # Accuracy for a threshold
                 n_correct_pred = (
-                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
+                    lambda low, high: (
+                        (y - y_hat)[(y > low) & (y <= high)].abs()
+                        < model.hparams.thresh
+                    )
+                    .float()
+                    .mean()
                 )
+
+                # Mean absolute error
                 abs_error = (
                     (y - y_hat).abs().float().mean()
                     if model.hparams.loss == "mae"
