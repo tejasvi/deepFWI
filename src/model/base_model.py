@@ -162,13 +162,15 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
 
         for n in range(self.data.n_output):
             tensorboard_logs[f"test_loss_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["test_loss"] for x in outputs]]
+                rm_none([d[str(n)] for d in [x["log"]["test_loss"] for x in outputs]])
             ).mean()
             tensorboard_logs[f"test_acc_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
+                rm_none(
+                    [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
+                )
             ).mean()
             tensorboard_logs[f"abs_error_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]]
+                rm_none([d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]])
             ).mean()
 
         # Inference on binned values
