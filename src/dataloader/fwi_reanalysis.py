@@ -435,6 +435,18 @@ passed in as `batch`.
                 tensorboard_logs["abs_error"][str(c)] = abs_error(y.min(), y.max())
 
                 # Inference on binned values
+                if self.hparams.binned:
+                    for i in range(len(self.bin_intervals) - 1):
+                        low, high = bin_intervals[i], bin_intervals[i + 1]
+                        tensorboard_logs[f"test_loss_{low}_{high}"][str(c)] = loss(
+                            low, high
+                        )
+                        tensorboard_logs[f"n_correct_pred_{low}_{high}"][
+                            str(c)
+                        ] = n_correct_pred(low, high)
+                        tensorboard_logs[f"abs_error_{low}_{high}"][str(c)] = abs_error(
+                            low, high
+                        )
 
         test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
         tensorboard_logs["_test_loss"] = test_loss
