@@ -211,6 +211,47 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
                             ]
                         )
                     ).mean()
+                tensorboard_logs[
+                    f"test_loss_{self.data.bin_intervals[-1]}_max_{n}"
+                ] = torch.stack(
+                    rm_none(
+                        [
+                            d[str(n)]
+                            for d in [
+                                x["log"][f"test_loss_{self.data.bin_intervals[-1]}_max"]
+                                for x in outputs
+                            ]
+                        ]
+                    )
+                ).mean()
+                tensorboard_logs[
+                    f"test_acc_{self.data.bin_intervals[-1]}_max_{n}"
+                ] = torch.stack(
+                    rm_none(
+                        [
+                            d[str(n)]
+                            for d in [
+                                x["log"][
+                                    f"n_correct_pred_{self.data.bin_intervals[-1]}_max"
+                                ]
+                                for x in outputs
+                            ]
+                        ]
+                    )
+                ).mean()
+                tensorboard_logs[
+                    f"abs_error_{self.data.bin_intervals[-1]}_max_{n}"
+                ] = torch.stack(
+                    rm_none(
+                        [
+                            d[str(n)]
+                            for d in [
+                                x["log"][f"abs_error_{self.data.bin_intervals[-1]}_max"]
+                                for x in outputs
+                            ]
+                        ]
+                    )
+                ).mean()
 
         self.logger.experiment[0].log(tensorboard_logs)
         return {
