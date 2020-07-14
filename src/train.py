@@ -270,6 +270,7 @@ def get_hparams(
         "inverse boxcox transformation during the inference.",
         "option",
     ) = 0.11816128080329039,
+    binned: ("Show the extended metrics for binned FWI value range", "option") = True,
     #
     # Run specific
     model: (
