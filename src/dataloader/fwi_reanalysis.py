@@ -420,7 +420,10 @@ passed in as `batch`.
 
                 # Mean absolute error
                 abs_error = (
-                    (y - y_hat).abs().float().mean()
+                    lambda low, high: (y - y_hat)[(y > low) & (y <= high)]
+                    .abs()
+                    .float()
+                    .mean()
                     if model.hparams.loss == "mae"
                     else (y - y_hat).abs().float().mean()
                 )
