@@ -76,6 +76,8 @@ to defaults to None
         ), "The number of input and output days must be > 0."
         self.n_input = self.hparams.in_days
         self.n_output = self.hparams.out_days
+        if self.hparams.binned:
+            self.bin_intervals = self.hparams.binned
 
         # Generate the list of all valid files in the specified directories
         get_inp_time = (
