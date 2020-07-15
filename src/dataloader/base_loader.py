@@ -277,21 +277,3 @@ passed in as `batch`.
             "test_loss": test_loss,
             "log": tensorboard_logs,
         }
-
-    def case_study_set(self, ds):
-        """
-        Remove the data with not belonging to the peak wildfire timespan of the case \
-study.
-
-        :param ds: The dataset to be filtered
-        :type ds: xr.Dataset
-        :return: The filtered dataset for case-study
-        :rtype: xr.Dataset
-        """
-        start = np.datetime64("2019-11-01")
-        end = np.datetime64("2020-02-29")
-        n_days = (end - start).item().days + 1
-
-        return ds.sel(
-            time=[start + np.timedelta64(i, "D") for i in range(n_days + self.out_days)]
-        )
