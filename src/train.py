@@ -162,7 +162,7 @@ def main(hparams):
     # ------------------------
 
     # Interrupt training anytime and continue to test
-    signal.signal(signal.SIGINT, trainer.test)
+    signal.signal(signal.SIGINT or 255, trainer.test)
 
     trainer.fit(model)
     trainer.test()
@@ -277,6 +277,12 @@ def get_hparams(
         "Show the extended metrics for comma separated binned FWI value range",
         "option",
     ) = False,
+    round_frp_to_zero: (
+        "Round off the the values below the specified threshold to zero",
+        "option",
+    ) = 0.5,
+    isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = True,
+    transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = True,
     #
     # Run specific
     model: (

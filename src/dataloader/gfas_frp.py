@@ -122,8 +122,8 @@ to defaults to None
                 inp_files = list(set(inp_files) - set(test_inp))
 
         if self.hparams.dry_run:
-            inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
-            out_files = out_files[: 2 * (self.n_output + self.n_input)]
+            inp_files = inp_files[: 32 * (self.n_output + self.n_input)]
+            # out_files = out_files[: 2 * (self.n_output + self.n_input)]
 
         # Checking for valid date format
         inp_invalid = lambda x: not (
@@ -163,10 +163,17 @@ to defaults to None
             combine="by_coords",
         ) as ds:
             self.output = ds.load()
-            # Set values in range (0, 0.5) to small positive number
-            self.output.frpfire.values[
-                (self.output.frpfire.values >= 0) & (self.output.frpfire.values < 0.5)
-            ] = 1e-10
+            if self.hparams.round_frp_to_zero:
+                # Set values in range (0, `round_to_zero`) to small positive number
+                self.output.frpfire.values[
+                    (self.output.frpfire.values >= 0)
+                    & (self.output.frpfire.values < self.hparams.round_frp_to_zero)
+                ] = 1e-10
+            if self.hparams.isolate_frp:
+                # Setting isolated fire occurrence FRP to -1
+                self.output.frpfire.values[
+                    self.generate_isolated_mask(self.output.frpfire.values > 0)
+                ] = -1
 
         # Ensure timestamp matches for both the input and output
         assert self.output.frpfire.time.min(skipna=True) <= self.input.rh.time.max(
@@ -187,7 +194,7 @@ to defaults to None
 
         # Mean of output variable used for bias-initialization.
         self.out_mean = (
-            out_mean if out_mean else -0.06211442 if self.hparams.mask else 0.0002138283
+            out_mean if out_mean else -0.07325175 if self.hparams.mask else 0.0002138283
         )
 
         # Variance of output variable used to scale the training loss.
@@ -196,7 +203,7 @@ to defaults to None
             if out_var
             else 18.819166
             if self.hparams.loss == "mae"
-            else 0.30641195
+            else 0.29613134
             if self.hparams.mask
             else 0.0012904834002256393
         )
@@ -220,6 +227,23 @@ to defaults to None
                 ),
             ]
         )
+
+    def generate_isolated_mask(self, x):
+        """
+        Generate the mask for value which have no fire occurrences for the day before \
+and after.
+
+        :param x: The numpy array to create the mask for
+        :type x: ndarray
+        :return: Mask for isolated values
+        :rtype: ndarray
+        """
+        mask = x.copy()
+        mask[0] = mask[0] & (x[0] | x[1])
+        for i in range(1, x.shape[0] - 1):
+            mask[i] = x[i] & (x[i - 1] | x[i + 1])
+        mask[-1] = mask[-1] & (x[-1] | x[-2])
+        return mask
 
     def __getitem__(self, idx):
         """
@@ -284,11 +308,25 @@ passed in as `batch`.
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask][y > 0]
-                y = y[y > 0]
-                y = torch.from_numpy(
-                    stats.yeojohnson(y.cpu(), lmbda=-0.8397658852658973)
-                ).cuda()
+                y_hat = y_hat_pre[b][c][mask]
+                if self.hparams.round_frp_to_zero:
+                    y_hat = y_hat[y > self.hparams.round_frp_to_zero]
+                    y = y[y > 0.5]
+                if y_hat.nelement() == 0:
+                    return {
+                        "loss": torch.zeros(1, requires_grad=True),
+                        "_log": None,
+                    }
+                y = y[y > 0.5]
+                if self.hparams.transform_frp:
+                    y = torch.from_numpy(
+                        stats.boxcox(
+                            y.cpu()
+                            if y.nelement() > 1
+                            else np.concatenate([y.cpu(), y.cpu() + 1]),
+                            lmbda=-0.8427360417396217,
+                        )
+                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
@@ -325,11 +363,21 @@ passed in as `batch`.
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask][y > 0]
-                y = y[y > 0]
-                y = torch.from_numpy(
-                    stats.yeojohnson(y.cpu(), lmbda=-0.8397658852658973)
-                ).cuda()
+                y_hat = y_hat_pre[b][c][mask]
+                if self.hparams.round_frp_to_zero:
+                    y_hat = y_hat[y > self.hparams.round_frp_to_zero]
+                    y = y[y > 0.5]
+                if y_hat.nelement() == 0:
+                    return {}
+                if self.hparams.transform_frp:
+                    y = torch.from_numpy(
+                        stats.boxcox(
+                            y.cpu()
+                            if y.nelement() > 1
+                            else np.concatenate([y.cpu(), y.cpu() + 1]),
+                            lmbda=-0.8427360417396217,
+                        )
+                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
@@ -372,11 +420,16 @@ passed in as `batch`.
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask][y > 0]
-                y = y[y > 0]
-                y = torch.from_numpy(
-                    inv_boxcox(y_hat.cpu().numpy(), -0.8397658852658973)
-                ).cuda()
+                y_hat = y_hat_pre[b][c][mask]
+                if self.hparams.round_frp_to_zero:
+                    y_hat = y_hat[y > self.hparams.round_frp_to_zero]
+                    y = y[y > 0.5]
+                if y_hat.nelement() == 0:
+                    return {}
+                if self.hparams.transform_frp:
+                    y_hat = torch.from_numpy(
+                        inv_boxcox(y_hat.cpu().numpy(), -0.8427360417396217)
+                    ).cuda()
                 if self.hparams.clip_fwi:
                     y = y[(y_hat < 60) & (0.5 < y_hat)]
                     y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
@@ -389,7 +442,7 @@ passed in as `batch`.
                 assert loss == loss
 
                 # Accuracy for a threshold
-                n_correct_pred = ((y - y_hat).abs() < 0.6959872).float().mean()
+                n_correct_pred = ((y - y_hat).abs() < 0.49710548).float().mean()
                 abs_error = (
                     (y - y_hat).abs().float().mean()
                     if model.hparams.loss == "mae"
