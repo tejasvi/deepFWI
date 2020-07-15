@@ -218,11 +218,14 @@ def str2num(s):
     if isinstance(s, bool):
         return s
     s = str(s)
-    if "." in s or "e-" in s:
+    if "." in s or "e-" in s or "," in s:
         try:
             return float(s)
         except:
-            pass
+            try:
+                return [float(i) for i in s.split(",")]
+            except:
+                pass
     if s.isdigit():
         return int(s)
     elif s == "None":
