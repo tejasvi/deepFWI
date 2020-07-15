@@ -159,7 +159,7 @@ to defaults to None
             parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
-            self.input = ds.load()
+            self.input = ds.sortby("time").load()
 
         with xr.open_mfdataset(
             out_files,
@@ -168,7 +168,7 @@ to defaults to None
             parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
-            self.output = ds.load()
+            self.output = ds.sortby("time").load()
 
         # Ensure timestamp matches for both the input and output
         assert self.output.fwi.time.min(skipna=True) == self.input.rh.time.min(
