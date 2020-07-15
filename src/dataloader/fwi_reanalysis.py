@@ -170,6 +170,10 @@ to defaults to None
         ) as ds:
             self.output = ds.sortby("time").load()
 
+        # Ensure the data timestamp is ordered
+        assert all(self.input.time.values[:-1] < self.input.time.values[1:])
+        assert all(self.output.time.values[:-1] < self.output.time.values[1:])
+
         # Ensure timestamp matches for both the input and output
         assert self.output.fwi.time.min(skipna=True) == self.input.rh.time.min(
             skipna=True
