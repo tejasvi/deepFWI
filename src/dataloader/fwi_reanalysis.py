@@ -232,9 +232,6 @@ to defaults to None
             )
         )
 
-        if self.hparams.binned:
-            self.bin_intervals = [0, 5, 15, 35, 70, 120]
-
     def __getitem__(self, idx):
         """
         Internal method used by pytorch to fetch input and corresponding output tensors.
