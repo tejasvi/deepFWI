@@ -274,7 +274,7 @@ def get_hparams(
         "option",
     ) = 0.11816128080329039,
     binned: (
-        "Show the extended metrics for comma separated binned FWI value range",
+        "Show the extended metrics for supplied comma separated binned FWI value range",
         "option",
     ) = False,
     round_frp_to_zero: (
