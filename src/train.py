@@ -272,7 +272,7 @@ def get_hparams(
         "Apply boxcox transformation with specified lambda while training and the "
         "inverse boxcox transformation during the inference.",
         "option",
-    ) = 0.11816128080329039,
+    ) = False,
     binned: (
         "Show the extended metrics for supplied comma separated binned FWI value range",
         "option",
