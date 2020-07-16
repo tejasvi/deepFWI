@@ -18,7 +18,7 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.loggers import TensorBoardLogger
 import wandb
 
-from train import get_hparams, get_model
+from .train import get_hparams, get_model
 
 # Setting seeds to ensure reproducibility. Setting CUDA to deterministic mode slows down
 # the training.

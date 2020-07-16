@@ -8,6 +8,11 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+import sys
+if '../..' not in sys.path:
+    sys.path.append('../..')
+from data.fwi_limits import *
+
 
 class ModelDataset(Dataset):
     """
@@ -204,8 +209,8 @@ passed in as `batch`.
                 y = y_pre[b][c][mask]
                 y_hat = y_hat_pre[b][c][mask]
                 if self.hparams.clip_fwi:
-                    y = y[(y_hat < 60) & (0.5 < y_hat)]
-                    y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
+                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"

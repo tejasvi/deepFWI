@@ -13,7 +13,40 @@ from scipy.special import inv_boxcox
 import torch
 import torchvision.transforms as transforms
 
-from dataloader.base_loader import ModelDataset as BaseDataset
+from deepFWI.src.dataloader.base_loader import ModelDataset as BaseDataset
+
+import sys
+
+if "../.." not in sys.path:
+    sys.path.append("../..")
+
+from deepFWI.data.frp_stats import (
+    FRP_MEAN,
+    FRP_VAR,
+    BOX_COX_FRP_MEAN,
+    BOX_COX_FRP_VAR,
+    PRE_TRANSFORM_FRP_MAD,
+)
+from deepFWI.data.reanalysis_stats import REANALYSIS_FWI_MAD
+from deepFWI.data.forcing_stats import (
+    FORCING_MEAN_RH,
+    FORCING_MEAN_T2,
+    FORCING_MEAN_TP,
+    FORCING_MEAN_WSPEED,
+    FORCING_STD_RH,
+    FORCING_STD_WSPEED,
+    FORCING_STD_T2,
+    FORCING_STD_TP,
+)
+from deepFWI.data.fwi_limits import LOWER_BOUND_FWI, UPPER_BOUND_FWI
+
+
+# Script Specific Variables
+MIN_CLIPPING_FRP = 0  # To clip the FRP values
+MAX_CLIPPING_FRP = 0.5  # TO clip the FRP Values
+PLACEHOLDER_FRP = (
+    1e-10  # Value to assign to the FRP having values between the above two mentioned
+)
 
 
 class ModelDataset(BaseDataset):
@@ -166,13 +199,15 @@ to defaults to None
             if self.hparams.round_frp_to_zero:
                 # Set values in range (0, `round_to_zero`) to small positive number
                 self.output.frpfire.values[
-                    (self.output.frpfire.values >= 0)
-                    & (self.output.frpfire.values < self.hparams.round_frp_to_zero)
+                    (self.output.frpfire.values >= MIN_CLIPPING_FRP)
+                    & (self.output.frpfire.values < MAX_CLIPPING_FRP)
                 ] = 1e-10
             if self.hparams.isolate_frp:
                 # Setting isolated fire occurrence FRP to -1
                 self.output.frpfire.values[
-                    self.generate_isolated_mask(self.output.frpfire.values > 0)
+                    self.generate_isolated_mask(
+                        self.output.frpfire.values > PLACEHOLDER_FRP
+                    )
                 ] = -1
 
         # Ensure timestamp matches for both the input and output
@@ -194,18 +229,22 @@ to defaults to None
 
         # Mean of output variable used for bias-initialization.
         self.out_mean = (
-            out_mean if out_mean else -0.07325175 if self.hparams.mask else 0.0002138283
+            out_mean
+            if out_mean
+            else BOX_COX_FRP_MEAN
+            if self.hparams.mask
+            else FRP_MEAN
         )
 
         # Variance of output variable used to scale the training loss.
         self.out_var = (
             out_var
             if out_var
-            else 18.819166
+            else REANALYSIS_FWI_MAD
             if self.hparams.loss == "mae"
-            else 0.29613134
+            else BOX_COX_FRP_VAR
             if self.hparams.mask
-            else 0.0012904834002256393
+            else FRP_VAR
         )
 
         self.transform = transforms.Compose(
@@ -217,12 +256,22 @@ to defaults to None
                     [
                         x
                         for i in range(self.n_input)
-                        for x in (72.47605, 279.96622, 2.4548044, 6.4765906,)
+                        for x in (
+                            FORCING_MEAN_RH,
+                            FORCING_MEAN_T2,
+                            FORCING_MEAN_TP,
+                            FORCING_MEAN_WSPEED,
+                        )
                     ],
                     [
                         x
                         for i in range(self.n_input)
-                        for x in (17.7426847, 21.2802498, 6.3852794, 3.69688883,)
+                        for x in (
+                            FORCING_STD_RH,
+                            FORCING_STD_T2,
+                            FORCING_STD_TP,
+                            FORCING_STD_WSPEED,
+                        )
                     ],
                 ),
             ]
@@ -324,7 +373,7 @@ passed in as `batch`.
                             y.cpu()
                             if y.nelement() > 1
                             else np.concatenate([y.cpu(), y.cpu() + 1]),
-                            lmbda=-0.8427360417396217,
+                            lmbda=BOX_COX_LAMBDA,
                         )
                     )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
                 pre_loss = (y_hat - y) ** 2
@@ -375,7 +424,7 @@ passed in as `batch`.
                             y.cpu()
                             if y.nelement() > 1
                             else np.concatenate([y.cpu(), y.cpu() + 1]),
-                            lmbda=-0.8427360417396217,
+                            lmbda=BOX_COX_LAMBDA,
                         )
                     )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
                 pre_loss = (y_hat - y) ** 2
@@ -428,11 +477,11 @@ passed in as `batch`.
                     return {}
                 if self.hparams.transform_frp:
                     y_hat = torch.from_numpy(
-                        inv_boxcox(y_hat.cpu().numpy(), -0.8427360417396217)
+                        inv_boxcox(y_hat.cpu().numpy(), BOX_COX_LAMBDA)
                     ).cuda()
                 if self.hparams.clip_fwi:
-                    y = y[(y_hat < 60) & (0.5 < y_hat)]
-                    y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
+                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"
@@ -442,7 +491,9 @@ passed in as `batch`.
                 assert loss == loss
 
                 # Accuracy for a threshold
-                n_correct_pred = ((y - y_hat).abs() < 0.49710548).float().mean()
+                n_correct_pred = (
+                    ((y - y_hat).abs() < PRE_TRANSFORM_FRP_MAD / 2).float().mean()
+                )
                 abs_error = (
                     (y - y_hat).abs().float().mean()
                     if model.hparams.loss == "mae"
