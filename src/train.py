@@ -277,8 +277,8 @@ def get_hparams(
         "Show the extended metrics for supplied comma separated binned FWI value range",
         "option",
     ) = False,
-    round_frp_to_zero: (
-        "Round off the the values below the specified threshold to zero",
+    round_to_zero: (
+        "Round off the target values below the specified threshold to zero",
         "option",
     ) = 0.5,
     isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = True,
