@@ -257,7 +257,10 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
                     )
                 ).mean()
 
-        self.logger.experiment[0].log(tensorboard_logs)
+        try:
+            self.logger.experiment[0].log(tensorboard_logs)
+        except:
+            log.info("Logger not found, skipping the log step.")
         return {
             "test_loss": avg_loss,
             "log": tensorboard_logs,
