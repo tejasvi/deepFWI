@@ -1,7 +1,7 @@
 # deepFWI: Prediction of Fire Weather Index
 
 ## Getting Started:
-- **Clone this repo**: 
+- **Clone this repo**:
 <br> `git clone https://github.com/wikilimo/deepFWI.git`
 <br> `cd deepFWI`
 
@@ -32,8 +32,8 @@
                [-forcings-dir ${FORCINGS_DIR:-$PWD}]
                [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]
                [-mask dataloader/mask.npy] [-thresh 9.4]
-               [-comment None]`
-               
+               [-comment None]
+
 * The entry point for inference is [src/test.py](src/test.py)
   * **Example Usage**: `python src/test.py [-h]
                [-init-features 16] [-in-days 4] [-out-days 1]
@@ -52,7 +52,7 @@
     `  -h, --help show this help message and exit`
 <pre>    -init-features 16                       Architecture complexity
     -in-days 4                              Number of input days
-    -out-days 1                         Number of output channels
+    -out-days 1                             Number of output days
     -epochs 100                             Number of training epochs
     -learning-rate 0.001                    Maximum learning rate
     -loss mse                               Loss function: mae, mse
@@ -73,15 +73,15 @@
     -mask dataloader/mask.npy               File containing the mask stored as the numpy array
     -thresh 9.4                             Threshold for accuracy: Half of output MAD
     -comment Comment of choice!             Used for logging
-    -save-test-set False                    Save the test-set file names to the specified filepath 
+    -save-test-set False                    Save the test-set file names to the specified filepath
     -checkpoint-file                        Path to the test model checkpoint</pre>
-    
+
+* Code documentation is present in [src/docs.md](src/docs.md). Code walk-through can be found at [Code_Structure_Overview.md](Code_Structure_Overview.md).
+
 * The [src/](src) directory contains the architecture implementation.
   * The [src/dataloader/](src/dataloader) directory contains the implementation specific to the training data.
   * The [src/model/](src/model) directory contains the model implementation.
-  * The [src/base.py](src/base.py) directory has the common implementation used by every model.
 
-* Code documentation is present in [src/docs.md](src/docs.md).
 * The [data/](data) directory contains the Exploratory Data Analysis and Preprocessing required for each dataset demonstrated via Jupyter Notebooks.
   * Forcings data: [data/fwi_global/fwi_forcings.ipynb](data/fwi_global/fwi_forcings.ipynb)
   * Reanalysis data: [data/fwi_global/fwi_reanalysis.ipynb](data/fwi_global/fwi_reanalysis.ipynb)
