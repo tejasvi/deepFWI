@@ -325,7 +325,7 @@ def get_hparams(
     save_test_set: (
         "Save the test-set file names to the specified filepath",
         "option",
-    ) = "dataloader/test_set_reanalysis.pkl",
+    ) = False,
     checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
 ):
     """
