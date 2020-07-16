@@ -64,6 +64,9 @@
     -dry-run False                          Use small amount of data for sanity check
     -case-study False                       Limit the analysis to Australian region (inference only)
     -clip-fwi False                         Limit the analysis to the data points with 0.5 < fwi < 60 (inference only)
+    -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference.
+    -binned False                           Show the extended metrics for supplied comma separated binned FWI value range
+    -round-to-zero False                    Round off the target values below the specified threshold to zero
     -test-set /path/to/pickled/list         Load test-set filenames from specified file instead of random split
     -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered
     -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis
