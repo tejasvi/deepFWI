@@ -2,16 +2,16 @@
 Base Dataset class to work with fwi-forcings data.
 """
 from collections import defaultdict
-
 import numpy as np
-
 import torch
 from torch.utils.data import Dataset
 
 import sys
-if '../..' not in sys.path:
-    sys.path.append('../..')
-from data.fwi_limits import *
+
+if "../.." not in sys.path:
+    sys.path.append("../..")
+
+from deepFWI.data.fwi_reanalysis_stats import LOWER_BOUND_FWI, UPPER_BOUND_FWI
 
 
 class ModelDataset(Dataset):
@@ -64,7 +64,7 @@ defaults to None
         """
         The internal method used to obtain the number of iteration samples.
 
-        :return: The maximum possible interations with the provided data.
+        :return: The maximum possible iterations with the provided data.
         :rtype: int
         """
         return len(self.input.time) - (self.n_input - 1) - (self.n_output - 1)

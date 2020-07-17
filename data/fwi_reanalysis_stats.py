@@ -9,3 +9,7 @@ REANALYSIS_FWI_MAX = 304.7236
 # The variance of FWI reanalysis calculated after applying the
 # box-cox transformation
 PROCESSED_REANALYSIS_FWI_VAR = 10.813191
+
+# Upper and lower bounds for clipping FWI
+LOWER_BOUND_FWI = 0.5
+UPPER_BOUND_FWI = 60

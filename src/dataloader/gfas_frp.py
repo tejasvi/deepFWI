@@ -26,8 +26,17 @@ from deepFWI.data.frp_stats import (
     BOX_COX_FRP_MEAN,
     BOX_COX_FRP_VAR,
     PRE_TRANSFORM_FRP_MAD,
+    MIN_CLIPPING_FRP,
+    MAX_CLIPPING_FRP,
+    PLACEHOLDER_FRP,
 )
-from deepFWI.data.reanalysis_stats import REANALYSIS_FWI_MAD
+
+from deepFWI.data.fwi_reanalysis_stats import (
+    REANALYSIS_FWI_MAD,
+    UPPER_BOUND_FWI,
+    LOWER_BOUND_FWI,
+)
+
 from deepFWI.data.forcing_stats import (
     FORCING_MEAN_RH,
     FORCING_MEAN_T2,
@@ -37,15 +46,6 @@ from deepFWI.data.forcing_stats import (
     FORCING_STD_WSPEED,
     FORCING_STD_T2,
     FORCING_STD_TP,
-)
-from deepFWI.data.fwi_limits import LOWER_BOUND_FWI, UPPER_BOUND_FWI
-
-
-# Script Specific Variables
-MIN_CLIPPING_FRP = 0  # To clip the FRP values
-MAX_CLIPPING_FRP = 0.5  # TO clip the FRP Values
-PLACEHOLDER_FRP = (
-    1e-10  # Value to assign to the FRP having values between the above two mentioned
 )
 
 

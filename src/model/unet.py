@@ -6,7 +6,7 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 
-from model.base_model import BaseModel
+from deepFWI.src.model.base_model import BaseModel
 
 
 class Model(BaseModel):

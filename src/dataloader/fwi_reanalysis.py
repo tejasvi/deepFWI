@@ -18,11 +18,13 @@ import sys
 if "../.." not in sys.path:
     sys.path.append("../..")
 
-from deepFWI.data.reanalysis_stats import (
+from deepFWI.data.fwi_reanalysis_stats import (
     REANALYSIS_FWI_MEAN,
     REANALYSIS_FWI_MAD,
     REANALYSIS_FWI_VAR,
     PROCESSED_REANALYSIS_FWI_VAR,
+    UPPER_BOUND_FWI,
+    LOWER_BOUND_FWI,
 )
 from deepFWI.data.forcing_stats import (
     FORCING_STD_TP,
@@ -34,13 +36,8 @@ from deepFWI.data.forcing_stats import (
     FORCING_MEAN_T2,
     FORCING_MEAN_RH,
 )
-from deepFWI.data.fwi_limits import UPPER_BOUND_FWI, LOWER_BOUND_FWI
 
-# Script Specific variables
-LATITUDE_START_INDEX = 355  # Start index of latitude for case study
-LATITUDE_END_INDEX = 480  # End index of latitude for case study
-LONGITUDE_START_INDEX = 400  # Start index of Longitude for case study
-LONGITUDE_END_INDEX = 550  # End index of longitude for case study
+from deepFWI.data.case_study import Australia
 
 
 class ModelDataset(BaseDataset):
@@ -293,8 +290,8 @@ passed in as `batch`.
         mask = model.data.mask.expand_as(y_pre[0][0])
         if self.hparams.case_study:
             mask = mask[
-                LATITUDE_START_INDEX:LATITUDE_END_INDEX,
-                LONGITUDE_START_INDEX:LONGITUDE_END_INDEX,
+                Australia["LATITUDE_START_INDEX"] : Australia["LATITUDE_END_INDEX"],
+                Australia["LONGITUDE_START_INDEX"] : Australia["LONGITUDE_END_INDEX"],
             ]
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
@@ -303,12 +300,20 @@ passed in as `batch`.
                 y_hat = y_hat_pre[b][c]
                 if self.hparams.case_study:
                     y = y[
-                        LATITUDE_START_INDEX:LATITUDE_END_INDEX,
-                        LONGITUDE_START_INDEX:LONGITUDE_END_INDEX,
+                        Australia["LATITUDE_START_INDEX"] : Australia[
+                            "LATITUDE_END_INDEX"
+                        ],
+                        Australia["LONGITUDE_START_INDEX"] : Australia[
+                            "LONGITUDE_END_INDEX"
+                        ],
                     ][mask]
                     y_hat = y_hat[
-                        LATITUDE_START_INDEX:LATITUDE_END_INDEX,
-                        LONGITUDE_START_INDEX:LONGITUDE_END_INDEX,
+                        Australia["LATITUDE_START_INDEX"] : Australia[
+                            "LATITUDE_END_INDEX"
+                        ],
+                        Australia["LONGITUDE_START_INDEX"] : Australia[
+                            "LONGITUDE_END_INDEX"
+                        ],
                     ][mask]
                 else:
                     y = y[mask]
