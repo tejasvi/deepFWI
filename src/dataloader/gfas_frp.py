@@ -26,12 +26,6 @@ from data.frp_stats import (
     PLACEHOLDER_FRP,
 )
 
-from data.fwi_reanalysis_stats import (
-    REANALYSIS_FWI_MAD,
-    UPPER_BOUND_FWI,
-    LOWER_BOUND_FWI,
-)
-
 from data.forcing_stats import (
     FORCING_MEAN_RH,
     FORCING_MEAN_T2,
