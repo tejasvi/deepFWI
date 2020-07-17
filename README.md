@@ -2,7 +2,7 @@
 
 ## Getting Started:
 - **Clone this repo**:
-<br> `git clone https://github.com/wikilimo/git`
+<br> `git clone https://github.com/wikilimo/deepFWI`
 <br> `cd deepFWI`
 
 * **Install dependencies**: To create the environment, run
