@@ -8,14 +8,9 @@ import xarray as xr
 import torch
 import torchvision.transforms as transforms
 
-from deepFWI.src.dataloader.base_loader import ModelDataset as BaseDataset
+from src.dataloader.base_loader import ModelDataset as BaseDataset
 
-import sys
-
-if "../.." not in sys.path:
-    sys.path.append("../..")
-
-from deepFWI.data.forecast_stats import (
+from data.forecast_stats import (
     FORECAST_FWI_MAD,
     FORECAST_FWI_MEAN,
     FORECAST_FWI_VAR,

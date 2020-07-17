@@ -12,6 +12,7 @@ import importlib
 import plac
 import time
 import signal
+import sys
 
 import numpy as np
 import torch
@@ -178,6 +179,7 @@ def get_model(hparams):
     :return: Model with the linked data.
     :rtype: Model
     """
+    sys.path.append("../", ".")
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
