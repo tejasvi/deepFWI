@@ -17,3 +17,9 @@
 * [unet_downsampled.py](src/model/unet_downsampled.py) modifies the unet [model](src/model/unet.py) by downsampling the output to match with the resolution of fwi-reanalysis.
 * [unet_snipped.py](src/model/unet_lite.py) modifies the unet [model](src/model/unet.py) by removing the up-sampling layers once activation resolution matches with the resolution of fwi-reanalysis.
 * [unet_tapered.py](src/model/unet_tapered.py) similar to [unet_snipped](src/model/unet_lite.py) modifies the unet [model](src/model/unet.py) by removing the up-sampling layers once activation resolution becomes 1/4th the resolution of input. After the removal, feature compression layers are added which keep the resolution constant all along. The layers in the tapered end additionally have skip connections similar to [DenseNet](https://arxiv.org/abs/1608.06993).
+
+### Unet architecture
+![](./docs/source/_static/unet.svg)
+
+### Unet-tapered architecture
+![](./docs/source/_static/unet_tapered.svg)
