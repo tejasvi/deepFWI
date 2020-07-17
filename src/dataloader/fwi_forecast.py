@@ -8,7 +8,18 @@ import xarray as xr
 import torch
 import torchvision.transforms as transforms
 
-from dataloader.base_loader import ModelDataset as BaseDataset
+from deepFWI.src.dataloader.base_loader import ModelDataset as BaseDataset
+
+import sys
+
+if "../.." not in sys.path:
+    sys.path.append("../..")
+
+from deepFWI.data.forecast_stats import (
+    FORECAST_FWI_MAD,
+    FORECAST_FWI_MEAN,
+    FORECAST_FWI_VAR,
+)
 
 
 class ModelDataset(BaseDataset):
@@ -112,11 +123,15 @@ class ModelDataset(BaseDataset):
         self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
 
         # Mean of output variable used for bias-initialization.
-        self.out_mean = out_mean if out_mean else 18.389227
+        self.out_mean = out_mean if out_mean else FORECAST_FWI_MEAN
 
         # Variance of output variable used to scale the training loss.
         self.out_var = (
-            out_var if out_var else 20.80943 if self.hparams.loss == "mae" else 716.1736
+            out_var
+            if out_var
+            else FORECAST_FWI_MAD
+            if self.hparams.loss == "mae"
+            else FORECAST_FWI_VAR
         )
 
         # Input transforms including mean and std normalization

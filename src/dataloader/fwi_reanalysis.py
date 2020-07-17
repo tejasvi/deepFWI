@@ -17,6 +17,28 @@ from dataloader.base_loader import ModelDataset as BaseDataset
 from pytorch_lightning import _logger as log
 
 
+from data.fwi_reanalysis_stats import (
+    REANALYSIS_FWI_MEAN,
+    REANALYSIS_FWI_MAD,
+    REANALYSIS_FWI_VAR,
+    PROCESSED_REANALYSIS_FWI_VAR,
+    UPPER_BOUND_FWI,
+    LOWER_BOUND_FWI,
+)
+from data.forcing_stats import (
+    FORCING_STD_TP,
+    FORCING_STD_T2,
+    FORCING_STD_WSPEED,
+    FORCING_STD_RH,
+    FORCING_MEAN_WSPEED,
+    FORCING_MEAN_TP,
+    FORCING_MEAN_T2,
+    FORCING_MEAN_RH,
+)
+
+from data.case_study import Australia
+
+
 class ModelDataset(BaseDataset):
     """
     The dataset class responsible for loading the data and providing the samples for \
@@ -199,17 +221,17 @@ to defaults to None
         ).cuda()
 
         # Mean of output variable used for bias-initialization.
-        self.out_mean = out_mean if out_mean else 0.6757456
+        self.out_mean = out_mean if out_mean else REANALYSIS_FWI_MEAN
 
         # Variance of output variable used to scale the training loss.
         self.out_var = (
             out_var
             if out_var
-            else 18.819166
+            else REANALYSIS_FWI_MAD
             if self.hparams.loss == "mae"
-            else 10.813191
+            else PROCESSED_REANALYSIS_FWI_VAR
             if self.hparams.mask
-            else 10.813191
+            else REANALYSIS_FWI_VAR
         )
 
         # Input transforms including mean and std normalization
@@ -225,12 +247,22 @@ to defaults to None
                         [
                             x
                             for i in range(self.n_input)
-                            for x in (72.47605, 279.96622, 2.4548044, 6.4765906,)
+                            for x in (
+                                FORCING_MEAN_RH,
+                                FORCING_MEAN_T2,
+                                FORCING_MEAN_TP,
+                                FORCING_MEAN_WSPEED,
+                            )
                         ],
                         [
                             x
                             for i in range(self.n_input)
-                            for x in (17.7426847, 21.2802498, 6.3852794, 3.69688883,)
+                            for x in (
+                                FORCING_STD_RH,
+                                FORCING_STD_T2,
+                                FORCING_STD_TP,
+                                FORCING_STD_WSPEED,
+                            )
                         ],
                     ),
                 ]
@@ -384,15 +416,32 @@ passed in as `batch`.
         y_hat_pre, _ = model(x) if model.aux else model(x), None
         mask = model.data.mask.expand_as(y_pre[0][0])
         if self.hparams.case_study:
-            mask = mask[355:480, 400:550]
+            mask = mask[
+                Australia["LATITUDE_START_INDEX"] : Australia["LATITUDE_END_INDEX"],
+                Australia["LONGITUDE_START_INDEX"] : Australia["LONGITUDE_END_INDEX"],
+            ]
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c]
                 y_hat = y_hat_pre[b][c]
                 if self.hparams.case_study:
-                    y = y[355:480, 400:550][mask]
-                    y_hat = y_hat[355:480, 400:550][mask]
+                    y = y[
+                        Australia["LATITUDE_START_INDEX"] : Australia[
+                            "LATITUDE_END_INDEX"
+                        ],
+                        Australia["LONGITUDE_START_INDEX"] : Australia[
+                            "LONGITUDE_END_INDEX"
+                        ],
+                    ][mask]
+                    y_hat = y_hat[
+                        Australia["LATITUDE_START_INDEX"] : Australia[
+                            "LATITUDE_END_INDEX"
+                        ],
+                        Australia["LONGITUDE_START_INDEX"] : Australia[
+                            "LONGITUDE_END_INDEX"
+                        ],
+                    ][mask]
                 else:
                     y = y[mask]
                     y_hat = y_hat[mask]
@@ -401,8 +450,8 @@ passed in as `batch`.
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).cuda()
                 if self.hparams.clip_fwi:
-                    y = y[(y_hat < 60) & (0.5 < y_hat)]
-                    y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
+                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"

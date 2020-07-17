@@ -4,7 +4,6 @@ Base model implementing helper methods.
 import pickle
 from collections import defaultdict
 
-
 import torch
 from torch import optim
 from torch.utils.data import DataLoader

@@ -2,11 +2,11 @@
 Base Dataset class to work with fwi-forcings data.
 """
 from collections import defaultdict
-
 import numpy as np
-
 import torch
 from torch.utils.data import Dataset
+
+from deepFWI.data.fwi_reanalysis_stats import LOWER_BOUND_FWI, UPPER_BOUND_FWI
 
 
 class ModelDataset(Dataset):
@@ -59,7 +59,7 @@ defaults to None
         """
         The internal method used to obtain the number of iteration samples.
 
-        :return: The maximum possible interations with the provided data.
+        :return: The maximum possible iterations with the provided data.
         :rtype: int
         """
         return len(self.input.time) - (self.n_input - 1) - (self.n_output - 1)
@@ -214,9 +214,8 @@ passed in as `batch`.
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).cuda()
                 if self.hparams.clip_fwi:
-                    y = y[(y_hat < 60) & (0.5 < y_hat)]
-                    y_hat = y_hat[(y_hat < 60) & (0.5 < y_hat)]
-
+                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"

@@ -2,7 +2,7 @@
 
 ## Getting Started:
 - **Clone this repo**:
-<br> `git clone https://github.com/wikilimo/deepFWI.git`
+<br> `git clone https://github.com/wikilimo/git`
 <br> `cd deepFWI`
 
 * **Install dependencies**: To create the environment, run
@@ -12,7 +12,7 @@
     >The setup is tested on Ubuntu 18.04 only and will not work on any non-Linux systems. See [this](https://github.com/conda/conda/issues/7311) issue for further details.
 ## Running Inference
 * **Quick example**:<br>
-  The [inference.ipynb](examples/inference.ipynb) demonstrates the end-to-end procedure of loading data, creating model from saved checkpoint, and getting the predictions.
+  The [inference_2_1.ipynb](examples/inference_2_1.ipynb) and [inference_4_10.ipynb](examples/inference_4_10.ipynb) notebooks demonstrate the end-to-end procedure of loading data, creating model from saved checkpoint, and getting the predictions for 2 day input, 1 day output; and 4 day input, 10 day output experiments respectively.
 * **Testing data**:<br>
   Ensure the access to fwi-forcings and fwi-reanalysis data.
 * **Obtain pre-trained model**:<br>
@@ -32,7 +32,7 @@
                [-forcings-dir ${FORCINGS_DIR:-$PWD}]
                [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]
                [-mask dataloader/mask.npy] [-thresh 9.4]
-               [-comment None]
+               [-comment None]`
 
 * The entry point for inference is [src/test.py](src/test.py)
   * **Example Usage**: `python src/test.py [-h]
@@ -68,7 +68,7 @@
     -binned False                           Show the extended metrics for supplied comma separated binned FWI value range
     -round-to-zero False                    Round off the target values below the specified threshold to zero
     -test-set /path/to/pickled/list         Load test-set filenames from specified file instead of random split
-    -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered
+    -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered, unet_interpolated
     -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis
     -forecast-dir ${FORECAST_DIR:-$PWD}     Directory containing forecast data. Alternatively set $FORECAST_DIR
     -forcings-dir ${FORCINGS_DIR:-$PWD}     Directory containing forcings data. Alternatively set $FORCINGS_DIR
@@ -84,8 +84,11 @@
 * The [src/](src) directory contains the architecture implementation.
   * The [src/dataloader/](src/dataloader) directory contains the implementation specific to the training data.
   * The [src/model/](src/model) directory contains the model implementation.
+  * The [src/model/base_model.py](src/model/base_model.py) script has the common implementation used by every model.
 
-* The [data/](data) directory contains the Exploratory Data Analysis and Preprocessing required for each dataset demonstrated via Jupyter Notebooks.
-  * Forcings data: [data/fwi_global/fwi_forcings.ipynb](data/fwi_global/fwi_forcings.ipynb)
-  * Reanalysis data: [data/fwi_global/fwi_reanalysis.ipynb](data/fwi_global/fwi_reanalysis.ipynb)
-  * Forecast data: [data//fwi_global/fwi_forecast.ipynb](data/fwi_global/fwi_forecast.ipynb)
+* Code documentation is present in [src/docs.md](src/docs.md).
+* The [data/EDA/](data/EDA/) directory contains the Exploratory Data Analysis and Preprocessing required for each dataset demonstrated via Jupyter Notebooks.
+  * Forcings data: [data/EDA/fwi_forcings.ipynb](data/EDA/fwi_forcings.ipynb)
+  * Reanalysis data: [data/EDA/fwi_reanalysis.ipynb](data/EDA/fwi_reanalysis.ipynb)
+  * Forecast data: [data/EDA/fwi_forecast.ipynb](data/EDA/fwi_forecast.ipynb)
+  * FRP data: [data/EDA/frp.ipynb](data/EDA/frp.ipynb)
