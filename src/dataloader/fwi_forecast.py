@@ -70,6 +70,8 @@ class ModelDataset(BaseDataset):
             **kwargs,
         )
 
+        self.hparams.thresh = FORECAST_FWI_MAD / 2
+
         # Consider only ground truth and discard forecast values
         preprocess = lambda x: x.isel(time=slice(0, 1))
 
