@@ -31,7 +31,7 @@
                [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
                [-forcings-dir ${FORCINGS_DIR:-$PWD}]
                [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]
-               [-mask dataloader/mask.npy] [-thresh 9.4]
+               [-mask dataloader/mask.npy]
                [-comment None]`
 
 * The entry point for inference is [src/test.py](src/test.py)
@@ -43,7 +43,7 @@
                [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
                [-forcings-dir ${FORCINGS_DIR:-$PWD}]
                [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]
-               [-mask dataloader/mask.npy] [-thresh 9.4]
+               [-mask dataloader/mask.npy]
                [-comment None] [-checkpoint-file]`
 
 * **Configuration Details**:
@@ -74,7 +74,6 @@
     -forcings-dir ${FORCINGS_DIR:-$PWD}     Directory containing forcings data. Alternatively set $FORCINGS_DIR
     -reanalysis-dir ${REANALYSIS_DIR:-$PWD} Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR
     -mask dataloader/mask.npy               File containing the mask stored as the numpy array
-    -thresh 9.4                             Threshold for accuracy: Half of output MAD
     -comment Comment of choice!             Used for logging
     -save-test-set False                    Save the test-set file names to the specified filepath
     -checkpoint-file                        Path to the test model checkpoint</pre>

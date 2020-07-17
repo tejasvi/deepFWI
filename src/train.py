@@ -320,7 +320,6 @@ def get_hparams(
         "Load test-set filenames from specified file instead of random split",
         "option",
     ) = False,
-    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 9.4095775,
     comment: ("Used for logging", "option") = "FRP 0 clipping, box cox",
     #
     # Test run
