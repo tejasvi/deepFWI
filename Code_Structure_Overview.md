@@ -25,4 +25,4 @@ The [model](src/model) directory contains modules related to objective functions
 ![](./docs/source/_static/unet_tapered.svg)
 
 ### U-net-interpolated architecture (used for predicting FRP)
-(TODO)
+![](./docs/source/_static/unet_interpolated.svg)
