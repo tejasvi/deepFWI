@@ -8,14 +8,9 @@ import xarray as xr
 import torch
 import torchvision.transforms as transforms
 
-from deepFWI.src.dataloader.base_loader import ModelDataset as BaseDataset
+from src.dataloader.base_loader import ModelDataset as BaseDataset
 
-import sys
-
-if "../.." not in sys.path:
-    sys.path.append("../..")
-
-from deepFWI.data.forecast_stats import (
+from data.forecast_stats import (
     FORECAST_FWI_MAD,
     FORECAST_FWI_MEAN,
     FORECAST_FWI_VAR,
@@ -74,6 +69,8 @@ class ModelDataset(BaseDataset):
             hparams=hparams,
             **kwargs,
         )
+
+        self.hparams.thresh = FORECAST_FWI_MAD / 2
 
         # Consider only ground truth and discard forecast values
         preprocess = lambda x: x.isel(time=slice(0, 1))

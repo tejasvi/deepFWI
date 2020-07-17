@@ -7,18 +7,17 @@ import pickle
 
 import xarray as xr
 import numpy as np
+from scipy.stats import boxcox
+from scipy.special import inv_boxcox
 
 import torch
 import torchvision.transforms as transforms
 
-from .base_loader import ModelDataset as BaseDataset
+from dataloader.base_loader import ModelDataset as BaseDataset
+from pytorch_lightning import _logger as log
 
-import sys
 
-if "../.." not in sys.path:
-    sys.path.append("../..")
-
-from deepFWI.data.fwi_reanalysis_stats import (
+from data.fwi_reanalysis_stats import (
     REANALYSIS_FWI_MEAN,
     REANALYSIS_FWI_MAD,
     REANALYSIS_FWI_VAR,
@@ -26,7 +25,7 @@ from deepFWI.data.fwi_reanalysis_stats import (
     UPPER_BOUND_FWI,
     LOWER_BOUND_FWI,
 )
-from deepFWI.data.forcing_stats import (
+from data.forcing_stats import (
     FORCING_STD_TP,
     FORCING_STD_T2,
     FORCING_STD_WSPEED,
@@ -37,7 +36,7 @@ from deepFWI.data.forcing_stats import (
     FORCING_MEAN_RH,
 )
 
-from deepFWI.data.case_study import Australia
+from data.case_study import Australia
 
 
 class ModelDataset(BaseDataset):
@@ -99,6 +98,7 @@ to defaults to None
         ), "The number of input and output days must be > 0."
         self.n_input = self.hparams.in_days
         self.n_output = self.hparams.out_days
+        self.hparams.thresh = REANALYSIS_FWI_MAD / 2
 
         # Generate the list of all valid files in the specified directories
         get_inp_time = (
@@ -180,7 +180,7 @@ to defaults to None
             parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
-            self.input = ds.load()
+            self.input = ds.sortby("time").load()
 
         with xr.open_mfdataset(
             out_files,
@@ -189,7 +189,11 @@ to defaults to None
             parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
-            self.output = ds.load()
+            self.output = ds.sortby("time").load()
+
+        # Ensure the data timestamp is ordered
+        assert all(self.input.time.values[:-1] < self.input.time.values[1:])
+        assert all(self.output.time.values[:-1] < self.output.time.values[1:])
 
         # Ensure timestamp matches for both the input and output
         assert self.output.fwi.time.min(skipna=True) == self.input.rh.time.min(
@@ -200,28 +204,18 @@ to defaults to None
         )
         assert len(self.input.time) == len(self.output.time)
 
+        self.min_date = self.input.rh.time.min().values
+
         log.info(
             f"Start date: {self.output.fwi.time.min(skipna=True)}",
             f"\nEnd date: {self.output.fwi.time.max(skipna=True)}",
         )
 
         # Loading the mask for output variable if provided as generating from NaN mask
-        self.mask = (
-            torch.nn.functional.max_pool2d(
-                (
-                    ~torch.from_numpy(
-                        np.load(self.hparams.mask)
-                        if self.hparams.mask
-                        else ~np.isnan(self.output["fwi"][0].values)
-                    )
-                )
-                .unsqueeze(0)
-                .float(),
-                kernel_size=3,
-                stride=1,
-                padding=1,
-            ).squeeze()
-            == 0
+        self.mask = torch.from_numpy(
+            np.load(self.hparams.mask)
+            if self.hparams.mask
+            else ~np.isnan(self.output["fwi"][0].values)
         ).cuda()
 
         # Mean of output variable used for bias-initialization.
@@ -273,6 +267,137 @@ to defaults to None
             )
         )
 
+    def __getitem__(self, idx):
+        """
+        Internal method used by pytorch to fetch input and corresponding output tensors.
+
+        :param idx: The index number of data sample.
+        :type idx: int
+        :return: Batch of data containing input and output tensors
+        :rtype: tuple
+        """
+
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        X = np.stack(
+            [
+                self.input[v].sel(time=self.min_date + np.timedelta64(idx + i, "D"))
+                for i in range(self.n_input)
+                for v in ["rh", "t2", "tp", "wspeed"]
+            ],
+            axis=-1,
+        )
+        y = torch.from_numpy(
+            np.stack(
+                [
+                    self.output["fwi"]
+                    .sel(
+                        time=self.min_date
+                        + np.timedelta64(idx + self.n_input - 1 + i, "D")
+                    )
+                    .values
+                    for i in range(self.n_output)
+                ],
+                axis=0,
+            )
+        )
+
+        if self.transform:
+            X = self.transform(X)
+
+        return X, y
+
+    def training_step(self, model, batch):
+        """
+        Called inside the training loop with the data from the training dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+
+        # forward pass
+        x, y_pre = batch
+        y_hat_pre = model(x)
+        mask = model.data.mask.expand_as(y_pre[0][0])
+        assert y_pre.shape == y_hat_pre.shape
+        tensorboard_logs = defaultdict(dict)
+        for b in range(y_pre.shape[0]):
+            for c in range(y_pre.shape[1]):
+                y = y_pre[b][c][mask]
+                if self.hparams.boxcox:
+                    y = torch.from_numpy(
+                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
+                    ).cuda()
+                y_hat = y_hat_pre[b][c][mask]
+                pre_loss = (y_hat - y) ** 2
+                loss = pre_loss.mean()
+                assert loss == loss
+                tensorboard_logs["train_loss_unscaled"][str(c)] = loss
+        loss = torch.stack(
+            list(tensorboard_logs["train_loss_unscaled"].values())
+        ).mean()
+        tensorboard_logs["_train_loss_unscaled"] = loss
+        # model.logger.log_metrics(tensorboard_logs)
+        return {
+            "loss": loss.true_divide(model.data.out_var * model.data.n_output),
+            "_log": tensorboard_logs,
+        }
+
+    def validation_step(self, model, batch):
+        """
+        Called inside the validation loop with the data from the validation dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+
+        # forward pass
+        x, y_pre = batch
+        y_hat_pre = model(x)
+        mask = model.data.mask.expand_as(y_pre[0][0])
+        assert y_pre.shape == y_hat_pre.shape
+        tensorboard_logs = defaultdict(dict)
+        for b in range(y_pre.shape[0]):
+            for c in range(y_pre.shape[1]):
+                y = y_pre[b][c][mask]
+                if self.hparams.boxcox:
+                    y = torch.from_numpy(
+                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
+                    ).cuda()
+                y_hat = y_hat_pre[b][c][mask]
+                pre_loss = (y_hat - y) ** 2
+                loss = pre_loss.mean()
+                assert loss == loss
+
+                # Accuracy for a threshold
+                n_correct_pred = (
+                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
+                )
+                abs_error = (y - y_hat).abs().float().mean()
+
+                tensorboard_logs["val_loss"][str(c)] = loss
+                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
+                tensorboard_logs["abs_error"][str(c)] = abs_error
+
+        val_loss = torch.stack(list(tensorboard_logs["val_loss"].values())).mean()
+        tensorboard_logs["_val_loss"] = val_loss
+        # model.logger.log_metrics(tensorboard_logs)
+        return {
+            "val_loss": val_loss,
+            "log": tensorboard_logs,
+        }
+
     def test_step(self, model, batch):
         """
         Called inside the testing loop with the data from the testing dataloader \
@@ -318,6 +443,10 @@ passed in as `batch`.
                 else:
                     y = y[mask]
                     y_hat = y_hat[mask]
+                if self.hparams.boxcox:
+                    y_hat = torch.from_numpy(
+                        inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
+                    ).cuda()
                 if self.hparams.clip_fwi:
                     y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
                     y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
@@ -326,22 +455,61 @@ passed in as `batch`.
                     if model.hparams.loss == "mae"
                     else (y_hat - y) ** 2
                 )
-                loss = pre_loss.mean()
-                assert loss == loss
+
+                loss = lambda low, high: pre_loss[(y > low) & (y <= high)].mean()
+                assert loss(y.min(), y.max()) == loss(y.min(), y.max())
 
                 # Accuracy for a threshold
                 n_correct_pred = (
-                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
-                )
-                abs_error = (
-                    (y - y_hat).abs().float().mean()
-                    if model.hparams.loss == "mae"
-                    else (y - y_hat).abs().float().mean()
+                    lambda low, high: (
+                        (y - y_hat)[(y > low) & (y <= high)].abs()
+                        < model.hparams.thresh
+                    )
+                    .float()
+                    .mean()
                 )
 
-                tensorboard_logs["test_loss"][str(c)] = loss
-                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
-                tensorboard_logs["abs_error"][str(c)] = abs_error
+                # Mean absolute error
+                abs_error = (
+                    lambda low, high: (y - y_hat)[(y > low) & (y <= high)]
+                    .abs()
+                    .float()
+                    .mean()
+                    if model.hparams.loss == "mae"
+                    else (y - y_hat)[(y > low) & (y <= high)].abs().float().mean()
+                )
+
+                tensorboard_logs["test_loss"][str(c)] = loss(y.min(), y.max())
+                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred(
+                    y.min(), y.max()
+                )
+                tensorboard_logs["abs_error"][str(c)] = abs_error(y.min(), y.max())
+
+                # Inference on binned values
+                if self.hparams.binned:
+                    for i in range(len(self.bin_intervals) - 1):
+                        low, high = (
+                            self.bin_intervals[i],
+                            self.bin_intervals[i + 1],
+                        )
+                        tensorboard_logs[f"test_loss_{low}_{high}"][str(c)] = loss(
+                            low, high
+                        )
+                        tensorboard_logs[f"n_correct_pred_{low}_{high}"][
+                            str(c)
+                        ] = n_correct_pred(low, high)
+                        tensorboard_logs[f"abs_error_{low}_{high}"][str(c)] = abs_error(
+                            low, high
+                        )
+                    tensorboard_logs[f"test_loss_{self.bin_intervals[-1]}_max"][
+                        str(c)
+                    ] = loss(self.bin_intervals[-1], y.max())
+                    tensorboard_logs[f"n_correct_pred_{self.bin_intervals[-1]}_max"][
+                        str(c)
+                    ] = n_correct_pred(self.bin_intervals[-1], y.max())
+                    tensorboard_logs[f"abs_error_{self.bin_intervals[-1]}_max"][
+                        str(c)
+                    ] = abs_error(self.bin_intervals[-1], y.max())
 
         test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
         tensorboard_logs["_test_loss"] = test_loss

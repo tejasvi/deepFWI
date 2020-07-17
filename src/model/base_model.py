@@ -157,24 +157,109 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Loss and logs.
         :rtype: dict
         """
-        if outputs == [{}] * len(outputs):
-            return {}
-        avg_loss = torch.stack([x["test_loss"] for x in outputs if x]).mean()
+        rm_none = lambda x: [t for t in x if not torch.isnan(t).any()]
+        avg_loss = torch.stack(rm_none([x["test_loss"] for x in outputs])).mean()
 
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["test_loss"] = avg_loss
 
         for n in range(self.data.n_output):
             tensorboard_logs[f"test_loss_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["test_loss"] for x in outputs if x]]
+                rm_none([d[str(n)] for d in [x["log"]["test_loss"] for x in outputs]])
             ).mean()
             tensorboard_logs[f"test_acc_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs if x]]
+                rm_none(
+                    [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
+                )
             ).mean()
             tensorboard_logs[f"abs_error_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs if x]]
+                rm_none([d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]])
             ).mean()
 
+            # Inference on binned values
+            if self.hparams.binned:
+                for i in range(len(self.data.bin_intervals) - 1):
+                    low, high = (
+                        self.data.bin_intervals[i],
+                        self.data.bin_intervals[i + 1],
+                    )
+                    tensorboard_logs[f"test_loss_{low}_{high}_{n}"] = torch.stack(
+                        rm_none(
+                            [
+                                d[str(n)]
+                                for d in [
+                                    x["log"][f"test_loss_{low}_{high}"] for x in outputs
+                                ]
+                            ]
+                        )
+                    ).mean()
+                    tensorboard_logs[f"test_acc_{low}_{high}_{n}"] = torch.stack(
+                        rm_none(
+                            [
+                                d[str(n)]
+                                for d in [
+                                    x["log"][f"n_correct_pred_{low}_{high}"]
+                                    for x in outputs
+                                ]
+                            ]
+                        )
+                    ).mean()
+                    tensorboard_logs[f"abs_error_{low}_{high}_{n}"] = torch.stack(
+                        rm_none(
+                            [
+                                d[str(n)]
+                                for d in [
+                                    x["log"][f"abs_error_{low}_{high}"] for x in outputs
+                                ]
+                            ]
+                        )
+                    ).mean()
+                tensorboard_logs[
+                    f"test_loss_{self.data.bin_intervals[-1]}_max_{n}"
+                ] = torch.stack(
+                    rm_none(
+                        [
+                            d[str(n)]
+                            for d in [
+                                x["log"][f"test_loss_{self.data.bin_intervals[-1]}_max"]
+                                for x in outputs
+                            ]
+                        ]
+                    )
+                ).mean()
+                tensorboard_logs[
+                    f"test_acc_{self.data.bin_intervals[-1]}_max_{n}"
+                ] = torch.stack(
+                    rm_none(
+                        [
+                            d[str(n)]
+                            for d in [
+                                x["log"][
+                                    f"n_correct_pred_{self.data.bin_intervals[-1]}_max"
+                                ]
+                                for x in outputs
+                            ]
+                        ]
+                    )
+                ).mean()
+                tensorboard_logs[
+                    f"abs_error_{self.data.bin_intervals[-1]}_max_{n}"
+                ] = torch.stack(
+                    rm_none(
+                        [
+                            d[str(n)]
+                            for d in [
+                                x["log"][f"abs_error_{self.data.bin_intervals[-1]}_max"]
+                                for x in outputs
+                            ]
+                        ]
+                    )
+                ).mean()
+
+        try:
+            self.logger.experiment[0].log(tensorboard_logs)
+        except:
+            log.info("Logger not found, skipping the log step.")
         return {
             "test_loss": avg_loss,
             "log": tensorboard_logs,
@@ -268,13 +353,6 @@ on second call determined by the `force` parameter.
                         len(self.data) - len(self.data) * 8 // 10,
                     ],
                 )
-            if self.hparams.case_study and not self.hparams.test_set:
-                assert (
-                    max(self.test_data.indices) > 214
-                ), "The data is outside the range of case study"
-                self.test_data.indices = list(
-                    set(self.test_data.indices) & set(range(214, 335))
-                )
 
             # Saving list of test-set files
             if self.hparams.save_test_set:
@@ -293,13 +371,21 @@ on second call determined by the `force` parameter.
                         ],
                         f,
                     )
-            print()
+            log.info(self.test_data.indices, self.data.inp_files, self.data.out_files)
 
             # Log test indices regardless
             log.info(self.test_data.indices)
 
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
+
+        if self.hparams.case_study and not self.hparams.test_set:
+            assert (
+                max(self.test_data.indices) > 214
+            ), "The data is outside the range of case study"
+            self.test_data.indices = list(
+                set(self.test_data.indices) & set(range(214, 335))
+            )
 
     def train_dataloader(self):
         """

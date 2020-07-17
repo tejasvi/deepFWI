@@ -12,6 +12,7 @@ import importlib
 import plac
 import time
 import signal
+import sys
 
 import numpy as np
 import torch
@@ -178,6 +179,7 @@ def get_model(hparams):
     :return: Model with the linked data.
     :rtype: Model
     """
+    sys.path.append("../", ".")
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
@@ -218,11 +220,14 @@ def str2num(s):
     if isinstance(s, bool):
         return s
     s = str(s)
-    if "." in s or "e-" in s:
+    if "." in s or "e-" in s or "," in s:
         try:
             return float(s)
         except:
-            pass
+            try:
+                return [float(i) for i in s.split(",")]
+            except:
+                pass
     if s.isdigit():
         return int(s)
     elif s == "None":
@@ -238,7 +243,7 @@ def str2num(s):
 def get_hparams(
     #
     # U-Net config
-    init_features: ("Architecture complexity", "option") = 10,
+    init_features: ("Architecture complexity", "option") = 16,
     in_days: ("Number of input days", "option") = 2,
     out_days: ("Number of output days", "option") = 1,
     #
@@ -265,8 +270,17 @@ def get_hparams(
         "Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)",
         "option",
     ) = False,
-    round_frp_to_zero: (
-        "Round off the the values below the specified threshold to zero",
+    boxcox: (
+        "Apply boxcox transformation with specified lambda while training and the "
+        "inverse boxcox transformation during the inference.",
+        "option",
+    ) = False,
+    binned: (
+        "Show the extended metrics for supplied comma separated binned FWI value range",
+        "option",
+    ) = False,
+    round_to_zero: (
+        "Round off the target values below the specified threshold to zero",
         "option",
     ) = 0.5,
     isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = True,
@@ -277,11 +291,11 @@ def get_hparams(
         "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered,"
         " unet_interpolated",
         "option",
-    ) = "unet_interpolated",
+    ) = "unet_tapered",
     out: (
         "Output data for training: fwi_forecast or fwi_reanalysis or gfas_frp",
         "option",
-    ) = "gfas_frp",
+    ) = "fwi_reanalysis",
     forecast_dir: (
         "Directory containing the forecast data. Alternatively set $FORECAST_DIR",
         "option",
@@ -301,19 +315,18 @@ def get_hparams(
     mask: (
         "File containing the mask stored as the numpy array",
         "option",
-    ) = "dataloader/mask_frp.npy",
+    ) = "dataloader/mask_reanalysis.npy",
     test_set: (
         "Load test-set filenames from specified file instead of random split",
         "option",
     ) = False,
-    thresh: ("Threshold for accuracy: Half of output MAD", "option") = 0.232943,
     comment: ("Used for logging", "option") = "FRP 0 clipping, box cox",
     #
     # Test run
     save_test_set: (
         "Save the test-set file names to the specified filepath",
         "option",
-    ) = "dataloader/test_set_frp.pkl",
+    ) = False,
     checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
 ):
     """

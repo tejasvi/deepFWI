@@ -4,7 +4,7 @@ U-Net model tapered at the end for low res output.
 import torch
 import torch.nn as nn
 
-from deepFWI.src.model.unet import Model as BaseModel
+from src.model.unet import Model as BaseModel
 
 
 class Model(BaseModel):

@@ -47,7 +47,7 @@ def main(hparams):
     model.load_state_dict(torch.load(hparams.checkpoint_file)["state_dict"])
     model.eval()
 
-    name = "-".join([hparams.model, hparams.out, "-test"])
+    name = "-".join([hparams.model, hparams.out, "test"])
 
     # ------------------------
     # LOGGING SETUP

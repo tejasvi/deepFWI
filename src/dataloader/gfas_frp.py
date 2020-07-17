@@ -13,14 +13,9 @@ from scipy.special import inv_boxcox
 import torch
 import torchvision.transforms as transforms
 
-from deepFWI.src.dataloader.base_loader import ModelDataset as BaseDataset
+from src.dataloader.base_loader import ModelDataset as BaseDataset
 
-import sys
-
-if "../.." not in sys.path:
-    sys.path.append("../..")
-
-from deepFWI.data.frp_stats import (
+from data.frp_stats import (
     FRP_MEAN,
     FRP_VAR,
     BOX_COX_FRP_MEAN,
@@ -31,13 +26,7 @@ from deepFWI.data.frp_stats import (
     PLACEHOLDER_FRP,
 )
 
-from deepFWI.data.fwi_reanalysis_stats import (
-    REANALYSIS_FWI_MAD,
-    UPPER_BOUND_FWI,
-    LOWER_BOUND_FWI,
-)
-
-from deepFWI.data.forcing_stats import (
+from data.forcing_stats import (
     FORCING_MEAN_RH,
     FORCING_MEAN_T2,
     FORCING_MEAN_TP,
@@ -107,6 +96,7 @@ to defaults to None
         ), "The number of input and output days must be > 0."
         self.n_input = self.hparams.in_days
         self.n_output = self.hparams.out_days
+        self.hparams.thresh = PRE_TRANSFORM_FRP_MAD / 2
 
         # Generate the list of all valid files in the specified directories
         inp_time = (
@@ -240,7 +230,7 @@ to defaults to None
         self.out_var = (
             out_var
             if out_var
-            else REANALYSIS_FWI_MAD
+            else PRE_TRANSFORM_FRP_MAD
             if self.hparams.loss == "mae"
             else BOX_COX_FRP_VAR
             if self.hparams.mask

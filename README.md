@@ -2,7 +2,7 @@
 
 ## Getting Started:
 - **Clone this repo**:
-<br> `git clone https://github.com/wikilimo/deepFWI.git`
+<br> `git clone https://github.com/wikilimo/git`
 <br> `cd deepFWI`
 
 * **Install dependencies**: To create the environment, run
@@ -31,7 +31,7 @@
                [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
                [-forcings-dir ${FORCINGS_DIR:-$PWD}]
                [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]
-               [-mask dataloader/mask.npy] [-thresh 9.4]
+               [-mask dataloader/mask.npy]
                [-comment None]`
 
 * The entry point for inference is [src/test.py](src/test.py)
@@ -43,7 +43,7 @@
                [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
                [-forcings-dir ${FORCINGS_DIR:-$PWD}]
                [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]
-               [-mask dataloader/mask.npy] [-thresh 9.4]
+               [-mask dataloader/mask.npy]
                [-comment None] [-checkpoint-file]`
 
 * **Configuration Details**:
@@ -52,7 +52,7 @@
     `  -h, --help show this help message and exit`
 <pre>    -init-features 16                       Architecture complexity
     -in-days 4                              Number of input days
-    -out-days 1                         Number of output channels
+    -out-days 1                             Number of output days
     -epochs 100                             Number of training epochs
     -learning-rate 0.001                    Maximum learning rate
     -loss mse                               Loss function: mae, mse
@@ -64,6 +64,9 @@
     -dry-run False                          Use small amount of data for sanity check
     -case-study False                       Limit the analysis to Australian region (inference only)
     -clip-fwi False                         Limit the analysis to the data points with 0.5 < fwi < 60 (inference only)
+    -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference.
+    -binned False                           Show the extended metrics for supplied comma separated binned FWI value range
+    -round-to-zero False                    Round off the target values below the specified threshold to zero
     -test-set /path/to/pickled/list         Load test-set filenames from specified file instead of random split
     -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered, unet_interpolated
     -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis
@@ -71,10 +74,11 @@
     -forcings-dir ${FORCINGS_DIR:-$PWD}     Directory containing forcings data. Alternatively set $FORCINGS_DIR
     -reanalysis-dir ${REANALYSIS_DIR:-$PWD} Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR
     -mask dataloader/mask.npy               File containing the mask stored as the numpy array
-    -thresh 9.4                             Threshold for accuracy: Half of output MAD
     -comment Comment of choice!             Used for logging
     -save-test-set False                    Save the test-set file names to the specified filepath
     -checkpoint-file                        Path to the test model checkpoint</pre>
+
+Code walk-through can be found at [Code_Structure_Overview.md](Code_Structure_Overview.md).
 
 * The [src/](src) directory contains the architecture implementation.
   * The [src/dataloader/](src/dataloader) directory contains the implementation specific to the training data.
