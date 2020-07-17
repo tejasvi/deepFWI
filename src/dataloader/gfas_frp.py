@@ -230,7 +230,7 @@ to defaults to None
         self.out_var = (
             out_var
             if out_var
-            else REANALYSIS_FWI_MAD
+            else PRE_TRANSFORM_FRP_MAD
             if self.hparams.loss == "mae"
             else BOX_COX_FRP_VAR
             if self.hparams.mask
