@@ -8,10 +8,8 @@
 *.tfw
 *.vscode
 *.swp
-*checkpoint*
 *__pycache__*
 *wandb*
-*.ckpt
 *.7z
 *lightning_logs*
 *tb_logs*
@@ -24,7 +22,3 @@ logs
 .DS_St
 docs/build
 *.npy
-
-# Do not ignore saved checkpoints
-!/src/model/checkpoints/pre_trained/2_1/epoch_41_100.ckpt
-!/src/model/checkpoints/pre_trained/4_10/epoch_99_100.ckpt
