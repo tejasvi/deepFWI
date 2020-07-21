@@ -24,3 +24,6 @@ logs
 .DS_St
 docs/build
 *.npy
+
+# Do not ignore saved checkpoints
+!src/model/checkpoints/
