@@ -26,4 +26,4 @@ docs/build
 *.npy
 
 # Do not ignore saved checkpoints
-!src/model/checkpoints/
+!src/model/checkpoints/*
