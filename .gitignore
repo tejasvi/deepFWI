@@ -8,10 +8,8 @@
 *.tfw
 *.vscode
 *.swp
-*checkpoint*
 *__pycache__*
 *wandb*
-*.ckpt
 *.7z
 *lightning_logs*
 *tb_logs*
