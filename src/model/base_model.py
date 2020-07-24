@@ -373,10 +373,7 @@ on second call determined by the `force` parameter.
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
 
-        if self.hparams.case_study and not self.hparams.test_set:
-            assert (
-                max(self.test_data.indices) > 214
-            ), "The data is outside the range of case study"
+        # Filter the test-set for case-study duration
             self.test_data.indices = list(
                 set(self.test_data.indices) & set(range(214, 335))
             )
