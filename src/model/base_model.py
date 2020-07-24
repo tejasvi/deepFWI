@@ -368,10 +368,7 @@ on second call determined by the `force` parameter.
                     pickle.dump(
                         test_set_dates, f,
                     )
-            log.info(self.test_data.indices, self.data.inp_files, self.data.out_files)
-
-            # Log test indices regardless
-            log.info(self.test_data.indices)
+            log.info(test_set_dates)
 
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
