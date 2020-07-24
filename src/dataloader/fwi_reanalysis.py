@@ -210,7 +210,7 @@ to defaults to None
         )
         assert len(self.input.time) == len(self.output.time)
 
-        self.min_date = self.input.rh.time.min().values
+        self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
 
         log.info(
             f"Start date: {self.output.fwi.time.min(skipna=True)}",
