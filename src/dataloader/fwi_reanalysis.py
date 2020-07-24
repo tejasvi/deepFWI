@@ -456,6 +456,10 @@ passed in as `batch`.
                 if self.hparams.clip_fwi:
                     y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
                     y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+
+                if not y.numel():
+                    return None
+
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"
