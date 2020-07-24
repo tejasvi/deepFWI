@@ -160,7 +160,8 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Loss and logs.
         :rtype: dict
         """
-        rm_none = lambda x: [t for t in x if not torch.isnan(t).any()]
+        ifx = lambda x: x if x else [torch.zeros(1)]
+        rm_none = lambda x: ifx([t for t in x if not torch.isnan(t).any()])
         avg_loss = torch.stack(rm_none([x["test_loss"] for x in outputs])).mean()
 
         tensorboard_logs = defaultdict(dict)
