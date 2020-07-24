@@ -54,6 +54,8 @@ defaults to None
         self.hparams = hparams
         self.out_mean = out_mean
         self.out_var = out_var
+        if self.hparams.binned:
+            self.bin_intervals = self.hparams.binned
 
     def __len__(self):
         """
