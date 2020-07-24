@@ -282,7 +282,7 @@ def get_hparams(
     round_to_zero: (
         "Round off the target values below the specified threshold to zero",
         "option",
-    ) = 0.5,
+    ) = False,
     isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = True,
     transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = True,
     #
