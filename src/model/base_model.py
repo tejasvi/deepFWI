@@ -358,6 +358,10 @@ on second call determined by the `force` parameter.
                     ],
                 )
 
+            test_set_dates = [
+                str(self.data.min_date + np.timedelta64(i, "D"))
+                for i in self.test_data.indices
+            ]
             # Saving list of test-set files
             if self.hparams.save_test_set:
                 with open(self.hparams.save_test_set, "wb") as f:
