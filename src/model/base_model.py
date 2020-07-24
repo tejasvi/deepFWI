@@ -7,6 +7,7 @@ from collections import defaultdict
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
+import numpy as np
 
 # Logging helpers
 from pytorch_lightning import _logger as log
