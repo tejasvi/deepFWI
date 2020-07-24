@@ -22,4 +22,3 @@ logs
 **/dataloader/*.npy
 .DS_St
 docs/build
-*.npy
