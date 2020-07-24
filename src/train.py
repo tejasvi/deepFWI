@@ -179,7 +179,7 @@ def get_model(hparams):
     :return: Model with the linked data.
     :rtype: Model
     """
-    sys.path.append("../", ".")
+    sys.path += ["../", "."]
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
