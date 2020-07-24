@@ -385,7 +385,7 @@ on second call determined by the `force` parameter.
                 Australia["PEAK_START_DATE"]
             ), "The data is outside the time-range of case study"
             self.test_data.indices = list(
-                set(self.test_data.indices) & set(range(214, 335))
+                set(self.test_data.indices)
             )
 
     def train_dataloader(self):
