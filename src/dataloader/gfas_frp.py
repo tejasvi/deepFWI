@@ -208,7 +208,7 @@ to defaults to None
             skipna=True
         )
 
-        self.min_date = self.input.rh.time.min().values
+        self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
 
         print(
             f"Start date: {self.output.frpfire.time.min(skipna=True)}",
