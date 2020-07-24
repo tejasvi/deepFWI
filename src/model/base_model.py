@@ -13,6 +13,8 @@ import numpy as np
 from pytorch_lightning import _logger as log
 from pytorch_lightning.core import LightningModule
 
+from data.case_study import Australia
+
 
 class BaseModel(LightningModule):
     """
