@@ -386,6 +386,20 @@ on second call determined by the `force` parameter.
             ), "The data is outside the time-range of case study"
             self.test_data.indices = list(
                 set(self.test_data.indices)
+                & set(
+                    range(
+                        (
+                            np.datetime64(Australia["PEAK_START_DATE"])
+                            - self.data.min_date
+                        )
+                        .item()
+                        .days,
+                        (np.datetime64(Australia["PEAK_END_DATE"]) - self.data.min_date)
+                        .item()
+                        .days
+                        + 1,
+                    )
+                )
             )
 
     def train_dataloader(self):
