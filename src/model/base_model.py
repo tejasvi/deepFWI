@@ -366,18 +366,7 @@ on second call determined by the `force` parameter.
             if self.hparams.save_test_set:
                 with open(self.hparams.save_test_set, "wb") as f:
                     pickle.dump(
-                        [
-                            self.test_data.indices,
-                            sum(
-                                [
-                                    self.data.inp_files[i : i + 4]
-                                    for i in self.test_data.indices
-                                ],
-                                [],
-                            ),
-                            [self.data.out_files[i] for i in self.test_data.indices],
-                        ],
-                        f,
+                        test_set_dates, f,
                     )
             log.info(self.test_data.indices, self.data.inp_files, self.data.out_files)
 
