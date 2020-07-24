@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from deepFWI.data.fwi_reanalysis_stats import LOWER_BOUND_FWI, UPPER_BOUND_FWI
+from data.fwi_reanalysis_stats import LOWER_BOUND_FWI, UPPER_BOUND_FWI
 
 
 class ModelDataset(Dataset):
