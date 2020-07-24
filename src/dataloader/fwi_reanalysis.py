@@ -179,6 +179,9 @@ to defaults to None
             engine="h5netcdf",
             parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
+            coords="minimal",
+            data_vars="minimal",
+            compat="override",
         ) as ds:
             self.input = ds.sortby("time").load()
 
@@ -188,6 +191,9 @@ to defaults to None
             engine="h5netcdf",
             parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
+            coords="minimal",
+            data_vars="minimal",
+            compat="override",
         ) as ds:
             self.output = ds.sortby("time").load()
 
