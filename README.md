@@ -12,11 +12,13 @@
     >The setup is tested on Ubuntu 18.04 only and will not work on any non-Linux systems. See [this](https://github.com/conda/conda/issues/7311) issue for further details.
 ## Running Inference
 * **Quick example**:<br>
-  The [inference_2_1.ipynb](examples/inference_2_1.ipynb) and [inference_4_10.ipynb](examples/inference_4_10.ipynb) notebooks demonstrate the end-to-end procedure of loading data, creating model from saved checkpoint, and getting the predictions for 2 day input, 1 day output; and 4 day input, 10 day output experiments respectively.
+  The [inference_2_1.ipynb](examples/inference_2_1.ipynb) and [inference_4_10.ipynb](examples/inference_4_10.ipynb) notebooks demonstrate the end-to-end procedure of loading data, creating model from saved checkpoint, and getting the predictions for 2 day input, 1 day FWI prediction; and 4 day input, 10 day FWI prediction experiments respectively.
 * **Testing data**:<br>
   Ensure the access to fwi-forcings and fwi-reanalysis data.
 * **Obtain pre-trained model**:<br>
   Place the model checkpoint file somewhere in your system and note the filepath.
+  * Checkpoint file for 2 day input, 1 day FWI prediction is available [here](src/model/checkpoints/pre_trained/2_1/epoch_41_100.ckpt)
+  * Checkpoint file for 4 day input, 10 day FWI prediction is available [here](src/model/checkpoints/pre_trained/4_10/epoch_99_100.ckpt)
 * **Run the inference script**:<br>
   * Optionally set `$FORCINGS_DIR` and `$REANALYSIS_DIR` to override `$PWD` as the default location of data.
   `python src/test.py -in-days=2 -out-days=1 -forcings-dir=${FORCINGS_DIR:-$PWD} -reanalysis-dir=${REANALYSIS_DIR:-$PWD} -checkpoint-file='path/to/checkpoint'`
@@ -78,7 +80,7 @@
     -save-test-set False                    Save the test-set file names to the specified filepath
     -checkpoint-file                        Path to the test model checkpoint</pre>
 
-* Code documentation is present in [src/docs.md](src/docs.md). Code walk-through can be found at [Code_Structure_Overview.md](Code_Structure_Overview.md).
+Code walk-through can be found at [Code_Structure_Overview.md](Code_Structure_Overview.md).
 
 * The [src/](src) directory contains the architecture implementation.
   * The [src/dataloader/](src/dataloader) directory contains the implementation specific to the training data.
