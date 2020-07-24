@@ -2,7 +2,7 @@
 
 ## Getting Started:
 - **Clone this repo**:
-<br> `git clone https://github.com/wikilimo/deepFWI`
+<br> `git clone https://github.com/wikilimo/deepFWI.git`
 <br> `cd deepFWI`
 
 * **Install dependencies**: To create the environment, run
@@ -11,8 +11,8 @@
 
     >The setup is tested on Ubuntu 18.04 only and will not work on any non-Linux systems. See [this](https://github.com/conda/conda/issues/7311) issue for further details.
 ## Running Inference
-* **Quick example**:<br>
-  The [inference_2_1.ipynb](examples/inference_2_1.ipynb) and [inference_4_10.ipynb](examples/inference_4_10.ipynb) notebooks demonstrate the end-to-end procedure of loading data, creating model from saved checkpoint, and getting the predictions for 2 day input, 1 day FWI prediction; and 4 day input, 10 day FWI prediction experiments respectively.
+* **Examples**:<br>
+  The [inference_2_1.ipynb](examples/inference_2_1.ipynb) and [inference_4_10.ipynb](examples/inference_4_10.ipynb) notebooks demonstrate the end-to-end procedure of loading data, creating model from saved checkpoint, and getting the predictions for 2 day input, 1 day output; and 4 day input, 10 day output experiments respectively.
 * **Testing data**:<br>
   Ensure the access to fwi-forcings and fwi-reanalysis data.
 * **Obtain pre-trained model**:<br>
@@ -87,9 +87,10 @@ Code walk-through can be found at [Code_Structure_Overview.md](Code_Structure_Ov
   * The [src/model/](src/model) directory contains the model implementation.
   * The [src/model/base_model.py](src/model/base_model.py) script has the common implementation used by every model.
 
-* Code documentation is present in [src/docs.md](src/docs.md).
 * The [data/EDA/](data/EDA/) directory contains the Exploratory Data Analysis and Preprocessing required for each dataset demonstrated via Jupyter Notebooks.
   * Forcings data: [data/EDA/fwi_forcings.ipynb](data/EDA/fwi_forcings.ipynb)
   * Reanalysis data: [data/EDA/fwi_reanalysis.ipynb](data/EDA/fwi_reanalysis.ipynb)
   * Forecast data: [data/EDA/fwi_forecast.ipynb](data/EDA/fwi_forecast.ipynb)
   * FRP data: [data/EDA/frp.ipynb](data/EDA/frp.ipynb)
+  
+* Code walk-through can be found at [Code_Structure_Overview.md](Code_Structure_Overview.md).
