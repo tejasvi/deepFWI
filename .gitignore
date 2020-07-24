@@ -16,7 +16,6 @@
 *lightning_logs*
 *tb_logs*
 .docs.sh
-Dockerfile
 logs
 .DS_Store
 **/dataloader/*.pkl
