@@ -374,6 +374,16 @@ on second call determined by the `force` parameter.
             self.data_prepared = True
 
         # Filter the test-set for case-study duration
+        if (
+            self.hparams.case_study
+            and not self.hparams.test_set
+            and not self.hparams.dry_run
+        ):
+            assert self.data.min_date + np.timedelta64(
+                max(self.test_data.indices), "D"
+            ) >= np.datetime64(
+                Australia["PEAK_START_DATE"]
+            ), "The data is outside the time-range of case study"
             self.test_data.indices = list(
                 set(self.test_data.indices) & set(range(214, 335))
             )
