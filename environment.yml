@@ -67,6 +67,7 @@ dependencies:
   - filelock=3.0.12
   - fiona=1.8.13
   - fire=0.3.1
+  - fish=3.1.2
   - flake8=3.8.3
   - fontconfig=2.13.1
   - freetype=2.9.1
@@ -201,6 +202,7 @@ dependencies:
   - partd=1.1.0
   - pathspec=0.7.0
   - pcre=8.44
+  - pcre2=10.35
   - pdbpp=0.10.0
   - pexpect=4.8.0
   - pickleshare=0.7.5
