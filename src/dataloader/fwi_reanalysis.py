@@ -35,8 +35,6 @@ from data.forcing_stats import (
     FORCING_MEAN_RH,
 )
 
-from data.case_study import Australia
-
 
 class ModelDataset(BaseDataset):
     """
