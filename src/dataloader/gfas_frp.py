@@ -177,7 +177,7 @@ to defaults to None
             parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
-            self.input = ds.load()
+            self.input = ds.sortby("time").load()
 
         with xr.open_mfdataset(
             # Remove duplicated file names
