@@ -111,7 +111,7 @@ class ModelDataset(BaseDataset):
         with xr.open_mfdataset(
             out_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.output = ds.load()
+            self.output = ds.sortby("time").load()
 
         # Ensure timestamp matches for both the input and output
         assert len(self.input.time) == len(self.output.time)
