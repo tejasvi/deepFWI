@@ -93,7 +93,7 @@ class ModelDataset(BaseDataset):
         with xr.open_mfdataset(
             inp_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.input = ds.load()
+            self.input = ds.sortby("time").load()
 
         out_files = sorted(
             glob(f"{forecast_dir}/ECMWF_FWI_2019*_1200_hr_fwi.nc"),
