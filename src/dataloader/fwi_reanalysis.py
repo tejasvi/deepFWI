@@ -6,8 +6,6 @@ import pickle
 
 import xarray as xr
 import numpy as np
-from scipy.stats import boxcox
-from scipy.special import inv_boxcox
 
 import torch
 import torchvision.transforms as transforms
