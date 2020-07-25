@@ -116,6 +116,8 @@ class ModelDataset(BaseDataset):
         # Ensure timestamp matches for both the input and output
         assert len(self.input.time) == len(self.output.time)
 
+        self.min_date = self.input.rh.time.min().values
+
         # Loading the mask for output variable if provided as generating from NaN mask
         self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
 
