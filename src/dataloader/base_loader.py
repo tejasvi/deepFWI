@@ -251,6 +251,10 @@ passed in as `batch`.
                         (y_hat < self.hparams.clip_fwi[1])
                         & (self.hparams.clip_fwi[0] < y_hat)
                     ]
+                    y_hat = y_hat[
+                        (y_hat < self.hparams.clip_fwi[1])
+                        & (self.hparams.clip_fwi[0] < y_hat)
+                    ]
                 if self.hparams.boxcox:
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
