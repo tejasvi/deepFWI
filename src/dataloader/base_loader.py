@@ -240,6 +240,12 @@ passed in as `batch`.
                         self.hparams.case_study[0] : self.hparams.case_study[1],
                         self.hparams.case_study[2] : self.hparams.case_study[3],
                     ][mask]
+                else:
+                    y = y[mask]
+                    y_hat = y_hat[mask]
+                if self.hparams.round_to_zero:
+                    y_hat = y_hat[y > self.hparams.round_to_zero]
+                    y = y[y > self.hparams.round_to_zero]
                 if self.hparams.boxcox:
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
