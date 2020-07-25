@@ -2,7 +2,6 @@
 The dataset class to be used with fwi-forcings and fwi-reanalysis data.
 """
 from glob import glob
-from collections import defaultdict
 import pickle
 
 import xarray as xr
