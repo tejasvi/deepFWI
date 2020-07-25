@@ -186,6 +186,7 @@ to defaults to None
             combine="by_coords",
         ) as ds:
             self.output = ds.sortby("time").load()
+            if self.hparams.round_to_zero:
                 # Set values in range (0, `round_to_zero`) to small positive number
                 self.output.frpfire.values[
                     (self.output.frpfire.values >= MIN_CLIPPING_FRP)
