@@ -6,6 +6,6 @@ ENV HOME=/home/esowc
 WORKDIR /usr/app
 USER 1001:1001
 COPY --chown=1001:1001 environment.yml /usr/app
-RUN /bin/bash -c "/opt/conda/bin/conda env update --quiet --name deepFWI --file environment.yml && /opt/conda/bin/conda clean -y -q --all"
+RUN /bin/bash -c "/opt/conda/bin/conda env update --quiet --name caliban --file environment.yml && /opt/conda/bin/conda clean -y -q --all"
 COPY --chown=1001:1001 . /usr/app/.
-ENTRYPOINT ["bash"]
+ENTRYPOINT ["fish"]
