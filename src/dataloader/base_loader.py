@@ -231,6 +231,15 @@ passed in as `batch`.
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c]
                 y_hat = y_hat_pre[b][c]
+                if self.hparams.case_study:
+                    y = y[
+                        self.hparams.case_study[0] : self.hparams.case_study[1],
+                        self.hparams.case_study[2] : self.hparams.case_study[3],
+                    ][mask]
+                    y_hat = y_hat[
+                        self.hparams.case_study[0] : self.hparams.case_study[1],
+                        self.hparams.case_study[2] : self.hparams.case_study[3],
+                    ][mask]
                 if self.hparams.boxcox:
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
