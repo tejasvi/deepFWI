@@ -21,8 +21,6 @@ from data.fwi_reanalysis_stats import (
     REANALYSIS_FWI_MAD,
     REANALYSIS_FWI_VAR,
     PROCESSED_REANALYSIS_FWI_VAR,
-    UPPER_BOUND_FWI,
-    LOWER_BOUND_FWI,
 )
 from data.forcing_stats import (
     FORCING_STD_TP,
