@@ -229,9 +229,8 @@ passed in as `batch`.
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
-
+                y = y_pre[b][c]
+                y_hat = y_hat_pre[b][c]
                 if self.hparams.boxcox:
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
