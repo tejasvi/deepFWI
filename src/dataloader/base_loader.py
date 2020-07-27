@@ -67,7 +67,7 @@ defaults to None
         :return: The maximum possible iterations with the provided data.
         :rtype: int
         """
-        return len(self.input.time) - (self.n_input - 1) - (self.n_output - 1)
+        return len(self.dates)
 
     def __getitem__(self, idx):
         """
