@@ -349,7 +349,7 @@ on second call determined by the `force` parameter.
                         hparams=hparams,
                         out=self.hparams.out,
                     )
-            else:
+            elif not hasattr(self.hparams, "eval"):
                 self.train_data, self.test_data = torch.utils.data.random_split(
                     self.data,
                     [
