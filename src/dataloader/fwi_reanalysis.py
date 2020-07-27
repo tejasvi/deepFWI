@@ -196,7 +196,7 @@ to defaults to None
 
         self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
 
-        self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
+        self.dates = []
 
         log.info(
             f"Start date: {self.output.fwi.time.min(skipna=True)}",
