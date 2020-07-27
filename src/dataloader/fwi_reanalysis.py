@@ -194,14 +194,7 @@ to defaults to None
         assert all(self.input.time.values[:-1] < self.input.time.values[1:])
         assert all(self.output.time.values[:-1] < self.output.time.values[1:])
 
-        # Ensure timestamp matches for both the input and output
-        assert self.output.fwi.time.min(skipna=True) == self.input.rh.time.min(
-            skipna=True
-        )
-        assert self.output.fwi.time.max(skipna=True) == self.input.rh.time.max(
-            skipna=True
-        )
-        assert len(self.input.time) == len(self.output.time)
+        self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
 
         self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
 
