@@ -202,6 +202,12 @@ to defaults to None
                     t - np.timedelta(i, "D") in self.input.time.values
                     for i in range(self.inp_days)
                 ]
+            ) and all(
+                [
+                    t + np.timedelta(i, "D") in self.output.time.values
+                    for i in range(self.out_days)
+                ]
+            ):
 
         log.info(
             f"Start date: {self.output.fwi.time.min(skipna=True)}",
