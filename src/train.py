@@ -176,6 +176,8 @@ def get_consts(hparams):
     :param hparams: Parameters
     :type hparams: Namespace
     """
+    if hparams.case_study:
+        case_studies = importlib.import_module(f"model.{hparams.model}").case_studies
 
 def get_model(hparams):
     """
