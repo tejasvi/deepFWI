@@ -1,4 +1,4 @@
-# Calculated in the EDA_Soil_Moisture.ipynb file
+# Calculated in the soil_moisture.ipynb file
 SOIL_MOISTURE_MEAN = 11.381658906276265
 SOIL_MOISTURE_VAR = 73.88017472194176
 SOIL_MOISTURE_STD = 8.585304704549872
