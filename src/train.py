@@ -276,7 +276,8 @@ def get_hparams(
     find_lr: ("Automatically search for an ideal learning rate", "option") = False,
     search_bs: ("Scale the batch dynamically for full GPU usage") = False,
     case_study: (
-        "Limit the analysis to Australian region (inference only)",
+        "The case-study region to use for inference: australia, california, portugal,"
+        " siberia, chile, uk",
         "option",
     ) = False,
     clip_fwi: (
