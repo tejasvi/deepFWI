@@ -197,6 +197,7 @@ to defaults to None
         self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
 
         self.dates = []
+        for t in self.input.time.values:
             if all(
                 [
                     t - np.timedelta(i, "D") in self.input.time.values
@@ -208,6 +209,7 @@ to defaults to None
                     for i in range(self.out_days)
                 ]
             ):
+                self.dates.append(t)
 
         log.info(
             f"Start date: {self.output.fwi.time.min(skipna=True)}",
