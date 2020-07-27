@@ -94,10 +94,7 @@ defaults to None
             np.stack(
                 [
                     self.output[list(self.output.data_vars)[0]]
-                    .sel(
-                        time=self.min_date
-                        + np.timedelta64(idx + self.n_input - 1 + i, "D")
-                    )
+                    .sel(time=self.dates[idx] + np.timedelta64(i, "D"))
                     .values
                     for i in range(self.n_output)
                 ],
