@@ -169,6 +169,14 @@ def main(hparams):
     trainer.test()
 
 
+def get_consts(hparams):
+    """
+    Add constant parameter values based on passed arguments.
+
+    :param hparams: Parameters
+    :type hparams: Namespace
+    """
+
 def get_model(hparams):
     """
     Prepare model and the data.
