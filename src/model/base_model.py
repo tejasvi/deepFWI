@@ -357,6 +357,8 @@ on second call determined by the `force` parameter.
                         len(self.data) - len(self.data) * 8 // 10,
                     ],
                 )
+            else:
+                self.train_data = self.test_data = self.data
 
             test_set_dates = [
                 str(self.data.min_date + np.timedelta64(i, "D"))
