@@ -84,7 +84,7 @@ defaults to None
 
         X = np.stack(
             [
-                self.input[v].sel(time=self.min_date + np.timedelta64(idx + i, "D"))
+                self.input[v].sel(time=self.dates[idx] - np.timedelta64(i, "D")).values
                 for i in range(self.n_input)
                 for v in ["rh", "t2", "tp", "wspeed"]
             ],
