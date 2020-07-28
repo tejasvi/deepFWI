@@ -220,6 +220,18 @@ def set_hparams(hparams):
             REANALYSIS_FWI_MAD,
             REANALYSIS_FWI_VAR,
         )
+
+    elif hparams.out == "gfas_frp":
+        from data.frp_stats import (
+            FRP_MEAN,
+            FRP_MAD,
+            FRP_VAR,
+            BOX_COX_FRP_MEAN,
+            BOX_COX_FRP_MAD,
+            BOX_COX_FRP_VAR,
+            BOX_COX_LAMBDA,
+        )
+
 def get_model(hparams):
     """
     Prepare model and the data.
