@@ -167,8 +167,8 @@ to defaults to None
             if self.hparams.round_to_zero:
                 # Set values in range (0, `round_to_zero`) to small positive number
                 self.output.frpfire.values[
-                    (self.output.frpfire.values >= MIN_CLIPPING_FRP)
-                    & (self.output.frpfire.values < MAX_CLIPPING_FRP)
+                    (self.output.frpfire.values >= self.hparams.clip_output[0])
+                    & (self.output.frpfire.values < self.hparams.clip_output[-1])
                 ] = 1e-10
             if self.hparams.isolate_frp:
                 # Setting isolated fire occurrence FRP to -1
