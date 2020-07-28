@@ -174,7 +174,10 @@ to defaults to None
                 # Setting isolated fire occurrence FRP to -1
                 self.output.frpfire.values[
                     self.generate_isolated_mask(
-                        self.output.frpfire.values > PLACEHOLDER_FRP
+                        # 1e-10 as a threshold since boxcox transformation accepts
+                        # positive number only
+                        self.output.frpfire.values
+                        > 1e-10
                     )
                 ] = -1
 
