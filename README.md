@@ -65,7 +65,7 @@
     -optim one_cycle                        Learning rate optimizer: one_cycle or cosine (train only)
     -dry-run False                          Use small amount of data for sanity check
     -case-study False                       Limit the analysis to Australian region (inference only)
-    -clip-fwi False                         Limit the analysis to the data points with 0.5 < fwi < 60 (inference only)
+    -clip-output False                      Limit the inference to the output values within supplied range (e.g. 0.5,60)
     -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference.
     -binned False                           Show the extended metrics for supplied comma separated binned FWI value range
     -round-to-zero False                    Round off the target values below the specified threshold to zero
