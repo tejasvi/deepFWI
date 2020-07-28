@@ -198,26 +198,6 @@ to defaults to None
 
         self.mask = torch.from_numpy(np.load(self.hparams.mask)).cuda()
 
-        # Mean of output variable used for bias-initialization.
-        self.out_mean = (
-            out_mean
-            if out_mean
-            else BOX_COX_FRP_MEAN
-            if self.hparams.mask
-            else FRP_MEAN
-        )
-
-        # Variance of output variable used to scale the training loss.
-        self.out_var = (
-            out_var
-            if out_var
-            else PRE_TRANSFORM_FRP_MAD
-            if self.hparams.loss == "mae"
-            else BOX_COX_FRP_VAR
-            if self.hparams.mask
-            else FRP_VAR
-        )
-
         self.transform = transforms.Compose(
             [
                 transforms.ToTensor(),
