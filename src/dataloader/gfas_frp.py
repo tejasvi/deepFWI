@@ -74,7 +74,7 @@ to defaults to None
         ), "The number of input and output days must be > 0."
         self.n_input = self.hparams.in_days
         self.n_output = self.hparams.out_days
-        self.hparams.thresh = PRE_TRANSFORM_FRP_MAD / 2
+        self.hparams.thresh = self.hparams.out_mad / 2
 
         # Generate the list of all valid files in the specified directories
         inp_time = (
