@@ -207,6 +207,14 @@ def set_hparams(hparams):
         "t2": FORCING_STD_T2,
         "rh": FORCING_STD_RH,
     }
+
+    if hparams.out == "fwi_reanalysis":
+        from data.fwi_reanalysis_stats import (
+            REANALYSIS_FWI_MEAN,
+            REANALYSIS_FWI_MAD,
+            REANALYSIS_FWI_VAR,
+        )
+
 def get_model(hparams):
     """
     Prepare model and the data.
