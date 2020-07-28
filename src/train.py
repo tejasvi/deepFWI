@@ -184,6 +184,16 @@ def set_hparams(hparams):
         if not hparams.mask:
             hparams.mask = f"src/dataloader/mask/{hparams.case_study}_mask.npy"
 
+    from data.forcing_stats import (
+        FORCING_STD_TP,
+        FORCING_STD_T2,
+        FORCING_STD_WSPEED,
+        FORCING_STD_RH,
+        FORCING_MEAN_WSPEED,
+        FORCING_MEAN_TP,
+        FORCING_MEAN_T2,
+        FORCING_MEAN_RH,
+    )
 def get_model(hparams):
     """
     Prepare model and the data.
