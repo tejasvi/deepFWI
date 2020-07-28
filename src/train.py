@@ -280,8 +280,8 @@ def get_hparams(
         " siberia, chile, uk",
         "option",
     ) = False,
-    clip_fwi: (
-        "Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)",
+    clip_output: (
+        "Limit the inference to the datapoints within supplied range (e.g. 0.5,60)",
         "option",
     ) = False,
     boxcox: (
