@@ -383,8 +383,8 @@ on second call determined by the `force` parameter.
         ):
             assert self.data.min_date + np.timedelta64(
                 max(self.test_data.indices), "D"
-            ) >= np.datetime64(
-                Australia["PEAK_START_DATE"]
+            ) >= min(
+                [np.datetime64(r[0]) for r in self.hparams.case_study_dates]
             ), "The data is outside the time-range of case study"
             self.test_data.indices = list(
                 set(self.test_data.indices)
