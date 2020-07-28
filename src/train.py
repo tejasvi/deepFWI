@@ -42,6 +42,8 @@ def main(hparams):
     :type hparams: Namespace
     """
 
+    hparams = set_hparams(hparams)
+
     # ------------------------
     # 1 INIT MODEL
     # ------------------------
@@ -247,6 +249,15 @@ def set_hparams(hparams):
             FORECAST_FWI_MEAN,
             FORECAST_FWI_VAR,
         )
+
+        hparams.out_mean, hparams.out_mad, hparams.out_var = (
+            FORECAST_FWI_MEAN,
+            FORECAST_FWI_MAD,
+            FORECAST_FWI_VAR,
+        )
+    return hparams
+
+
 def get_model(hparams):
     """
     Prepare model and the data.
@@ -258,6 +269,7 @@ def get_model(hparams):
     :rtype: Model
     """
     sys.path += ["../", "."]
+
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
