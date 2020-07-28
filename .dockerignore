@@ -1,9 +1,5 @@
-logs
-*.ckpt
-**logs**
-__pycache__
-**__pycache__**
-**checkpoints**
-model/checkpoints
-**/.ipynb_checkpoints/
+**/logs
+**/__pycache__
+src/model/checkpoints
+**/.ipynb_checkpoints
 **/.vscode
