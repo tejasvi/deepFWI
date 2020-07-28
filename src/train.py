@@ -194,6 +194,13 @@ def set_hparams(hparams):
         FORCING_MEAN_T2,
         FORCING_MEAN_RH,
     )
+
+    hparams.inp_mean = {
+        "wspeed": FORCING_MEAN_WSPEED,
+        "tp": FORCING_MEAN_TP,
+        "t2": FORCING_MEAN_T2,
+        "rh": FORCING_MEAN_RH,
+    }
 def get_model(hparams):
     """
     Prepare model and the data.
