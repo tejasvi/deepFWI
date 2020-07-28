@@ -215,6 +215,11 @@ def set_hparams(hparams):
             REANALYSIS_FWI_VAR,
         )
 
+        hparams.out_mean, hparams.out_mad, hparams.out_var = (
+            REANALYSIS_FWI_MEAN,
+            REANALYSIS_FWI_MAD,
+            REANALYSIS_FWI_VAR,
+        )
 def get_model(hparams):
     """
     Prepare model and the data.
