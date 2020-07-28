@@ -241,6 +241,12 @@ def set_hparams(hparams):
         )
         if hparams.boxcox and not (type(hparams.boxcox) == type(bool)):
             hparams.boxcox = BOX_COX_LAMBDA
+    elif hparams.out == "fwi_forecast":
+        from data.forecast_stats import (
+            FORECAST_FWI_MAD,
+            FORECAST_FWI_MEAN,
+            FORECAST_FWI_VAR,
+        )
 def get_model(hparams):
     """
     Prepare model and the data.
