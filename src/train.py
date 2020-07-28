@@ -232,6 +232,13 @@ def set_hparams(hparams):
             BOX_COX_LAMBDA,
         )
 
+        hparams.out_mean, hparams.out_mad, hparams.out_var = (
+            BOX_COX_FRP_MEAN,
+            BOX_COX_FRP_MAD,
+            BOX_COX_FRP_VAR if hparams.boxcox else FRP_MEAN,
+            FRP_MAD,
+            FRP_VAR,
+        )
 def get_model(hparams):
     """
     Prepare model and the data.
