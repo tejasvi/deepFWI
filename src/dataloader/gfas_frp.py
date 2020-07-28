@@ -15,28 +15,6 @@ import torchvision.transforms as transforms
 
 from src.dataloader.base_loader import ModelDataset as BaseDataset
 
-from data.frp_stats import (
-    FRP_MEAN,
-    FRP_VAR,
-    BOX_COX_FRP_MEAN,
-    BOX_COX_FRP_VAR,
-    PRE_TRANSFORM_FRP_MAD,
-    MIN_CLIPPING_FRP,
-    MAX_CLIPPING_FRP,
-    PLACEHOLDER_FRP,
-)
-
-from data.forcing_stats import (
-    FORCING_MEAN_RH,
-    FORCING_MEAN_T2,
-    FORCING_MEAN_TP,
-    FORCING_MEAN_WSPEED,
-    FORCING_STD_RH,
-    FORCING_STD_WSPEED,
-    FORCING_STD_T2,
-    FORCING_STD_TP,
-)
-
 
 class ModelDataset(BaseDataset):
     """
