@@ -1,3 +1,6 @@
+ARG GPU=1
+ARG CUDA_VERSION=10.1
+
 FROM gcr.io/blueshift-playground/blueshift:gpu
 RUN [ $(getent group 1001) ] || groupadd --gid 1001 1001
 RUN useradd --no-log-init --no-create-home -u 1001 -g 1001 --shell /bin/bash esowc
