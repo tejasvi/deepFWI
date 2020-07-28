@@ -239,6 +239,8 @@ def set_hparams(hparams):
             FRP_MAD,
             FRP_VAR,
         )
+        if hparams.boxcox and not (type(hparams.boxcox) == type(bool)):
+            hparams.boxcox = BOX_COX_LAMBDA
 def get_model(hparams):
     """
     Prepare model and the data.
