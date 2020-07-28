@@ -169,7 +169,7 @@ def main(hparams):
     trainer.test()
 
 
-def get_consts(hparams):
+def set_hparams(hparams):
     """
     Add constant parameter values based on passed arguments.
 
