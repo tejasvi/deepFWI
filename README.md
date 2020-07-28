@@ -5,9 +5,13 @@
 <br> `git clone https://github.com/wikilimo/deepFWI.git`
 <br> `cd deepFWI`
 
-* **Install dependencies**: To create the environment, run
+* **Using conda**: To create the environment, run
 <br> `conda env create -f environment.yml`
 <br> `conda activate wildfire-dl`
+
+* **Using docker**: To create the image and container, run
+<br> `docker build -t deepfwi .`
+<br> `docker docker run -it deepfwi`
 
     >The setup is tested on Ubuntu 18.04 only and will not work on any non-Linux systems. See [this](https://github.com/conda/conda/issues/7311) issue for further details.
 ## Running Inference
