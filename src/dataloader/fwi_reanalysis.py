@@ -14,24 +14,6 @@ from dataloader.base_loader import ModelDataset as BaseDataset
 from pytorch_lightning import _logger as log
 
 
-from data.fwi_reanalysis_stats import (
-    REANALYSIS_FWI_MEAN,
-    REANALYSIS_FWI_MAD,
-    REANALYSIS_FWI_VAR,
-    PROCESSED_REANALYSIS_FWI_VAR,
-)
-from data.forcing_stats import (
-    FORCING_STD_TP,
-    FORCING_STD_T2,
-    FORCING_STD_WSPEED,
-    FORCING_STD_RH,
-    FORCING_MEAN_WSPEED,
-    FORCING_MEAN_TP,
-    FORCING_MEAN_T2,
-    FORCING_MEAN_RH,
-)
-
-
 class ModelDataset(BaseDataset):
     """
     The dataset class responsible for loading the data and providing the samples for \
@@ -91,7 +73,7 @@ to defaults to None
         ), "The number of input and output days must be > 0."
         self.n_input = self.hparams.in_days
         self.n_output = self.hparams.out_days
-        self.hparams.thresh = REANALYSIS_FWI_MAD / 2
+        self.hparams.thresh = self.hparams.out_mad / 2
 
         # Generate the list of all valid files in the specified directories
         get_inp_time = (
@@ -212,8 +194,7 @@ to defaults to None
                 self.dates.append(t)
 
         log.info(
-            f"Start date: {self.dates[0]}",
-            f"\nEnd date: {self.dates[-1]}",
+            f"Start date: {self.dates[0]}", f"\nEnd date: {self.dates[-1]}",
         )
 
         # Loading the mask for output variable if provided as generating from NaN mask
@@ -222,20 +203,6 @@ to defaults to None
             if self.hparams.mask
             else ~np.isnan(self.output["fwi"][0].values)
         ).cuda()
-
-        # Mean of output variable used for bias-initialization.
-        self.out_mean = out_mean if out_mean else REANALYSIS_FWI_MEAN
-
-        # Variance of output variable used to scale the training loss.
-        self.out_var = (
-            out_var
-            if out_var
-            else REANALYSIS_FWI_MAD
-            if self.hparams.loss == "mae"
-            else PROCESSED_REANALYSIS_FWI_VAR
-            if self.hparams.mask
-            else REANALYSIS_FWI_VAR
-        )
 
         # Input transforms including mean and std normalization
         self.transform = (
@@ -251,20 +218,20 @@ to defaults to None
                             x
                             for i in range(self.n_input)
                             for x in (
-                                FORCING_MEAN_RH,
-                                FORCING_MEAN_T2,
-                                FORCING_MEAN_TP,
-                                FORCING_MEAN_WSPEED,
+                                self.hparams.inp_mean["rh"],
+                                self.hparams.inp_mean["t2"],
+                                self.hparams.inp_mean["tp"],
+                                self.hparams.inp_mean["wspeed"],
                             )
                         ],
                         [
                             x
                             for i in range(self.n_input)
                             for x in (
-                                FORCING_STD_RH,
-                                FORCING_STD_T2,
-                                FORCING_STD_TP,
-                                FORCING_STD_WSPEED,
+                                self.hparams.inp_std["rh"],
+                                self.hparams.inp_std["t2"],
+                                self.hparams.inp_std["tp"],
+                                self.hparams.inp_std["wspeed"],
                             )
                         ],
                     ),

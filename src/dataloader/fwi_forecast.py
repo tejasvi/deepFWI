@@ -10,12 +10,6 @@ import torchvision.transforms as transforms
 
 from src.dataloader.base_loader import ModelDataset as BaseDataset
 
-from data.forecast_stats import (
-    FORECAST_FWI_MAD,
-    FORECAST_FWI_MEAN,
-    FORECAST_FWI_VAR,
-)
-
 
 class ModelDataset(BaseDataset):
     """
@@ -70,7 +64,7 @@ class ModelDataset(BaseDataset):
             **kwargs,
         )
 
-        self.hparams.thresh = FORECAST_FWI_MAD / 2
+        self.hparams.thresh = self.hparams.out_mad / 2
 
         # Consider only ground truth and discard forecast values
         preprocess = lambda x: x.isel(time=slice(0, 1))
@@ -120,18 +114,6 @@ class ModelDataset(BaseDataset):
 
         # Loading the mask for output variable if provided as generating from NaN mask
         self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
-
-        # Mean of output variable used for bias-initialization.
-        self.out_mean = out_mean if out_mean else FORECAST_FWI_MEAN
-
-        # Variance of output variable used to scale the training loss.
-        self.out_var = (
-            out_var
-            if out_var
-            else FORECAST_FWI_MAD
-            if self.hparams.loss == "mae"
-            else FORECAST_FWI_VAR
-        )
 
         # Input transforms including mean and std normalization
         self.transform = transforms.Compose(

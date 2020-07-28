@@ -17,8 +17,3 @@ BOX_COX_LAMBDA = -0.8397658852658973
 
 # Pre-transform stats of frp.ipynb
 PRE_TRANSFORM_FRP_MAD = 1.3919744
-
-# To clip FRP, and assign a placeholder value for what's in-between
-MIN_CLIPPING_FRP = 0
-MAX_CLIPPING_FRP = 0.5
-PLACEHOLDER_FRP = 1e-10

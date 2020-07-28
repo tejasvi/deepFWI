@@ -9,8 +9,6 @@ from scipy.special import inv_boxcox
 import torch
 from torch.utils.data import Dataset
 
-from data.fwi_reanalysis_stats import LOWER_BOUND_FWI, UPPER_BOUND_FWI
-
 
 class ModelDataset(Dataset):
     """
@@ -59,6 +57,11 @@ defaults to None
         self.out_var = out_var
         if self.hparams.binned:
             self.bin_intervals = self.hparams.binned
+
+        # Mean of output variable used for bias-initialization.
+        self.out_mean = out_mean if out_mean else self.hparams.out_mean
+        # Variance of output variable used to scale the training loss.
+        self.out_var = out_var if out_var else self.hparams.out_var
 
     def __len__(self):
         """
@@ -257,8 +260,14 @@ passed in as `batch`.
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).cuda()
                 if self.hparams.clip_fwi:
-                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
-                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+                    y = y[
+                        (y_hat < self.hparams.clip_fwi[-1])
+                        & (self.hparams.clipe < y_hat)
+                    ]
+                    y_hat = y_hat[
+                        (y_hat < self.hparams.clip_fwi[-1])
+                        & (self.hparams.clip_fwi[0] < y_hat)
+                    ]
 
                 if not y.numel():
                     return None

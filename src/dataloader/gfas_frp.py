@@ -428,11 +428,17 @@ passed in as `batch`.
                     return {}
                 if self.hparams.transform_frp:
                     y_hat = torch.from_numpy(
-                        inv_boxcox(y_hat.cpu().numpy(), BOX_COX_LAMBDA)
+                        inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).cuda()
                 if self.hparams.clip_fwi:
-                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
-                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+                    y = y[
+                        (y_hat < self.hparams.clip_fwi[-1])
+                        & (self.hparams.clip_fwi[0] < y_hat)
+                    ]
+                    y_hat = y_hat[
+                        (y_hat < self.hparams.clip_fwi[-1])
+                        & (self.hparams.clip_fwi[0] < y_hat)
+                    ]
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"
@@ -443,7 +449,7 @@ passed in as `batch`.
 
                 # Accuracy for a threshold
                 n_correct_pred = (
-                    ((y - y_hat).abs() < PRE_TRANSFORM_FRP_MAD / 2).float().mean()
+                    ((y - y_hat).abs() < self.hparams.out_mad / 2).float().mean()
                 )
                 abs_error = (
                     (y - y_hat).abs().float().mean()
