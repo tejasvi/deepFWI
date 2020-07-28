@@ -375,7 +375,7 @@ passed in as `batch`.
                             y.cpu()
                             if y.nelement() > 1
                             else np.concatenate([y.cpu(), y.cpu() + 1]),
-                            lmbda=BOX_COX_LAMBDA,
+                            lmbda=self.hparams.boxcox,
                         )
                     )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
                 pre_loss = (y_hat - y) ** 2
