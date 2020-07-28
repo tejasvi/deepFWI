@@ -22,14 +22,12 @@ RUN /opt/conda/bin/conda env update --name deepfwi --file environment.yml && \
 COPY --chown=1001:1001 . /usr/app/.
 
 RUN echo "Installing Apex"
-# make sure we don't overwrite some existing directory called "apex"
-WORKDIR /tmp/unique_for_apex
-# uninstall Apex if present, twice to make absolutely sure
-RUN pip uninstall -y apex || :
-RUN pip uninstall -y apex || :
-RUN git clone https://github.com/NVIDIA/apex.git
-WORKDIR /tmp/unique_for_apex/apex
-RUN pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" .
+RUN if [ "$GPU" = 1 ]; then \
+pip uninstall -y -qq apex && \
+git clone --depth=1 https://github.com/NVIDIA/apex.git && \
+cd /usr/app/apex && \
+pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" . \
+&& rm /usr/app/apex -r; \
+fi;
 
 WORKDIR /usr/app
-ENTRYPOINT ["fish"]
