@@ -218,10 +218,10 @@ to defaults to None
                         x
                         for i in range(self.n_input)
                         for x in (
-                            FORCING_STD_RH,
-                            FORCING_STD_T2,
-                            FORCING_STD_TP,
-                            FORCING_STD_WSPEED,
+                            self.hparams.inp_std["rh"],
+                            self.hparams.inp_std["t2"],
+                            self.hparams.inp_std["tp"],
+                            self.hparams.inp_std["wspeed"],
                         )
                     ],
                 ),
