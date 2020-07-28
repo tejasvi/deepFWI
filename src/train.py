@@ -175,6 +175,8 @@ def set_hparams(hparams):
 
     :param hparams: Parameters
     :type hparams: Namespace
+    :return: Modified parameters
+    :rtype: Namespace
     """
     if hparams.case_study:
         case_studies = importlib.import_module(f"model.{hparams.model}").case_studies
