@@ -239,6 +239,8 @@ passed in as `batch`.
                         & (self.hparams.clip_output[0] < y_hat)
                     ]
                 if self.hparams.boxcox:
+                    # Negative predictions give NaN after inverse-boxcox
+                    y_hat[y_hat < 0] = 0
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).cuda()
