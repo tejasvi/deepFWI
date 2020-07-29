@@ -181,7 +181,7 @@ def set_hparams(hparams):
     :rtype: Namespace
     """
     if hparams.case_study:
-        case_studies = importlib.import_module(f"model.{hparams.model}").case_studies
+        case_studies = importlib.import_module("data.consts.case_study").case_studies
         hparams.case_study_dates = case_studies[hparams.case_study]
         if not hparams.mask:
             hparams.mask = f"src/dataloader/mask/{hparams.case_study}_mask.npy"
