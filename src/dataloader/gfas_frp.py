@@ -328,7 +328,7 @@ passed in as `batch`.
                             else np.concatenate([y.cpu(), y.cpu() + 1]),
                             lmbda=self.hparams.boxcox,
                         )
-                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
+                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].to(y_hat.device)
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
@@ -379,7 +379,7 @@ passed in as `batch`.
                             else np.concatenate([y.cpu(), y.cpu() + 1]),
                             lmbda=self.hparams.boxcox,
                         )
-                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
+                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].to(y.device)
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
