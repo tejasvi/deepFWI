@@ -229,7 +229,7 @@ passed in as `batch`.
                 if self.hparams.round_to_zero:
                     y_hat = y_hat[y > self.hparams.round_to_zero]
                     y = y[y > self.hparams.round_to_zero]
-                if self.hparams.clip_fwi:
+                if self.hparams.clip_output:
                     y = y[
                         (y_hat < self.hparams.clip_fwi[1])
                         & (self.hparams.clip_fwi[0] < y_hat)
