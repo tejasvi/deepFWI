@@ -231,22 +231,13 @@ passed in as `batch`.
                     y = y[y > self.hparams.round_to_zero]
                 if self.hparams.clip_output:
                     y = y[
-                        (y_hat < self.hparams.clip_output[1])
+                        (y_hat < self.hparams.clip_output[-1])
                         & (self.hparams.clip_output[0] < y_hat)
                     ]
                     y_hat = y_hat[
-                        (y_hat < self.hparams.clip_output[1])
+                        (y_hat < self.hparams.clip_output[-1])
                         & (self.hparams.clip_output[0] < y_hat)
                     ]
-                if self.hparams.boxcox:
-                    # Negative predictions give NaN after inverse-boxcox
-                    y_hat[y_hat < 0] = 0
-                    y_hat = torch.from_numpy(
-                        inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
-                    ).cuda()
-                if self.hparams.clip_fwi:
-                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
-                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
 
                 if not y.numel():
                     return None
