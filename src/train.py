@@ -186,7 +186,7 @@ def set_hparams(hparams):
         if not hparams.mask:
             hparams.mask = f"dataloader/mask/{hparams.case_study}_mask.npy"
 
-    from data.forcing_stats import (
+    from data.consts.forcing_stats import (
         FORCING_STD_TP,
         FORCING_STD_T2,
         FORCING_STD_WSPEED,
