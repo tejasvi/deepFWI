@@ -211,7 +211,7 @@ def set_hparams(hparams):
     }
 
     if hparams.out == "fwi_reanalysis":
-        from data.fwi_reanalysis_stats import (
+        from data.consts.fwi_reanalysis_stats import (
             REANALYSIS_FWI_MEAN,
             REANALYSIS_FWI_MAD,
             REANALYSIS_FWI_VAR,
@@ -224,7 +224,7 @@ def set_hparams(hparams):
         )
 
     elif hparams.out == "gfas_frp":
-        from data.frp_stats import (
+        from data.consts.frp_stats import (
             FRP_MEAN,
             FRP_MAD,
             FRP_VAR,
@@ -244,7 +244,7 @@ def set_hparams(hparams):
         if hparams.boxcox and not (type(hparams.boxcox) == type(bool)):
             hparams.boxcox = BOX_COX_LAMBDA
     elif hparams.out == "fwi_forecast":
-        from data.forecast_stats import (
+        from data.consts.forecast_stats import (
             FORECAST_FWI_MAD,
             FORECAST_FWI_MEAN,
             FORECAST_FWI_VAR,
