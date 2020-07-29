@@ -409,7 +409,7 @@ def get_hparams(
     mask: (
         "File containing the mask stored as the numpy array",
         "option",
-    ) = "dataloader/mask_reanalysis.npy",
+    ) = "src/dataloader/mask/reanalysis_mask.npy",
     test_set: (
         "Load test-set filenames from specified file instead of random split",
         "option",
