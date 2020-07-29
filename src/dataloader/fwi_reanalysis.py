@@ -251,10 +251,10 @@ to defaults to None
                             x
                             for i in range(self.n_input)
                             for x in (
-                                FORCING_MEAN_RH,
-                                FORCING_MEAN_T2,
-                                FORCING_MEAN_TP,
-                                FORCING_MEAN_WSPEED,
+                                self.hparams.inp_mean["rh"],
+                                self.hparams.inp_mean["t2"],
+                                self.hparams.inp_mean["tp"],
+                                self.hparams.inp_mean["wspeed"],
                             )
                         ],
                         [
