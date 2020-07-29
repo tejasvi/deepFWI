@@ -231,12 +231,12 @@ passed in as `batch`.
                     y = y[y > self.hparams.round_to_zero]
                 if self.hparams.clip_output:
                     y = y[
-                        (y_hat < self.hparams.clip_fwi[1])
-                        & (self.hparams.clip_fwi[0] < y_hat)
+                        (y_hat < self.hparams.clip_output[1])
+                        & (self.hparams.clip_output[0] < y_hat)
                     ]
                     y_hat = y_hat[
-                        (y_hat < self.hparams.clip_fwi[1])
-                        & (self.hparams.clip_fwi[0] < y_hat)
+                        (y_hat < self.hparams.clip_output[1])
+                        & (self.hparams.clip_output[0] < y_hat)
                     ]
                 if self.hparams.boxcox:
                     y_hat = torch.from_numpy(
