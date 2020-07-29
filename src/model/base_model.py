@@ -379,6 +379,7 @@ on second call determined by the `force` parameter.
             self.hparams.case_study
             and not self.hparams.test_set
             and not self.hparams.dry_run
+            and not hasattr(self.hparams, "eval")
         ):
             assert self.data.min_date + np.timedelta64(
                 max(self.test_data.indices), "D"
