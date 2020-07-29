@@ -445,7 +445,7 @@ passed in as `batch`.
 
                 # Accuracy for a threshold
                 n_correct_pred = (
-                    ((y - y_hat).abs() < PRE_TRANSFORM_FRP_MAD / 2).float().mean()
+                    ((y - y_hat).abs() < self.hparams.out_mad / 2).float().mean()
                 )
                 abs_error = (
                     (y - y_hat).abs().float().mean()
