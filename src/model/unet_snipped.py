@@ -5,7 +5,7 @@ are removed before the activation resolution gets higher than the output resolut
 import torch
 import torch.nn as nn
 
-from src.model.unet import Model as BaseModel
+from model.unet import Model as BaseModel
 
 
 class Model(BaseModel):
