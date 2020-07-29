@@ -189,9 +189,7 @@ to defaults to None
             ):
                 self.dates.append(t)
 
-        log.info(
-            f"Start date: {self.dates[0]}\nEnd date: {self.dates[-1]}",
-        )
+        log.info(f"Start date: {self.dates[0]}\nEnd date: {self.dates[-1]}",)
 
         # Loading the mask for output variable if provided as generating from NaN mask
         self.mask = torch.from_numpy(
