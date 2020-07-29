@@ -430,11 +430,8 @@ passed in as `batch`.
                     return {}
                 if self.hparams.transform_frp:
                     y_hat = torch.from_numpy(
-                        inv_boxcox(y_hat.cpu().numpy(), BOX_COX_LAMBDA)
-                    ).cuda()
-                if self.hparams.clip_fwi:
-                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
-                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+                        inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
+                    ).to(y_hat.device)
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"
