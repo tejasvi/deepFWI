@@ -13,7 +13,7 @@ from scipy.special import inv_boxcox
 import torch
 import torchvision.transforms as transforms
 
-from src.dataloader.base_loader import ModelDataset as BaseDataset
+from dataloader.base_loader import ModelDataset as BaseDataset
 
 
 class ModelDataset(BaseDataset):
