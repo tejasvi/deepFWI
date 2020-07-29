@@ -200,20 +200,19 @@ to defaults to None
         for t in self.input.time.values:
             if all(
                 [
-                    t - np.timedelta(i, "D") in self.input.time.values
-                    for i in range(self.inp_days)
+                    t - np.timedelta64(i, "D") in self.input.time.values
+                    for i in range(self.hparams.in_days)
                 ]
             ) and all(
                 [
-                    t + np.timedelta(i, "D") in self.output.time.values
-                    for i in range(self.out_days)
+                    t + np.timedelta64(i, "D") in self.output.time.values
+                    for i in range(self.hparams.out_days)
                 ]
             ):
                 self.dates.append(t)
 
         log.info(
-            f"Start date: {self.dates[0]}",
-            f"\nEnd date: {self.dates[-1]}",
+            f"Start date: {self.dates[0]}\nEnd date: {self.dates[-1]}",
         )
 
         # Loading the mask for output variable if provided as generating from NaN mask
