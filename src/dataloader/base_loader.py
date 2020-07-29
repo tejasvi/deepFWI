@@ -58,6 +58,11 @@ defaults to None
         if self.hparams.binned:
             self.bin_intervals = self.hparams.binned
 
+        # Mean of output variable used for bias-initialization.
+        self.out_mean = out_mean if out_mean else self.hparams.out_mean
+        # Variance of output variable used to scale the training loss.
+        self.out_var = out_var if out_var else self.hparams.out_var
+
     def __len__(self):
         """
         The internal method used to obtain the number of iteration samples.
