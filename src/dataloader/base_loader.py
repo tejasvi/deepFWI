@@ -221,11 +221,6 @@ passed in as `batch`.
         x, y_pre = batch
         y_hat_pre, _ = model(x) if model.aux else model(x), None
         mask = model.data.mask.expand_as(y_pre[0][0])
-        if self.hparams.case_study:
-            mask = mask[
-                self.hparams.case_study[0] : self.hparams.case_study[1],
-                self.hparams.case_study[2] : self.hparams.case_study[3],
-            ]
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
