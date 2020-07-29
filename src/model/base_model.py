@@ -357,6 +357,7 @@ on second call determined by the `force` parameter.
                 )
             else:
                 self.train_data = self.test_data = self.data
+                self.test_data.indices = list(range(len(self.test_data)))
 
             test_set_dates = [
                 str(self.data.min_date + np.timedelta64(i, "D"))
