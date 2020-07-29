@@ -139,7 +139,7 @@ passed in as `batch`.
                 if self.hparams.boxcox:
                     y = torch.from_numpy(
                         boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
-                    ).cuda()
+                    ).to(y.device)
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
@@ -183,7 +183,7 @@ passed in as `batch`.
                 if self.hparams.boxcox:
                     y = torch.from_numpy(
                         boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
-                    ).cuda()
+                    ).to(y.device)
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
