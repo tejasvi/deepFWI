@@ -14,24 +14,6 @@ from dataloader.base_loader import ModelDataset as BaseDataset
 from pytorch_lightning import _logger as log
 
 
-from data.fwi_reanalysis_stats import (
-    REANALYSIS_FWI_MEAN,
-    REANALYSIS_FWI_MAD,
-    REANALYSIS_FWI_VAR,
-    PROCESSED_REANALYSIS_FWI_VAR,
-)
-from data.forcing_stats import (
-    FORCING_STD_TP,
-    FORCING_STD_T2,
-    FORCING_STD_WSPEED,
-    FORCING_STD_RH,
-    FORCING_MEAN_WSPEED,
-    FORCING_MEAN_TP,
-    FORCING_MEAN_T2,
-    FORCING_MEAN_RH,
-)
-
-
 class ModelDataset(BaseDataset):
     """
     The dataset class responsible for loading the data and providing the samples for \
