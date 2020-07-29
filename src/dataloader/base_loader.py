@@ -224,20 +224,8 @@ passed in as `batch`.
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
-                y = y_pre[b][c]
-                y_hat = y_hat_pre[b][c]
-                if self.hparams.case_study:
-                    y = y[
-                        self.hparams.case_study[0] : self.hparams.case_study[1],
-                        self.hparams.case_study[2] : self.hparams.case_study[3],
-                    ][mask]
-                    y_hat = y_hat[
-                        self.hparams.case_study[0] : self.hparams.case_study[1],
-                        self.hparams.case_study[2] : self.hparams.case_study[3],
-                    ][mask]
-                else:
-                    y = y[mask]
-                    y_hat = y_hat[mask]
+                y = y_pre[b][c][mask]
+                y_hat = y_hat_pre[b][c][mask]
                 if self.hparams.round_to_zero:
                     y_hat = y_hat[y > self.hparams.round_to_zero]
                     y = y[y > self.hparams.round_to_zero]
