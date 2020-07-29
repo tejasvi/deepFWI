@@ -221,21 +221,7 @@ to defaults to None
             np.load(self.hparams.mask)
             if self.hparams.mask
             else ~np.isnan(self.output["fwi"][0].values)
-        ).cuda()
-
-        # Mean of output variable used for bias-initialization.
-        self.out_mean = out_mean if out_mean else REANALYSIS_FWI_MEAN
-
-        # Variance of output variable used to scale the training loss.
-        self.out_var = (
-            out_var
-            if out_var
-            else REANALYSIS_FWI_MAD
-            if self.hparams.loss == "mae"
-            else PROCESSED_REANALYSIS_FWI_VAR
-            if self.hparams.mask
-            else REANALYSIS_FWI_VAR
-        )
+        ).to("cuda" if self.hparams.gpus else "cpu")
 
         # Input transforms including mean and std normalization
         self.transform = (
