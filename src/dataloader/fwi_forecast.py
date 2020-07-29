@@ -8,13 +8,7 @@ import xarray as xr
 import torch
 import torchvision.transforms as transforms
 
-from src.dataloader.base_loader import ModelDataset as BaseDataset
-
-from data.forecast_stats import (
-    FORECAST_FWI_MAD,
-    FORECAST_FWI_MEAN,
-    FORECAST_FWI_VAR,
-)
+from dataloader.base_loader import ModelDataset as BaseDataset
 
 
 class ModelDataset(BaseDataset):
