@@ -270,6 +270,9 @@ def get_model(hparams):
     """
     sys.path += ["../", "."]
 
+    # Update hparams with the constants
+    set_hparams(hparams)
+
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
