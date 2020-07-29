@@ -229,6 +229,12 @@ passed in as `batch`.
                 if self.hparams.round_to_zero:
                     y_hat = y_hat[y > self.hparams.round_to_zero]
                     y = y[y > self.hparams.round_to_zero]
+                if self.hparams.boxcox:
+                    # Negative predictions give NaN after inverse-boxcox
+                    y_hat[y_hat < 0] = 0
+                    y_hat = torch.from_numpy(
+                        inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
+                    ).to(y_hat.device)
                 if self.hparams.clip_output:
                     y = y[
                         (y_hat < self.hparams.clip_output[-1])
