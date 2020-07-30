@@ -95,28 +95,6 @@ to defaults to None
             key=get_out_time,
         )
 
-        # Loading list of test-set files
-        if self.hparams.test_set:
-            with open(self.hparams.test_set, "rb") as f:
-                test_out = pickle.load(f)
-                time_indices = set(map(get_inp_time, inp_files))
-                inp_index = {
-                    k: [x for x in inp_files if get_inp_time(x) == k]
-                    for k in time_indices
-                }
-                test_inp = sum(
-                    [inp_index[t] for f in test_out for t in (get_out_time(f),)], [],
-                )
-
-        # Handling the input and output files using test-set files
-        if not self.hparams.dry_run and "test_inp" in locals():
-            if hasattr(self.hparams, "eval"):
-                inp_files = test_inp
-                out_files = test_out
-            else:
-                inp_files = list(set(inp_files) - set(test_inp))
-                out_files = list(set(out_files) - set(test_out))
-
         if self.hparams.dry_run:
             inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
             out_files = out_files[: 2 * (self.n_output + self.n_input)]
