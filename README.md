@@ -29,28 +29,10 @@
 
 ## Implementation overview
 * The entry point for training is [src/train.py](src/train.py)
-  * **Example Usage**: `python src/train.py [-h]
-               [-init-features 16] [-in-days 4] [-out-days 1]
-               [-epochs 100] [-learning-rate 0.001] [-loss mse]
-               [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
-               [-optim one_cycle] [-dry-run False]
-               [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
-               [-forcings-dir ${FORCINGS_DIR:-$PWD}]
-               [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]
-               [-mask dataloader/mask.npy]
-               [-comment None]`
+  * **Example Usage**: `python src/train.py [-h] [-in-days 4] [-out-days 1] [-forcings-dir ${FORCINGS_DIR:-$PWD}] [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]`
 
 * The entry point for inference is [src/test.py](src/test.py)
-  * **Example Usage**: `python src/test.py [-h]
-               [-init-features 16] [-in-days 4] [-out-days 1]
-               [-learning-rate 0.001] [-loss mse]
-               [-batch-size 1] [-split 0.2] [-use-16bit True] [-gpus 1]
-               [-dry-run False] [-case-study False]
-               [-clip-fwi False] [-model unet_tapered] [-out fwi_reanalysis]
-               [-forcings-dir ${FORCINGS_DIR:-$PWD}]
-               [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]
-               [-mask dataloader/mask.npy]
-               [-comment None] [-checkpoint-file]`
+  * **Example Usage**: `python src/test.py [-h] [-in-days 4] [-out-days 1] [-forcings-dir ${FORCINGS_DIR:-$PWD}] [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}] [-checkpoint-file]`
 
 * **Configuration Details**:
 <br> Optional arguments (default values indicated below):
