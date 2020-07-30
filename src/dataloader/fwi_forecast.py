@@ -6,7 +6,6 @@ from glob import glob
 import xarray as xr
 
 import torch
-import torchvision.transforms as transforms
 
 from dataloader.base_loader import ModelDataset as BaseDataset
 
@@ -27,7 +26,6 @@ class ModelDataset(BaseDataset):
         forecast_dir=None,
         forcings_dir=None,
         reanalysis_dir=None,
-        transform=None,
         hparams=None,
         **kwargs,
     ):
@@ -47,8 +45,6 @@ class ModelDataset(BaseDataset):
         :param reanalysis_dir: The directory containing the FWI-Reanalysis data,
             defaults to None
         :type reanalysis_dir: str, optional
-        :param transform: Custom transform for the input variable, defaults to None
-        :type transform: torch.transforms, optional
         :param hparams: Holds configuration values, defaults to None
         :type hparams: Namespace, optional
         """
@@ -59,7 +55,6 @@ class ModelDataset(BaseDataset):
             forecast_dir=forecast_dir,
             forcings_dir=forcings_dir,
             reanalysis_dir=reanalysis_dir,
-            transform=transform,
             hparams=hparams,
             **kwargs,
         )
@@ -114,34 +109,3 @@ class ModelDataset(BaseDataset):
 
         # Loading the mask for output variable if provided as generating from NaN mask
         self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
-
-        # Input transforms including mean and std normalization
-        self.transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                # Mean and standard deviation stats used to normalize the input data to
-                # the mean of zero and standard deviation of one.
-                transforms.Normalize(
-                    (
-                        72.03445,
-                        281.2624,
-                        2.4925985,
-                        6.5504117,
-                        72.03445,
-                        281.2624,
-                        2.4925985,
-                        6.5504117,
-                    ),
-                    (
-                        18.8233801,
-                        21.9253515,
-                        6.37190019,
-                        3.73465273,
-                        18.8233801,
-                        21.9253515,
-                        6.37190019,
-                        3.73465273,
-                    ),
-                ),
-            ]
-        )
