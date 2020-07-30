@@ -119,7 +119,9 @@ defaults to None
 
         X = np.stack(
             [
-                self.input[v].sel(time=self.dates[idx] - np.timedelta64(i, "D")).values
+                self.input[v]
+                .sel(time=[self.dates[idx] - np.timedelta64(i, "D")])
+                .values
                 for i in range(self.n_input)
                 for v in ["rh", "t2", "tp", "wspeed"]
             ],
@@ -129,7 +131,7 @@ defaults to None
             np.stack(
                 [
                     self.output[list(self.output.data_vars)[0]]
-                    .sel(time=self.dates[idx] + np.timedelta64(i, "D"))
+                    .sel(time=[self.dates[idx] + np.timedelta64(i, "D")])
                     .values
                     for i in range(self.n_output)
                 ],
