@@ -63,6 +63,37 @@ defaults to None
         # Variance of output variable used to scale the training loss.
         self.out_var = out_var if out_var else self.hparams.out_var
 
+        # Input transforms including mean and std normalization
+        self.transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                # Mean and standard deviation stats used to normalize the input data to
+                # the mean of zero and standard deviation of one.
+                transforms.Normalize(
+                    [
+                        x
+                        for i in range(self.n_input)
+                        for x in (
+                            self.hparams.inp_mean["rh"],
+                            self.hparams.inp_mean["t2"],
+                            self.hparams.inp_mean["tp"],
+                            self.hparams.inp_mean["wspeed"],
+                        )
+                    ],
+                    [
+                        x
+                        for i in range(self.n_input)
+                        for x in (
+                            self.hparams.inp_std["rh"],
+                            self.hparams.inp_std["t2"],
+                            self.hparams.inp_std["tp"],
+                            self.hparams.inp_std["wspeed"],
+                        )
+                    ],
+                ),
+            ]
+        )
+
     def __len__(self):
         """
         The internal method used to obtain the number of iteration samples.
