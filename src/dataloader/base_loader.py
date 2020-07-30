@@ -3,10 +3,12 @@ Base Dataset class to work with fwi-forcings data.
 """
 from collections import defaultdict
 import numpy as np
+from scipy.stats import boxcox
+from scipy.special import inv_boxcox
+
 import torch
 from torch.utils.data import Dataset
-
-from deepFWI.data.fwi_reanalysis_stats import LOWER_BOUND_FWI, UPPER_BOUND_FWI
+import torchvision.transforms as transforms
 
 
 class ModelDataset(Dataset):
@@ -54,6 +56,44 @@ defaults to None
         self.hparams = hparams
         self.out_mean = out_mean
         self.out_var = out_var
+        if self.hparams.binned:
+            self.bin_intervals = self.hparams.binned
+
+        # Mean of output variable used for bias-initialization.
+        self.out_mean = out_mean if out_mean else self.hparams.out_mean
+        # Variance of output variable used to scale the training loss.
+        self.out_var = out_var if out_var else self.hparams.out_var
+
+        # Input transforms including mean and std normalization
+        self.transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                # Mean and standard deviation stats used to normalize the input data to
+                # the mean of zero and standard deviation of one.
+                transforms.Normalize(
+                    [
+                        x
+                        for i in range(self.n_input)
+                        for x in (
+                            self.hparams.inp_mean["rh"],
+                            self.hparams.inp_mean["t2"],
+                            self.hparams.inp_mean["tp"],
+                            self.hparams.inp_mean["wspeed"],
+                        )
+                    ],
+                    [
+                        x
+                        for i in range(self.n_input)
+                        for x in (
+                            self.hparams.inp_std["rh"],
+                            self.hparams.inp_std["t2"],
+                            self.hparams.inp_std["tp"],
+                            self.hparams.inp_std["wspeed"],
+                        )
+                    ],
+                ),
+            ]
+        )
 
     def __len__(self):
         """
@@ -62,7 +102,7 @@ defaults to None
         :return: The maximum possible iterations with the provided data.
         :rtype: int
         """
-        return len(self.input.time) - (self.n_input - 1) - (self.n_output - 1)
+        return len(self.dates)
 
     def __getitem__(self, idx):
         """
@@ -79,7 +119,9 @@ defaults to None
 
         X = np.stack(
             [
-                self.input[v].sel(time=self.min_date + np.timedelta64(idx + i, "D"))
+                self.input[v]
+                .sel(time=[self.dates[idx] - np.timedelta64(i, "D")])
+                .values
                 for i in range(self.n_input)
                 for v in ["rh", "t2", "tp", "wspeed"]
             ],
@@ -89,10 +131,7 @@ defaults to None
             np.stack(
                 [
                     self.output[list(self.output.data_vars)[0]]
-                    .sel(
-                        time=self.min_date
-                        + np.timedelta64(idx + self.n_input - 1 + i, "D")
-                    )
+                    .sel(time=[self.dates[idx] + np.timedelta64(i, "D")])
                     .values
                     for i in range(self.n_output)
                 ],
@@ -128,6 +167,22 @@ passed in as `batch`.
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
                 y_hat = y_hat_pre[b][c][mask]
+                if self.hparams.round_to_zero:
+                    y_hat = y_hat[y > self.hparams.round_to_zero]
+                    y = y[y > self.hparams.round_to_zero]
+                if self.hparams.clip_output:
+                    y = y[
+                        (y_hat < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y_hat)
+                    ]
+                    y_hat = y_hat[
+                        (y_hat < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y_hat)
+                    ]
+                if self.hparams.boxcox:
+                    y = torch.from_numpy(
+                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
+                    ).to(y.device)
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
@@ -165,6 +220,22 @@ passed in as `batch`.
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
                 y_hat = y_hat_pre[b][c][mask]
+                if self.hparams.round_to_zero:
+                    y_hat = y_hat[y > self.hparams.round_to_zero]
+                    y = y[y > self.hparams.round_to_zero]
+                if self.hparams.clip_output:
+                    y = y[
+                        (y_hat < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y_hat)
+                    ]
+                    y_hat = y_hat[
+                        (y_hat < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y_hat)
+                    ]
+                if self.hparams.boxcox:
+                    y = torch.from_numpy(
+                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
+                    ).to(y.device)
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
@@ -199,7 +270,6 @@ passed in as `batch`.
         :return: Loss and logs
         :rtype: dict
         """
-
         x, y_pre = batch
         y_hat_pre, _ = model(x) if model.aux else model(x), None
         mask = model.data.mask.expand_as(y_pre[0][0])
@@ -208,14 +278,28 @@ passed in as `batch`.
             for c in range(y_pre.shape[1]):
                 y = y_pre[b][c][mask]
                 y_hat = y_hat_pre[b][c][mask]
-
+                if self.hparams.round_to_zero:
+                    y_hat = y_hat[y > self.hparams.round_to_zero]
+                    y = y[y > self.hparams.round_to_zero]
                 if self.hparams.boxcox:
+                    # Negative predictions give NaN after inverse-boxcox
+                    y_hat[y_hat < 0] = 0
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
-                    ).cuda()
-                if self.hparams.clip_fwi:
-                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
-                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+                    ).to(y_hat.device)
+                if self.hparams.clip_output:
+                    y = y[
+                        (y_hat < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y_hat)
+                    ]
+                    y_hat = y_hat[
+                        (y_hat < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y_hat)
+                    ]
+
+                if not y.numel():
+                    return None
+
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"
@@ -254,7 +338,10 @@ passed in as `batch`.
                 # Inference on binned values
                 if self.hparams.binned:
                     for i in range(len(self.bin_intervals) - 1):
-                        low, high = bin_intervals[i], bin_intervals[i + 1]
+                        low, high = (
+                            self.bin_intervals[i],
+                            self.bin_intervals[i + 1],
+                        )
                         tensorboard_logs[f"test_loss_{low}_{high}"][str(c)] = loss(
                             low, high
                         )

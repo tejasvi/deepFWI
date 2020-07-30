@@ -4,7 +4,7 @@ FWI-Reanalysis resolution.
 """
 import torch.nn as nn
 
-from src.model.unet import Model as BaseModel
+from model.unet import Model as BaseModel
 
 
 class Model(BaseModel):

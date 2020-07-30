@@ -14,7 +14,6 @@
 *lightning_logs*
 *tb_logs*
 .docs.sh
-Dockerfile
 logs
 .DS_Store
 **/dataloader/*.pkl
@@ -22,3 +21,5 @@ logs
 .DS_St
 docs/build
 *.npy
+*.ipynb_checkpoints
+*.ckpt

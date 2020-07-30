@@ -6,15 +6,8 @@ from glob import glob
 import xarray as xr
 
 import torch
-import torchvision.transforms as transforms
 
-from src.dataloader.base_loader import ModelDataset as BaseDataset
-
-from data.forecast_stats import (
-    FORECAST_FWI_MAD,
-    FORECAST_FWI_MEAN,
-    FORECAST_FWI_VAR,
-)
+from dataloader.base_loader import ModelDataset as BaseDataset
 
 
 class ModelDataset(BaseDataset):
@@ -33,7 +26,6 @@ class ModelDataset(BaseDataset):
         forecast_dir=None,
         forcings_dir=None,
         reanalysis_dir=None,
-        transform=None,
         hparams=None,
         **kwargs,
     ):
@@ -53,8 +45,6 @@ class ModelDataset(BaseDataset):
         :param reanalysis_dir: The directory containing the FWI-Reanalysis data,
             defaults to None
         :type reanalysis_dir: str, optional
-        :param transform: Custom transform for the input variable, defaults to None
-        :type transform: torch.transforms, optional
         :param hparams: Holds configuration values, defaults to None
         :type hparams: Namespace, optional
         """
@@ -65,12 +55,11 @@ class ModelDataset(BaseDataset):
             forecast_dir=forecast_dir,
             forcings_dir=forcings_dir,
             reanalysis_dir=reanalysis_dir,
-            transform=transform,
             hparams=hparams,
             **kwargs,
         )
 
-        self.hparams.thresh = FORECAST_FWI_MAD / 2
+        self.hparams.thresh = self.hparams.out_mad / 2
 
         # Consider only ground truth and discard forecast values
         preprocess = lambda x: x.isel(time=slice(0, 1))
@@ -93,7 +82,7 @@ class ModelDataset(BaseDataset):
         with xr.open_mfdataset(
             inp_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.input = ds.load()
+            self.input = ds.sortby("time").load()
 
         out_files = sorted(
             glob(f"{forecast_dir}/ECMWF_FWI_2019*_1200_hr_fwi.nc"),
@@ -111,53 +100,12 @@ class ModelDataset(BaseDataset):
         with xr.open_mfdataset(
             out_files, preprocess=preprocess, engine="h5netcdf"
         ) as ds:
-            self.output = ds.load()
+            self.output = ds.sortby("time").load()
 
         # Ensure timestamp matches for both the input and output
         assert len(self.input.time) == len(self.output.time)
 
+        self.min_date = self.input.rh.time.min().values
+
         # Loading the mask for output variable if provided as generating from NaN mask
         self.mask = ~torch.isnan(torch.from_numpy(self.output["fwi"][0].values))
-
-        # Mean of output variable used for bias-initialization.
-        self.out_mean = out_mean if out_mean else FORECAST_FWI_MEAN
-
-        # Variance of output variable used to scale the training loss.
-        self.out_var = (
-            out_var
-            if out_var
-            else FORECAST_FWI_MAD
-            if self.hparams.loss == "mae"
-            else FORECAST_FWI_VAR
-        )
-
-        # Input transforms including mean and std normalization
-        self.transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                # Mean and standard deviation stats used to normalize the input data to
-                # the mean of zero and standard deviation of one.
-                transforms.Normalize(
-                    (
-                        72.03445,
-                        281.2624,
-                        2.4925985,
-                        6.5504117,
-                        72.03445,
-                        281.2624,
-                        2.4925985,
-                        6.5504117,
-                    ),
-                    (
-                        18.8233801,
-                        21.9253515,
-                        6.37190019,
-                        3.73465273,
-                        18.8233801,
-                        21.9253515,
-                        6.37190019,
-                        3.73465273,
-                    ),
-                ),
-            ]
-        )

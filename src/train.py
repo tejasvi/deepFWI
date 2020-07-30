@@ -169,6 +169,93 @@ def main(hparams):
     trainer.test()
 
 
+def set_hparams(hparams):
+    """
+    Add constant parameter values based on passed arguments.
+
+    :param hparams: Parameters
+    :type hparams: Namespace
+    :return: Modified parameters
+    :rtype: Namespace
+    """
+    if hparams.case_study:
+        case_studies = importlib.import_module("data.consts.case_study").case_studies
+        hparams.case_study_dates = case_studies[hparams.case_study]
+        if not hparams.mask:
+            hparams.mask = f"dataloader/mask/{hparams.case_study}_mask.npy"
+
+    from data.consts.forcing_stats import (
+        FORCING_STD_TP,
+        FORCING_STD_T2,
+        FORCING_STD_WSPEED,
+        FORCING_STD_RH,
+        FORCING_MEAN_WSPEED,
+        FORCING_MEAN_TP,
+        FORCING_MEAN_T2,
+        FORCING_MEAN_RH,
+    )
+
+    hparams.inp_mean = {
+        "wspeed": FORCING_MEAN_WSPEED,
+        "tp": FORCING_MEAN_TP,
+        "t2": FORCING_MEAN_T2,
+        "rh": FORCING_MEAN_RH,
+    }
+    hparams.inp_std = {
+        "wspeed": FORCING_STD_WSPEED,
+        "tp": FORCING_STD_TP,
+        "t2": FORCING_STD_T2,
+        "rh": FORCING_STD_RH,
+    }
+
+    if hparams.out == "fwi_reanalysis":
+        from data.consts.fwi_reanalysis_stats import (
+            REANALYSIS_FWI_MEAN,
+            REANALYSIS_FWI_MAD,
+            REANALYSIS_FWI_VAR,
+        )
+
+        hparams.out_mean, hparams.out_mad, hparams.out_var = (
+            REANALYSIS_FWI_MEAN,
+            REANALYSIS_FWI_MAD,
+            REANALYSIS_FWI_VAR,
+        )
+
+    elif hparams.out == "gfas_frp":
+        from data.consts.frp_stats import (
+            FRP_MEAN,
+            FRP_MAD,
+            FRP_VAR,
+            BOX_COX_FRP_MEAN,
+            BOX_COX_FRP_MAD,
+            BOX_COX_FRP_VAR,
+            BOX_COX_LAMBDA,
+        )
+
+        hparams.out_mean, hparams.out_mad, hparams.out_var = (
+            BOX_COX_FRP_MEAN,
+            BOX_COX_FRP_MAD,
+            BOX_COX_FRP_VAR if hparams.boxcox else FRP_MEAN,
+            FRP_MAD,
+            FRP_VAR,
+        )
+        if hparams.boxcox and not (type(hparams.boxcox) == type(bool)):
+            hparams.boxcox = BOX_COX_LAMBDA
+    elif hparams.out == "fwi_forecast":
+        from data.consts.forecast_stats import (
+            FORECAST_FWI_MAD,
+            FORECAST_FWI_MEAN,
+            FORECAST_FWI_VAR,
+        )
+
+        hparams.out_mean, hparams.out_mad, hparams.out_var = (
+            FORECAST_FWI_MEAN,
+            FORECAST_FWI_MAD,
+            FORECAST_FWI_VAR,
+        )
+    return hparams
+
+
 def get_model(hparams):
     """
     Prepare model and the data.
@@ -179,7 +266,11 @@ def get_model(hparams):
     :return: Model with the linked data.
     :rtype: Model
     """
-    sys.path.append("../", ".")
+    sys.path += ["../", "."]
+
+    # Update hparams with the constants
+    set_hparams(hparams)
+
     Model = importlib.import_module(f"model.{hparams.model}").Model
     if hparams.model in ["unet"]:
         if hparams.out == "fwi_forecast":
@@ -263,11 +354,12 @@ def get_hparams(
     find_lr: ("Automatically search for an ideal learning rate", "option") = False,
     search_bs: ("Scale the batch dynamically for full GPU usage") = False,
     case_study: (
-        "Limit the analysis to Australian region (inference only)",
+        "The case-study region to use for inference: australia, california, portugal,"
+        " siberia, chile, uk",
         "option",
     ) = False,
-    clip_fwi: (
-        "Limit the analysis to the datapoints with 0.5 < fwi < 60 (inference only)",
+    clip_output: (
+        "Limit the inference to the datapoints within supplied range (e.g. 0.5,60)",
         "option",
     ) = False,
     boxcox: (
@@ -282,7 +374,7 @@ def get_hparams(
     round_to_zero: (
         "Round off the target values below the specified threshold to zero",
         "option",
-    ) = 0.5,
+    ) = False,
     isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = True,
     transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = True,
     #
@@ -315,11 +407,7 @@ def get_hparams(
     mask: (
         "File containing the mask stored as the numpy array",
         "option",
-    ) = "dataloader/mask_reanalysis.npy",
-    test_set: (
-        "Load test-set filenames from specified file instead of random split",
-        "option",
-    ) = False,
+    ) = "src/dataloader/mask/reanalysis_mask.npy",
     comment: ("Used for logging", "option") = "FRP 0 clipping, box cox",
     #
     # Test run

@@ -2,7 +2,6 @@
 The dataset class to be used with fwi-forcings and gfas-frp data.
 """
 from glob import glob
-import pickle
 from collections import defaultdict
 
 import xarray as xr
@@ -11,31 +10,8 @@ from scipy import stats
 from scipy.special import inv_boxcox
 
 import torch
-import torchvision.transforms as transforms
 
-from src.dataloader.base_loader import ModelDataset as BaseDataset
-
-from data.frp_stats import (
-    FRP_MEAN,
-    FRP_VAR,
-    BOX_COX_FRP_MEAN,
-    BOX_COX_FRP_VAR,
-    PRE_TRANSFORM_FRP_MAD,
-    MIN_CLIPPING_FRP,
-    MAX_CLIPPING_FRP,
-    PLACEHOLDER_FRP,
-)
-
-from data.forcing_stats import (
-    FORCING_MEAN_RH,
-    FORCING_MEAN_T2,
-    FORCING_MEAN_TP,
-    FORCING_MEAN_WSPEED,
-    FORCING_STD_RH,
-    FORCING_STD_WSPEED,
-    FORCING_STD_T2,
-    FORCING_STD_TP,
-)
+from dataloader.base_loader import ModelDataset as BaseDataset
 
 
 class ModelDataset(BaseDataset):
@@ -52,7 +28,6 @@ class ModelDataset(BaseDataset):
         forcings_dir=None,
         reanalysis_dir=None,
         frp_dir=None,
-        transform=None,
         hparams=None,
         **kwargs,
     ):
@@ -72,8 +47,6 @@ to None
         :param reanalysis_dir: The directory containing the FWI-Reanalysis data, \
 to defaults to None
         :type reanalysis_dir: str, optional
-        :param transform: Custom transform for the input variable, defaults to None
-        :type transform: torch.transforms, optional
         :param hparams: Holds configuration values, defaults to None
         :type hparams: Namespace, optional
         """
@@ -85,7 +58,6 @@ to defaults to None
             forcings_dir=forcings_dir,
             reanalysis_dir=reanalysis_dir,
             frp_dir=None,
-            transform=transform,
             hparams=hparams,
             **kwargs,
         )
@@ -96,7 +68,7 @@ to defaults to None
         ), "The number of input and output days must be > 0."
         self.n_input = self.hparams.in_days
         self.n_output = self.hparams.out_days
-        self.hparams.thresh = PRE_TRANSFORM_FRP_MAD / 2
+        self.hparams.thresh = self.hparams.out_mad / 2
 
         # Generate the list of all valid files in the specified directories
         inp_time = (
@@ -110,39 +82,11 @@ to defaults to None
             key=inp_time,
         )
         out_time = lambda x: int(x[-8:-6]) * 100 + int(x[-5:-3])
-        out_files_orig = sorted(
+        out_files = sorted(
             sorted(glob(f"{frp_dir}/FRP_20??_??.nc")),
             # Extracting the year and month from filenames to sort by time.
             key=out_time,
         )
-
-        if self.hparams.save_test_set:
-            # Create out_files list of size same as inp_list
-            time_indices = set(map(inp_time, inp_files))
-            out_files = sorted(
-                [
-                    f
-                    for f in out_files_orig
-                    for t in time_indices
-                    if t // 100 == out_time(f)
-                ],
-                key=out_time,
-            )
-        else:
-            out_files = out_files_orig
-
-        # Loading list of test-set files
-        if self.hparams.test_set:
-            with open(self.hparams.test_set, "rb") as f:
-                _, test_inp, test_out = pickle.load(f)
-
-        # Handling the input and output files using test-set files
-        if not self.hparams.dry_run and "test_inp" in locals():
-            if hasattr(self.hparams, "eval"):
-                inp_files = test_inp
-                out_files = test_out
-            else:
-                inp_files = list(set(inp_files) - set(test_inp))
 
         if self.hparams.dry_run:
             inp_files = inp_files[: 32 * (self.n_output + self.n_input)]
@@ -177,7 +121,7 @@ to defaults to None
             parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
-            self.input = ds.load()
+            self.input = ds.sortby("time").load()
 
         with xr.open_mfdataset(
             # Remove duplicated file names
@@ -185,18 +129,21 @@ to defaults to None
             parallel=False if self.hparams.dry_run else True,
             combine="by_coords",
         ) as ds:
-            self.output = ds.load()
-            if self.hparams.round_frp_to_zero:
+            self.output = ds.sortby("time").load()
+            if self.hparams.round_to_zero:
                 # Set values in range (0, `round_to_zero`) to small positive number
                 self.output.frpfire.values[
-                    (self.output.frpfire.values >= MIN_CLIPPING_FRP)
-                    & (self.output.frpfire.values < MAX_CLIPPING_FRP)
+                    (self.output.frpfire.values >= self.hparams.clip_output[0])
+                    & (self.output.frpfire.values < self.hparams.clip_output[-1])
                 ] = 1e-10
             if self.hparams.isolate_frp:
                 # Setting isolated fire occurrence FRP to -1
                 self.output.frpfire.values[
                     self.generate_isolated_mask(
-                        self.output.frpfire.values > PLACEHOLDER_FRP
+                        # 1e-10 as a threshold since boxcox transformation accepts
+                        # positive number only
+                        self.output.frpfire.values
+                        > 1e-10
                     )
                 ] = -1
 
@@ -208,63 +155,15 @@ to defaults to None
             skipna=True
         )
 
-        self.min_date = self.input.rh.time.min().values
+        self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
 
         print(
             f"Start date: {self.output.frpfire.time.min(skipna=True)}",
             f"\nEnd date: {self.output.frpfire.time.max(skipna=True)}",
         )
 
-        self.mask = torch.from_numpy(np.load(self.hparams.mask)).cuda()
-
-        # Mean of output variable used for bias-initialization.
-        self.out_mean = (
-            out_mean
-            if out_mean
-            else BOX_COX_FRP_MEAN
-            if self.hparams.mask
-            else FRP_MEAN
-        )
-
-        # Variance of output variable used to scale the training loss.
-        self.out_var = (
-            out_var
-            if out_var
-            else PRE_TRANSFORM_FRP_MAD
-            if self.hparams.loss == "mae"
-            else BOX_COX_FRP_VAR
-            if self.hparams.mask
-            else FRP_VAR
-        )
-
-        self.transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                # Mean and standard deviation stats used to normalize the input data to
-                # the mean of zero and standard deviation of one.
-                transforms.Normalize(
-                    [
-                        x
-                        for i in range(self.n_input)
-                        for x in (
-                            FORCING_MEAN_RH,
-                            FORCING_MEAN_T2,
-                            FORCING_MEAN_TP,
-                            FORCING_MEAN_WSPEED,
-                        )
-                    ],
-                    [
-                        x
-                        for i in range(self.n_input)
-                        for x in (
-                            FORCING_STD_RH,
-                            FORCING_STD_T2,
-                            FORCING_STD_TP,
-                            FORCING_STD_WSPEED,
-                        )
-                    ],
-                ),
-            ]
+        self.mask = torch.from_numpy(np.load(self.hparams.mask)).to(
+            "cuda" if self.hparams.gpus else "cpu"
         )
 
     def generate_isolated_mask(self, x):
@@ -283,47 +182,6 @@ and after.
             mask[i] = x[i] & (x[i - 1] | x[i + 1])
         mask[-1] = mask[-1] & (x[-1] | x[-2])
         return mask
-
-    def __getitem__(self, idx):
-        """
-        Internal method used by pytorch to fetch input and corresponding output tensors.
-
-        :param idx: The index number of data sample.
-        :type idx: int
-        :return: Batch of data containing input and output tensors
-        :rtype: tuple
-        """
-
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        X = np.stack(
-            [
-                self.input[v].sel(time=self.min_date + np.timedelta64(idx + i, "D"))
-                for i in range(self.n_input)
-                for v in ["rh", "t2", "tp", "wspeed"]
-            ],
-            axis=-1,
-        )
-        y = torch.from_numpy(
-            np.stack(
-                [
-                    self.output["frpfire"]
-                    .sel(
-                        time=self.min_date
-                        + np.timedelta64(idx + self.n_input - 1 + i, "D")
-                    )
-                    .values
-                    for i in range(self.n_output)
-                ],
-                axis=0,
-            )
-        )
-
-        if self.transform:
-            X = self.transform(X)
-
-        return X, y
 
     def training_step(self, model, batch):
         """
@@ -363,9 +221,9 @@ passed in as `batch`.
                             y.cpu()
                             if y.nelement() > 1
                             else np.concatenate([y.cpu(), y.cpu() + 1]),
-                            lmbda=BOX_COX_LAMBDA,
+                            lmbda=self.hparams.boxcox,
                         )
-                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
+                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].to(y_hat.device)
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
@@ -414,9 +272,9 @@ passed in as `batch`.
                             y.cpu()
                             if y.nelement() > 1
                             else np.concatenate([y.cpu(), y.cpu() + 1]),
-                            lmbda=BOX_COX_LAMBDA,
+                            lmbda=self.hparams.boxcox,
                         )
-                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].cuda()
+                    )[0 : y.shape[-1] if y.nelement() > 1 else 1].to(y.device)
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
@@ -467,11 +325,17 @@ passed in as `batch`.
                     return {}
                 if self.hparams.transform_frp:
                     y_hat = torch.from_numpy(
-                        inv_boxcox(y_hat.cpu().numpy(), BOX_COX_LAMBDA)
-                    ).cuda()
-                if self.hparams.clip_fwi:
-                    y = y[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
-                    y_hat = y_hat[(y_hat < UPPER_BOUND_FWI) & (LOWER_BOUND_FWI < y_hat)]
+                        inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
+                    ).to(y_hat.device)
+                if self.hparams.clip_output:
+                    y = y[
+                        (y_hat < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y_hat)
+                    ]
+                    y_hat = y_hat[
+                        (y_hat < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y_hat)
+                    ]
                 pre_loss = (
                     (y_hat - y).abs()
                     if model.hparams.loss == "mae"
@@ -482,7 +346,7 @@ passed in as `batch`.
 
                 # Accuracy for a threshold
                 n_correct_pred = (
-                    ((y - y_hat).abs() < PRE_TRANSFORM_FRP_MAD / 2).float().mean()
+                    ((y - y_hat).abs() < self.hparams.out_mad / 2).float().mean()
                 )
                 abs_error = (
                     (y - y_hat).abs().float().mean()

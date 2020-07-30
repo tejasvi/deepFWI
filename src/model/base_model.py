@@ -1,12 +1,12 @@
 """
 Base model implementing helper methods.
 """
-import pickle
 from collections import defaultdict
 
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
+import numpy as np
 
 # Logging helpers
 from pytorch_lightning import _logger as log
@@ -157,7 +157,8 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Loss and logs.
         :rtype: dict
         """
-        rm_none = lambda x: [t for t in x if not torch.isnan(t).any()]
+        ifx = lambda x: x if x else [torch.zeros(1)]
+        rm_none = lambda x: ifx([t for t in x if not torch.isnan(t).any()])
         avg_loss = torch.stack(rm_none([x["test_loss"] for x in outputs])).mean()
 
         tensorboard_logs = defaultdict(dict)
@@ -345,7 +346,7 @@ on second call determined by the `force` parameter.
                         hparams=hparams,
                         out=self.hparams.out,
                     )
-            else:
+            elif not hasattr(self.hparams, "eval"):
                 self.train_data, self.test_data = torch.utils.data.random_split(
                     self.data,
                     [
@@ -353,38 +354,42 @@ on second call determined by the `force` parameter.
                         len(self.data) - len(self.data) * 8 // 10,
                     ],
                 )
+            else:
+                self.train_data = self.test_data = self.data
+                self.test_data.indices = list(range(len(self.test_data)))
 
-            # Saving list of test-set files
-            if self.hparams.save_test_set:
-                with open(self.hparams.save_test_set, "wb") as f:
-                    pickle.dump(
-                        [
-                            self.test_data.indices,
-                            sum(
-                                [
-                                    self.data.inp_files[i : i + 4]
-                                    for i in self.test_data.indices
-                                ],
-                                [],
-                            ),
-                            [self.data.out_files[i] for i in self.test_data.indices],
-                        ],
-                        f,
-                    )
-            log.info(self.test_data.indices, self.data.inp_files, self.data.out_files)
-
-            # Log test indices regardless
-            log.info(self.test_data.indices)
+            test_set_dates = [
+                str(self.data.min_date + np.timedelta64(i, "D"))
+                for i in self.test_data.indices
+            ]
+            log.info(test_set_dates)
 
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
 
-        if self.hparams.case_study and not self.hparams.test_set:
-            assert (
-                max(self.test_data.indices) > 214
-            ), "The data is outside the range of case study"
+        # Filter the test-set for case-study duration
+        if (
+            self.hparams.case_study
+            and not self.hparams.test_set
+            and not self.hparams.dry_run
+            and not hasattr(self.hparams, "eval")
+        ):
+            assert self.data.min_date + np.timedelta64(
+                max(self.test_data.indices), "D"
+            ) >= min(
+                [np.datetime64(r[0]) for r in self.hparams.case_study_dates]
+            ), "The data is outside the time-range of case study"
             self.test_data.indices = list(
-                set(self.test_data.indices) & set(range(214, 335))
+                set(self.test_data.indices)
+                & set(
+                    [
+                        range(
+                            (r[0] - self.data.min_date).item().days,
+                            (r[-1] - self.data.min_date).item().days + 1,
+                        )
+                        for r in self.hparams.case_study_dates
+                    ]
+                )
             )
 
     def train_dataloader(self):

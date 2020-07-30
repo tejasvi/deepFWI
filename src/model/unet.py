@@ -6,7 +6,7 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 
-from src.model.base_model import BaseModel
+from model.base_model import BaseModel
 
 
 class Model(BaseModel):
