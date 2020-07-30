@@ -11,7 +11,6 @@ from scipy import stats
 from scipy.special import inv_boxcox
 
 import torch
-import torchvision.transforms as transforms
 
 from dataloader.base_loader import ModelDataset as BaseDataset
 
@@ -30,7 +29,6 @@ class ModelDataset(BaseDataset):
         forcings_dir=None,
         reanalysis_dir=None,
         frp_dir=None,
-        transform=None,
         hparams=None,
         **kwargs,
     ):
@@ -50,8 +48,6 @@ to None
         :param reanalysis_dir: The directory containing the FWI-Reanalysis data, \
 to defaults to None
         :type reanalysis_dir: str, optional
-        :param transform: Custom transform for the input variable, defaults to None
-        :type transform: torch.transforms, optional
         :param hparams: Holds configuration values, defaults to None
         :type hparams: Namespace, optional
         """
@@ -63,7 +59,6 @@ to defaults to None
             forcings_dir=forcings_dir,
             reanalysis_dir=reanalysis_dir,
             frp_dir=None,
-            transform=transform,
             hparams=hparams,
             **kwargs,
         )
@@ -198,36 +193,6 @@ to defaults to None
 
         self.mask = torch.from_numpy(np.load(self.hparams.mask)).to(
             "cuda" if self.hparams.gpus else "cpu"
-        )
-
-        self.transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                # Mean and standard deviation stats used to normalize the input data to
-                # the mean of zero and standard deviation of one.
-                transforms.Normalize(
-                    [
-                        x
-                        for i in range(self.n_input)
-                        for x in (
-                            self.hparams.inp_mean["rh"],
-                            self.hparams.inp_mean["t2"],
-                            self.hparams.inp_mean["tp"],
-                            self.hparams.inp_mean["wspeed"],
-                        )
-                    ],
-                    [
-                        x
-                        for i in range(self.n_input)
-                        for x in (
-                            self.hparams.inp_std["rh"],
-                            self.hparams.inp_std["t2"],
-                            self.hparams.inp_std["tp"],
-                            self.hparams.inp_std["wspeed"],
-                        )
-                    ],
-                ),
-            ]
         )
 
     def generate_isolated_mask(self, x):
