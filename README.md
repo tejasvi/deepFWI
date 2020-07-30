@@ -55,7 +55,6 @@
     -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference.
     -binned False                           Show the extended metrics for supplied comma separated binned FWI value range
     -round-to-zero False                    Round off the target values below the specified threshold to zero
-    -test-set /path/to/pickled/list         Load test-set filenames from specified file instead of random split
     -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered, unet_interpolated
     -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis
     -forecast-dir ${FORECAST_DIR:-$PWD}     Directory containing forecast data. Alternatively set $FORECAST_DIR

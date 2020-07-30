@@ -1,7 +1,6 @@
 """
 Base model implementing helper methods.
 """
-import pickle
 from collections import defaultdict
 
 import torch
@@ -363,12 +362,6 @@ on second call determined by the `force` parameter.
                 str(self.data.min_date + np.timedelta64(i, "D"))
                 for i in self.test_data.indices
             ]
-            # Saving list of test-set files
-            if self.hparams.save_test_set:
-                with open(self.hparams.save_test_set, "wb") as f:
-                    pickle.dump(
-                        test_set_dates, f,
-                    )
             log.info(test_set_dates)
 
             # Set flag to avoid resource intensive re-preparation during next call

@@ -2,7 +2,6 @@
 The dataset class to be used with fwi-forcings and gfas-frp data.
 """
 from glob import glob
-import pickle
 from collections import defaultdict
 
 import xarray as xr
@@ -83,39 +82,11 @@ to defaults to None
             key=inp_time,
         )
         out_time = lambda x: int(x[-8:-6]) * 100 + int(x[-5:-3])
-        out_files_orig = sorted(
+        out_files = sorted(
             sorted(glob(f"{frp_dir}/FRP_20??_??.nc")),
             # Extracting the year and month from filenames to sort by time.
             key=out_time,
         )
-
-        if self.hparams.save_test_set:
-            # Create out_files list of size same as inp_list
-            time_indices = set(map(inp_time, inp_files))
-            out_files = sorted(
-                [
-                    f
-                    for f in out_files_orig
-                    for t in time_indices
-                    if t // 100 == out_time(f)
-                ],
-                key=out_time,
-            )
-        else:
-            out_files = out_files_orig
-
-        # Loading list of test-set files
-        if self.hparams.test_set:
-            with open(self.hparams.test_set, "rb") as f:
-                _, test_inp, test_out = pickle.load(f)
-
-        # Handling the input and output files using test-set files
-        if not self.hparams.dry_run and "test_inp" in locals():
-            if hasattr(self.hparams, "eval"):
-                inp_files = test_inp
-                out_files = test_out
-            else:
-                inp_files = list(set(inp_files) - set(test_inp))
 
         if self.hparams.dry_run:
             inp_files = inp_files[: 32 * (self.n_output + self.n_input)]
