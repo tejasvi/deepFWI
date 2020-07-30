@@ -2,13 +2,11 @@
 The dataset class to be used with fwi-forcings and fwi-reanalysis data.
 """
 from glob import glob
-import pickle
 
 import xarray as xr
 import numpy as np
 
 import torch
-import torchvision.transforms as transforms
 
 from dataloader.base_loader import ModelDataset as BaseDataset
 from pytorch_lightning import _logger as log
@@ -30,7 +28,6 @@ training.
         forecast_dir=None,
         forcings_dir=None,
         reanalysis_dir=None,
-        transform=None,
         hparams=None,
         **kwargs,
     ):
@@ -50,8 +47,6 @@ to None
         :param reanalysis_dir: The directory containing the FWI-Reanalysis data, \
 to defaults to None
         :type reanalysis_dir: str, optional
-        :param transform: Custom transform for the input variable, defaults to None
-        :type transform: torch.transforms, optional
         :param hparams: Holds configuration values, defaults to None
         :type hparams: Namespace, optional
         """
@@ -62,7 +57,6 @@ to defaults to None
             forecast_dir=forecast_dir,
             forcings_dir=forcings_dir,
             reanalysis_dir=reanalysis_dir,
-            transform=transform,
             hparams=hparams,
             **kwargs,
         )
@@ -175,38 +169,3 @@ to defaults to None
             if self.hparams.mask
             else ~np.isnan(self.output["fwi"][0].values)
         ).to("cuda" if self.hparams.gpus else "cpu")
-
-        # Input transforms including mean and std normalization
-        self.transform = (
-            transform
-            if transform
-            else transforms.Compose(
-                [
-                    transforms.ToTensor(),
-                    # Mean and standard deviation stats used to normalize the input data
-                    # to the mean of zero and standard deviation of one.
-                    transforms.Normalize(
-                        [
-                            x
-                            for i in range(self.n_input)
-                            for x in (
-                                self.hparams.inp_mean["rh"],
-                                self.hparams.inp_mean["t2"],
-                                self.hparams.inp_mean["tp"],
-                                self.hparams.inp_mean["wspeed"],
-                            )
-                        ],
-                        [
-                            x
-                            for i in range(self.n_input)
-                            for x in (
-                                self.hparams.inp_std["rh"],
-                                self.hparams.inp_std["t2"],
-                                self.hparams.inp_std["tp"],
-                                self.hparams.inp_std["wspeed"],
-                            )
-                        ],
-                    ),
-                ]
-            )
-        )
