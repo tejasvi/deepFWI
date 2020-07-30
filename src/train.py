@@ -408,10 +408,6 @@ def get_hparams(
         "File containing the mask stored as the numpy array",
         "option",
     ) = "src/dataloader/mask/reanalysis_mask.npy",
-    test_set: (
-        "Load test-set filenames from specified file instead of random split",
-        "option",
-    ) = False,
     comment: ("Used for logging", "option") = "FRP 0 clipping, box cox",
     #
     # Test run
