@@ -120,7 +120,7 @@ to defaults to None
             data_vars="minimal",
             compat="override",
         ) as ds:
-            self.input = ds.sortby("time").load()
+            self.input = ds.sortby("time")
 
         with xr.open_mfdataset(
             out_files,
@@ -132,7 +132,7 @@ to defaults to None
             data_vars="minimal",
             compat="override",
         ) as ds:
-            self.output = ds.sortby("time").load()
+            self.output = ds.sortby("time")
 
         self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
 
