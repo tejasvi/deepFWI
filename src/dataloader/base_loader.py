@@ -213,13 +213,20 @@ passed in as `batch`.
                         (y < self.hparams.clip_output[-1])
                         & (self.hparams.clip_output[0] < y)
                     ]
+                if self.hparams.cb_loss:
+                    loss_factor = get_cb_loss_factor(y)
+
                 if self.hparams.boxcox:
                     y = torch.from_numpy(
                         boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
                     ).to(y.device)
+
                 pre_loss = (y_hat - y) ** 2
+                if loss_factor in locals():
+                    pre_loss *= loss_factor
                 loss = pre_loss.mean()
                 assert loss == loss
+
                 tensorboard_logs["train_loss_unscaled"][str(c)] = loss
         loss = torch.stack(
             list(tensorboard_logs["train_loss_unscaled"].values())
@@ -227,7 +234,7 @@ passed in as `batch`.
         tensorboard_logs["_train_loss_unscaled"] = loss
         # model.logger.log_metrics(tensorboard_logs)
         return {
-            "loss": loss.true_divide(model.data.out_var * model.data.n_output),
+            "loss": loss.true_divide(model.data.out_var * model.hparams.out_days),
             "_log": tensorboard_logs,
         }
 
