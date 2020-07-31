@@ -158,6 +158,26 @@ defaults to None
 
         return X, y
 
+    def get_cb_loss_factor(self, y):
+        """
+        Compute the Class-Balanced loss factor mask using output value frequency \
+distribution and the supplied beta factor.
+
+        :param y: The ground truth value 2D tensor
+        :type y: torch.tensor
+        """
+        idx = torch.argmin(
+            x.unsqueeze(0).expand(self.hparams.bin_centers.shape[0], -1, -1)
+            - self.hparams.bin_centers,
+            dim=0,
+        )
+        loss_factor = torch.empty_like(y)
+        for i in range(self.hparams.freq.shape[0]):
+            loss_factor[idx == i] = (1 - self.hparams.cb_loss) / (
+                1 - self.hparams.cb_loss ** self.hparams.freq[i]
+            )
+        return loss_factor
+
     def training_step(self, model, batch):
         """
         Called inside the training loop with the data from the training dataloader \
