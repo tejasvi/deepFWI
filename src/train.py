@@ -405,6 +405,10 @@ def get_hparams(
         "Filter the data with specified date range. E.g. 2019-04-01,2019-05-01",
         "option",
     ) = False,
+    cb_loss: (
+        "Use Class-Balanced loss with the supplied beta parameter",
+        "option",
+    ) = False,
     #
     # Run specific
     model: (
