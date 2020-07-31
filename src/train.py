@@ -401,6 +401,10 @@ def get_hparams(
         "Consider the data only during bush-fire peak (Dec-Jan)",
         "option",
     ) = False,
+    date_range: (
+        "Filter the data with specified date range. E.g. 2019-04-01,2019-05-01",
+        "option",
+    ) = False,
     #
     # Run specific
     model: (
