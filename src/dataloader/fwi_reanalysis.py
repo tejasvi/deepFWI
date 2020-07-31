@@ -134,20 +134,35 @@ to defaults to None
         ) as ds:
             self.output = ds.sortby("time")
 
-        self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
-
+        # The t=0 dates
         self.dates = []
         for t in self.input.time.values:
-            if all(
-                [
-                    t - np.timedelta64(i, "D") in self.input.time.values
-                    for i in range(self.hparams.in_days)
-                ]
-            ) and all(
-                [
-                    t + np.timedelta64(i, "D") in self.output.time.values
-                    for i in range(self.hparams.out_days)
-                ]
+            t = t.astype("datetime64[D]")
+            if (
+                # Date is within the range if specified
+                (
+                    not self.hparams.date_range
+                    or self.hparams.date_range[0] <= t <= self.hparams.date_range[-1]
+                )
+                # Date is within the case-study range if specified
+                and (
+                    not self.hparams.case_study_dates
+                    or min([r[0] <= t <= r[-1] for r in self.hparams.case_study_dates])
+                )
+                # Input data for preceding dates is available
+                and all(
+                    [
+                        t - np.timedelta64(i, "D") in self.input.time.values
+                        for i in range(self.hparams.in_days)
+                    ]
+                )
+                # Output data for later dates is available
+                and all(
+                    [
+                        t + np.timedelta64(i, "D") in self.output.time.values
+                        for i in range(self.hparams.out_days)
+                    ]
+                )
             ):
                 self.dates.append(t)
 
