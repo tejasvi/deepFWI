@@ -74,6 +74,10 @@ defaults to None
             self.hparams.case_study_dates = [
                 [np.datetime64(d) for d in r] for r in self.hparams.case_study_dates
             ]
+        # If custom date range specified, override
+        else:
+            self.hparams.case_study_dates = None
+
         # Input transforms including mean and std normalization
         self.transform = transforms.Compose(
             [
