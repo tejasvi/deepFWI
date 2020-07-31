@@ -195,9 +195,4 @@ to defaults to None
             self.output.sel(time=dates_spread).load(),
         )
 
-        # Loading the mask for output variable if provided as generating from NaN mask
-        self.mask = torch.from_numpy(
-            np.load(self.hparams.mask)
-            if self.hparams.mask
-            else ~np.isnan(self.output["fwi"][0].values)
-        ).to("cuda" if self.hparams.gpus else "cpu")
+        log.info(f"Start date: {min(self.dates)}\nEnd date: {max(self.dates)}")
