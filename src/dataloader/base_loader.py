@@ -273,14 +273,16 @@ passed in as `batch`.
                         (y < self.hparams.clip_output[-1])
                         & (self.hparams.clip_output[0] < y)
                     ]
-                    y_hat = y_hat[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
-                    ]
+                if self.hparams.cb_loss:
+                    loss_factor = get_cb_loss_factor(y)
+
                 if self.hparams.boxcox:
                     y = torch.from_numpy(
                         boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
                     ).to(y.device)
+
+                if loss_factor in locals():
+                    pre_loss *= loss_factor
                 pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
