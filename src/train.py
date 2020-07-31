@@ -372,7 +372,7 @@ def get_hparams(
     ) = "one_cycle",
     dry_run: ("Use small amount of data for sanity check", "option") = False,
     find_lr: ("Automatically search for an ideal learning rate", "option") = False,
-    search_bs: ("Scale the batch dynamically for full GPU usage") = False,
+    search_bs: ("Scale the batch dynamically for full GPU usage", "option") = False,
     case_study: (
         "The case-study region to use for inference: australia, california, portugal,"
         " siberia, chile, uk",
@@ -395,8 +395,12 @@ def get_hparams(
         "Round off the target values below the specified threshold to zero",
         "option",
     ) = False,
-    isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = True,
-    transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = True,
+    isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = False,
+    transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = False,
+    bush_fire_peak: (
+        "Consider the data only during bush-fire peak (Dec-Jan)",
+        "option",
+    ) = False,
     #
     # Run specific
     model: (
