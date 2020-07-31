@@ -330,22 +330,15 @@ on second call determined by the `force` parameter.
                 hparams=self.hparams,
                 out=self.hparams.out,
             )
-            self.add_bias(self.data.out_mean)
-            if self.hparams.test_set:
-                if hasattr(self.hparams, "eval"):
-                    self.train_data = self.test_data = self.data
-                else:
-                    self.train_data = self.data
-                    hparams = self.hparams
-                    hparams.eval = True
-                    self.test_data = ModelDataset(
-                        forecast_dir=self.hparams.forecast_dir,
-                        forcings_dir=self.hparams.forcings_dir,
-                        reanalysis_dir=self.hparams.reanalysis_dir,
-                        frp_dir=self.hparams.frp_dir,
-                        hparams=hparams,
-                        out=self.hparams.out,
-                    )
+            self.data.model = self
+            if self.hparams.cb_loss:
+                # Move bin_centers and freq to GPU if possible
+                self.hparams.bin_centers = torch.from_numpy(
+                    self.hparams.bin_centers
+                ).to(self.device)
+                self.hparams.loss_factors = torch.from_numpy(
+                    self.hparams.loss_factors
+                ).to(self.device)
             elif not hasattr(self.hparams, "eval"):
                 self.train_data, self.test_data = torch.utils.data.random_split(
                     self.data,
