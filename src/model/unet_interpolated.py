@@ -72,7 +72,7 @@ class Model(BaseModel):
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["test_loss"] = avg_loss
 
-        for n in range(self.data.n_output):
+        for n in range(self.hparams.out_days):
             tensorboard_logs[f"test_loss_{n}"] = torch.stack(
                 [d[str(n)] for d in [x["log"]["test_loss"] for x in outputs if x]]
             ).mean()
