@@ -340,6 +340,8 @@ def str2num(s):
                 pass
     if s.isdigit():
         return int(s)
+    elif s == "inf":
+        return float("inf")
     elif s == "None":
         return None
     else:
