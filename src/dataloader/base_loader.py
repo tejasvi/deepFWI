@@ -64,6 +64,11 @@ defaults to None
         # Variance of output variable used to scale the training loss.
         self.out_var = out_var if out_var else self.hparams.out_var
 
+        # Convert string dates to numpy format
+        if self.hparams.date_range:
+            self.hparams.date_range = [
+                np.datetime64(d) for d in self.hparams.date_range
+            ]
         # Input transforms including mean and std normalization
         self.transform = transforms.Compose(
             [
