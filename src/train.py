@@ -330,15 +330,14 @@ def str2num(s):
     if isinstance(s, bool):
         return s
     s = str(s)
-    if "." in s or "e-" in s or "," in s:
+    if "." in s or "e-" in s:
         try:
             return float(s)
         except:
-            try:
-                return [float(i) for i in s.split(",")]
-            except:
-                pass
-    if s.isdigit():
+            pass
+    if "," in s:
+        return [str2num(i) for i in s.split(",")]
+    elif s.isdigit():
         return int(s)
     elif s == "inf":
         return float("inf")
