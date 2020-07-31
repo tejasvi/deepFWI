@@ -163,9 +163,8 @@ to defaults to None
                 )
             ):
                 self.dates.append(t)
-
-        if self.hparams.dry_run:
-            self.dates = self.dates[:5]
+                if self.hparams.dry_run and len(self.dates) == 5:
+                    break
 
         self.min_date = min(self.dates)
 
