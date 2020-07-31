@@ -142,7 +142,7 @@ defaults to None
                 ],
                 axis=-1,
             )
-        ).to(self.model.device)
+        )
 
         y = torch.from_numpy(
             np.stack(
@@ -154,7 +154,7 @@ defaults to None
                 ],
                 axis=0,
             )
-        ).to(self.model.device)
+        )
 
         return X, y
 
