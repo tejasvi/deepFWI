@@ -87,7 +87,7 @@ defaults to None
                 transforms.Normalize(
                     [
                         x
-                        for i in range(self.n_input)
+                        for i in range(self.hparams.in_days)
                         for x in (
                             self.hparams.inp_mean["rh"],
                             self.hparams.inp_mean["t2"],
@@ -97,7 +97,7 @@ defaults to None
                     ],
                     [
                         x
-                        for i in range(self.n_input)
+                        for i in range(self.hparams.in_days)
                         for x in (
                             self.hparams.inp_std["rh"],
                             self.hparams.inp_std["t2"],
