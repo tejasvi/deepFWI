@@ -209,17 +209,30 @@ def set_hparams(hparams):
     }
 
     if hparams.out == "fwi_reanalysis":
-        from data.consts.fwi_reanalysis_stats import (
-            REANALYSIS_FWI_MEAN,
-            REANALYSIS_FWI_MAD,
-            REANALYSIS_FWI_VAR,
-        )
+        if hparams.bush_fire_peak:
+            from data.consts.fwi_reanalysis_stats import (
+                PEAKED_FWI_MEAN,
+                PEAKED_FWI_MAD,
+                PEAKED_FWI_VAR,
+            )
 
-        hparams.out_mean, hparams.out_mad, hparams.out_var = (
-            REANALYSIS_FWI_MEAN,
-            REANALYSIS_FWI_MAD,
-            REANALYSIS_FWI_VAR,
-        )
+            hparams.out_mean, hparams.out_mad, hparams.out_var = (
+                PEAKED_FWI_MEAN,
+                PEAKED_FWI_MAD,
+                PEAKED_FWI_VAR,
+            )
+        else:
+            from data.consts.fwi_reanalysis_stats import (
+                REANALYSIS_FWI_MEAN,
+                REANALYSIS_FWI_MAD,
+                REANALYSIS_FWI_VAR,
+            )
+
+            hparams.out_mean, hparams.out_mad, hparams.out_var = (
+                REANALYSIS_FWI_MEAN,
+                REANALYSIS_FWI_MAD,
+                REANALYSIS_FWI_VAR,
+            )
 
     elif hparams.out == "gfas_frp":
         from data.consts.frp_stats import (
