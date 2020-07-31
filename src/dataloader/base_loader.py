@@ -131,16 +131,19 @@ defaults to None
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        X = np.stack(
-            [
-                self.input[v]
-                .sel(time=[self.dates[idx] - np.timedelta64(i, "D")])
-                .values
-                for i in range(self.n_input)
-                for v in ["rh", "t2", "tp", "wspeed"]
-            ],
-            axis=-1,
-        )
+        X = self.transform(
+            np.stack(
+                [
+                    self.input[v]
+                    .sel(time=[self.dates[idx] - np.timedelta64(i, "D")])
+                    .values.squeeze()
+                    for i in range(self.hparams.in_days)
+                    for v in ["rh", "t2", "tp", "wspeed"]
+                ],
+                axis=-1,
+            )
+        ).to(self.model.device)
+
         y = torch.from_numpy(
             np.stack(
                 [
