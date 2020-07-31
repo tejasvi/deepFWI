@@ -6,8 +6,6 @@ from glob import glob
 import xarray as xr
 import numpy as np
 
-import torch
-
 from dataloader.base_loader import ModelDataset as BaseDataset
 from pytorch_lightning import _logger as log
 
