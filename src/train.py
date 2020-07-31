@@ -266,6 +266,12 @@ def set_hparams(hparams):
             FORECAST_FWI_MAD,
             FORECAST_FWI_VAR,
         )
+
+    if hparams.cb_loss and hparams.out == "fwi_reanalysis":
+        from data.consts.reanalysis_freq import bin_centers, freq
+
+        hparams.bin_centers = bin_centers
+        hparams.loss_factors = (1 - hparams.cb_loss) / (1 - hparams.cb_loss ** freq)
     return hparams
 
 
