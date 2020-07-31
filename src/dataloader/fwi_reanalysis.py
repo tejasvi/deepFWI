@@ -140,10 +140,6 @@ to defaults to None
         ) as ds:
             self.output = ds.sortby("time").load()
 
-        # Ensure the data timestamp is ordered
-        assert all(self.input.time.values[:-1] < self.input.time.values[1:])
-        assert all(self.output.time.values[:-1] < self.output.time.values[1:])
-
         self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
 
         self.dates = []
