@@ -369,31 +369,6 @@ on second call determined by the `force` parameter.
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
 
-        # Filter the test-set for case-study duration
-        if (
-            self.hparams.case_study
-            and not self.hparams.test_set
-            and not self.hparams.dry_run
-            and not hasattr(self.hparams, "eval")
-        ):
-            assert self.data.min_date + np.timedelta64(
-                max(self.test_data.indices), "D"
-            ) >= min(
-                [np.datetime64(r[0]) for r in self.hparams.case_study_dates]
-            ), "The data is outside the time-range of case study"
-            self.test_data.indices = list(
-                set(self.test_data.indices)
-                & set(
-                    [
-                        range(
-                            (r[0] - self.data.min_date).item().days,
-                            (r[-1] - self.data.min_date).item().days + 1,
-                        )
-                        for r in self.hparams.case_study_dates
-                    ]
-                )
-            )
-
     def train_dataloader(self):
         """
         Create the training dataloader from the training dataset.
