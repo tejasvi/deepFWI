@@ -166,7 +166,34 @@ to defaults to None
             ):
                 self.dates.append(t)
 
-        log.info(f"Start date: {self.dates[0]}\nEnd date: {self.dates[-1]}",)
+        if self.hparams.dry_run:
+            self.dates = self.dates[:5]
+
+        self.min_date = min(self.dates)
+
+        # Required dates for operating on t=0 dates
+        dates_spread = list(
+            set(
+                sum(
+                    [
+                        [
+                            d + np.timedelta64(i - self.hparams.in_days, "D")
+                            for i in range(
+                                1, self.hparams.in_days + self.hparams.out_days
+                            )
+                        ]
+                        for d in self.dates
+                    ],
+                    [],
+                )
+            )
+        )
+
+        # Load the data only for required dates
+        self.input, self.output = (
+            self.input.sel(time=dates_spread).load(),
+            self.output.sel(time=dates_spread).load(),
+        )
 
         # Loading the mask for output variable if provided as generating from NaN mask
         self.mask = torch.from_numpy(
