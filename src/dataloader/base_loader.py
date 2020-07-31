@@ -205,13 +205,13 @@ passed in as `batch`.
                     y_hat = y_hat[y > self.hparams.round_to_zero]
                     y = y[y > self.hparams.round_to_zero]
                 if self.hparams.clip_output:
-                    y = y[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
-                    ]
                     y_hat = y_hat[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
+                    ]
+                    y = y[
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
                     ]
                 if self.hparams.boxcox:
                     y = torch.from_numpy(
@@ -258,9 +258,13 @@ passed in as `batch`.
                     y_hat = y_hat[y > self.hparams.round_to_zero]
                     y = y[y > self.hparams.round_to_zero]
                 if self.hparams.clip_output:
+                    y_hat = y_hat[
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
+                    ]
                     y = y[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
                     ]
                     y_hat = y_hat[
                         (y_hat < self.hparams.clip_output[-1])
@@ -322,13 +326,13 @@ passed in as `batch`.
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).to(y_hat.device)
                 if self.hparams.clip_output:
-                    y = y[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
-                    ]
                     y_hat = y_hat[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
+                    ]
+                    y = y[
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
                     ]
 
                 if not y.numel():
