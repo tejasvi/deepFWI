@@ -87,10 +87,6 @@ to defaults to None
             key=get_out_time,
         )
 
-        if self.hparams.dry_run:
-            inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
-            out_files = out_files[: 2 * (self.n_output + self.n_input)]
-
         # Checking for valid date format
         out_invalid = lambda x: not (
             1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
