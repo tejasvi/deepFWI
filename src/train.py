@@ -440,14 +440,8 @@ def get_hparams(
         "File containing the mask stored as the numpy array",
         "option",
     ) = "src/dataloader/mask/reanalysis_mask.npy",
-    comment: ("Used for logging", "option") = "FRP 0 clipping, box cox",
-    #
-    # Test run
-    save_test_set: (
-        "Save the test-set file names to the specified filepath",
-        "option",
-    ) = False,
-    checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
+    comment: ("Used for logging", "option") = False,
+    checkpoint_file: ("Path to the test model checkpoint", "option",) = False,
 ):
     """
     Process and print the dictionary of project wide arguments.
