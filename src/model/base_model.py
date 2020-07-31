@@ -339,7 +339,16 @@ on second call determined by the `force` parameter.
                 self.hparams.loss_factors = torch.from_numpy(
                     self.hparams.loss_factors
                 ).to(self.device)
-            elif not hasattr(self.hparams, "eval"):
+            # Load the mask for output variable if provided or generate from NaN mask
+            self.data.mask = torch.from_numpy(
+                np.load(self.hparams.mask)
+                if self.hparams.mask
+                else ~np.isnan(
+                    self.data.output[list(self.data.output.data_vars)[0]][0].values
+                )
+            ).to(self.device)
+            self.add_bias(self.data.out_mean)
+            if not hasattr(self.hparams, "eval"):
                 self.train_data, self.test_data = torch.utils.data.random_split(
                     self.data,
                     [
