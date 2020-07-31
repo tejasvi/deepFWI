@@ -149,15 +149,12 @@ defaults to None
                 [
                     self.output[list(self.output.data_vars)[0]]
                     .sel(time=[self.dates[idx] + np.timedelta64(i, "D")])
-                    .values
-                    for i in range(self.n_output)
+                    .values.squeeze()
+                    for i in range(self.hparams.out_days)
                 ],
                 axis=0,
             )
-        )
-
-        if self.transform:
-            X = self.transform(X)
+        ).to(self.model.device)
 
         return X, y
 
