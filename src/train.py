@@ -269,11 +269,16 @@ def set_hparams(hparams):
     if hparams.cb_loss and hparams.out == "fwi_reanalysis":
         from data.consts.reanalysis_freq import bin_centers, freq
 
-        assert (
-            bin_centers.shape == freq.shape
-        ), "The number of bin-centers for corresponding frequencies must be same"
         hparams.bin_centers = bin_centers
         hparams.loss_factors = (1 - hparams.cb_loss) / (1 - hparams.cb_loss ** freq)
+        hparams.loss_factors = (
+            hparams.loss_factors
+            / hparams.loss_factors.sum()
+            * hparams.loss_factors.size[0]
+        )
+        assert (
+            hparams.bin_centers.shape == hparams.loss_factors.shape
+        ), "The number of bin-centers for corresponding frequencies must be the same"
     return hparams
 
 
