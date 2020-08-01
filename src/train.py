@@ -416,6 +416,10 @@ def get_hparams(
         "Use Class-Balanced loss with the supplied beta parameter",
         "option",
     ) = False,
+    chronological_split: (
+        "Do chronological train-test split in the specified ratio",
+        "option",
+    ) = False,
     #
     # Run specific
     model: (
