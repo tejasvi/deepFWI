@@ -462,7 +462,7 @@ def get_hparams(
     """
     d = {k: str2num(v) for k, v in locals().items()}
     for k, v in d.items():
-        print(f" |{k.replace('_', '-'):>15} -> {str(v):<15}")
+        print(f" |{k.replace('_', '-'):>20} -> {str(v):<20}")
     return d
 
 
