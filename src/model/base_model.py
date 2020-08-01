@@ -349,13 +349,26 @@ on second call determined by the `force` parameter.
             ).to(self.device)
             self.add_bias(self.data.out_mean)
             if not hasattr(self.hparams, "eval"):
-                self.train_data, self.test_data = torch.utils.data.random_split(
-                    self.data,
-                    [
-                        len(self.data) * 8 // 10,
-                        len(self.data) - len(self.data) * 8 // 10,
-                    ],
-                )
+                if self.hparams.chronological_split:
+                    self.train_data = torch.utils.data.Subset(
+                        self.data,
+                        range(int(len(self.data) * self.hparams.chronological_split)),
+                    )
+                    self.test_data = torch.utils.data.Subset(
+                        self.data,
+                        range(
+                            int(len(self.data) * self.hparams.chronological_split),
+                            len(self.data),
+                        ),
+                    )
+                else:
+                    self.train_data, self.test_data = torch.utils.data.random_split(
+                        self.data,
+                        [
+                            len(self.data) * 8 // 10,
+                            len(self.data) - len(self.data) * 8 // 10,
+                        ],
+                    )
             else:
                 self.train_data = self.test_data = self.data
                 self.test_data.indices = list(range(len(self.test_data)))
