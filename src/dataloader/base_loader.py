@@ -348,7 +348,7 @@ passed in as `batch`.
         :rtype: dict
         """
         x, y_pre = batch
-        y_hat_pre, _ = model(x) if model.aux else model(x), None
+        y_hat_pre = model(x)
         mask = model.data.mask.expand_as(y_pre[0][0])
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
