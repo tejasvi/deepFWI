@@ -92,7 +92,9 @@ def main(hparams):
         wandb_logger.log_hyperparams(model.hparams)
         for file in [
             i
-            for s in [glob(x) for x in ["*.py", "dataloader/*.py", "model/*.py"]]
+            for s in [
+                glob(x) for x in ["src/*.py", "src/dataloader/*.py", "src/model/*.py"]
+            ]
             for i in s
         ]:
             shutil.copy(file, wandb.run.dir)
