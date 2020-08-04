@@ -195,13 +195,16 @@ defaults to None
         Compute the Class-Balanced loss factor mask using output value frequency \
 distribution and the supplied beta factor.
 
-        :param y: The ground truth value 2D tensor
+        :param y: The 1D ground truth value tensor
         :type y: torch.tensor
         """
-        idx = torch.argmin(
-            x.unsqueeze(0).expand(self.hparams.bin_centers.shape[0], -1, -1)
-            - self.hparams.bin_centers,
-            dim=0,
+        idx = (
+            (
+                y.unsqueeze(0).expand(self.bin_centers.shape[0], -1)
+                - self.bin_centers.unsqueeze(-1).expand(-1, y.shape[0])
+            )
+            .abs()
+            .argmin(dim=0)
         )
         loss_factor = torch.empty_like(y)
         for i in range(self.hparams.freq.shape[0]):
