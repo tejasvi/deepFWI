@@ -94,6 +94,17 @@ to defaults to None
         ) as ds:
             self.output = ds.sortby("time")
 
+        if self.hparams.smos_input:
+            self.smos_files = glob(f"{self.hparams.smos_dir}/20*_20*.as1.grib")
+
+            with xr.open_mfdataset(
+                self.smos_files,
+                preprocess=lambda x: x.expand_dims("time"),
+                engine="cfgrib",
+                parallel=False,
+            ) as ds:
+                smos_input = ds
+
         # The t=0 dates
         self.dates = []
         for t in self.input.time.values:
