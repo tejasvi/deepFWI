@@ -54,7 +54,7 @@ def main(hparams):
 
     # Callback to save checkpoint of best performing model
     checkpoint_callback = pl.callbacks.model_checkpoint.ModelCheckpoint(
-        filepath=f"model/checkpoints/{name}/",
+        filepath=f"src/model/checkpoints/{name}/",
         monitor="val_loss",
         verbose=True,
         save_top_k=1,
