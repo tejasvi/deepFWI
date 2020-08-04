@@ -288,7 +288,7 @@ def set_hparams(hparams):
         hparams.loss_factors = (
             hparams.loss_factors
             / hparams.loss_factors.sum()
-            * hparams.loss_factors.size[0]
+            * hparams.loss_factors.size
         )
         assert (
             hparams.bin_centers.shape == hparams.loss_factors.shape
