@@ -63,7 +63,6 @@ to defaults to None
         assert (
             self.hparams.in_days > 0 and self.hparams.out_days > 0
         ), "The number of input and output days must be > 0."
-        self.hparams.thresh = self.hparams.out_mad / 2
 
         # Generate the list of all valid files in the specified directories
         get_inp_time = (
