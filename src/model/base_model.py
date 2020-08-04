@@ -366,8 +366,9 @@ on second call determined by the `force` parameter.
                     self.train_data, self.test_data = torch.utils.data.random_split(
                         self.data,
                         [
-                            len(self.data) * 8 // 10,
-                            len(self.data) - len(self.data) * 8 // 10,
+                            len(self.data) * (5 if self.hparams.dry_run else 8) // 10,
+                            len(self.data)
+                            - len(self.data) * (5 if self.hparams.dry_run else 8) // 10,
                         ],
                     )
             else:
