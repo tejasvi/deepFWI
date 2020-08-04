@@ -164,5 +164,12 @@ to defaults to None
             self.input.sel(time=dates_spread).load(),
             self.output.sel(time=dates_spread).load(),
         )
+        if self.hparams.smos_input:
+            # Drop duplicates
+            self.smos_input = (
+                smos_input.sel(time=dates_spread, method="nearest")
+                .isel(time=np.unique(smos_input["time"], return_index=True)[1])
+                .load()
+            )
 
         log.info(f"Start date: {min(self.dates)}\nEnd date: {max(self.dates)}")
