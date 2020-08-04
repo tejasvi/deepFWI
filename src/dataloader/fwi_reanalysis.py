@@ -64,45 +64,8 @@ to defaults to None
             self.hparams.in_days > 0 and self.hparams.out_days > 0
         ), "The number of input and output days must be > 0."
 
-        # Generate the list of all valid files in the specified directories
-        get_inp_time = (
-            lambda x: int(x.split("_20")[1][:2]) * 10000
-            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
-            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:])
-        )
-        inp_files = sorted(
-            sorted(glob(f"{forcings_dir}/ECMWF_FO_20*.nc")),
-            # Extracting the month and date from filenames to sort by time.
-            key=get_inp_time,
-        )
-        get_out_time = (
-            lambda x: int(x[-24:-22]) * 10000 + int(x[-22:-20]) * 100 + int(x[-20:-18])
-        )
-        out_files = sorted(
-            glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
-            # Extracting the month and date from filenames to sort by time.
-            key=get_out_time,
-        )
-
-        # Checking for valid date format
-        out_invalid = lambda x: not (
-            1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
-        )
-        assert not (sum([out_invalid(x) for x in out_files])), (
-            "Invalid date format for output file(s)."
-            "The dates should be formatted as YYMMDD."
-        )
-        self.out_files = out_files
-
-        inp_invalid = lambda x: not (
-            1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) <= 12
-            and 1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]) <= 31
-        )
-        assert not (sum([inp_invalid(x) for x in inp_files])), (
-            "Invalid date format for input file(s)."
-            "The dates should be formatted as YYMMDD."
-        )
-        self.inp_files = inp_files
+        inp_files = glob(f"{forcings_dir}/ECMWF_FO_20*.nc")
+        out_files = glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc")
 
         # Consider only ground truth and discard forecast values
         preprocess = lambda x: x.isel(time=slice(0, 1))
