@@ -207,6 +207,15 @@ def set_hparams(hparams):
         "rh": FORCING_STD_RH,
     }
 
+    if hparams.smos_input:
+        from data.consts.soil_moisture_stats import (
+            SOIL_MOISTURE_MEAN,
+            SOIL_MOISTURE_STD,
+        )
+
+        hparams.smos_mean = SOIL_MOISTURE_MEAN
+        hparams.smos_std = SOIL_MOISTURE_STD
+
     if hparams.out == "fwi_reanalysis":
         if hparams.bush_fire_peak:
             from data.consts.fwi_reanalysis_stats import (
