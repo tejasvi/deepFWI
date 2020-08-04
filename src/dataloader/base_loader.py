@@ -109,7 +109,12 @@ defaults to None
                             self.hparams.inp_std["tp"],
                             self.hparams.inp_std["wspeed"],
                         )
-                    ],
+                    ]
+                    + (
+                        [self.hparams.smos_std for i in range(self.hparams.in_days)]
+                        if self.hparams.smos_input
+                        else []
+                    ),
                 ),
             ]
         )
