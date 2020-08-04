@@ -57,6 +57,7 @@ defaults to None
         self.hparams = hparams
         self.out_mean = out_mean
         self.out_var = out_var
+        self.hparams.thresh = self.hparams.out_mad / 2
         if self.hparams.binned:
             self.bin_intervals = self.hparams.binned
 
