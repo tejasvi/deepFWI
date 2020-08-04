@@ -314,9 +314,9 @@ passed in as `batch`.
                         boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
                     ).to(y.device)
 
+                pre_loss = (y_hat - y) ** 2
                 if "loss_factor" in locals():
                     pre_loss *= loss_factor
-                pre_loss = (y_hat - y) ** 2
                 loss = pre_loss.mean()
                 assert loss == loss
 
