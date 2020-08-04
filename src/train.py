@@ -329,7 +329,7 @@ def get_model(hparams):
     else:
         raise ImportError(f"{hparams.model} and {hparams.out} combination invalid.")
 
-    model = Model(hparams)
+    model = Model(hparams).to("cuda" if hparams.gpus else "cpu")
     model.prepare_data(ModelDataset)
     return model
 
