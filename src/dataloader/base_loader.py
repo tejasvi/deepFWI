@@ -5,6 +5,7 @@ from collections import defaultdict
 import numpy as np
 from scipy.stats import boxcox
 from scipy.special import inv_boxcox
+from skimage.transform import resize
 
 import torch
 from torch.utils.data import Dataset
