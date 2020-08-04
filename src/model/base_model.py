@@ -37,7 +37,6 @@ useful hooks
         self.hparams = hparams
         self.batch_size = hparams.batch_size
         self.data_prepared = False
-        self.aux = False
 
     def forward(self):
         """
