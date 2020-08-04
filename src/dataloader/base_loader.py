@@ -94,7 +94,12 @@ defaults to None
                             self.hparams.inp_mean["tp"],
                             self.hparams.inp_mean["wspeed"],
                         )
-                    ],
+                    ]
+                    + (
+                        [self.hparams.smos_mean for i in range(self.hparams.in_days)]
+                        if self.hparams.smos_input
+                        else []
+                    ),
                     [
                         x
                         for i in range(self.hparams.in_days)
