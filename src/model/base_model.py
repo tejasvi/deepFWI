@@ -332,12 +332,12 @@ on second call determined by the `force` parameter.
             self.data.model = self
             if self.hparams.cb_loss:
                 # Move bin_centers and freq to GPU if possible
-                self.hparams.bin_centers = torch.from_numpy(
-                    self.hparams.bin_centers
-                ).to(self.device)
-                self.hparams.loss_factors = torch.from_numpy(
-                    self.hparams.loss_factors
-                ).to(self.device)
+                self.data.bin_centers = torch.from_numpy(self.hparams.bin_centers).to(
+                    self.device, dtype=next(iter(self.data))[1].dtype
+                )
+                self.data.loss_factors = torch.from_numpy(self.hparams.loss_factors).to(
+                    self.device, dtype=next(iter(self.data))[1].dtype
+                )
             # Load the mask for output variable if provided or generate from NaN mask
             self.data.mask = torch.from_numpy(
                 np.load(self.hparams.mask)
