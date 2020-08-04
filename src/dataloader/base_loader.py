@@ -207,10 +207,8 @@ distribution and the supplied beta factor.
             .argmin(dim=0)
         )
         loss_factor = torch.empty_like(y)
-        for i in range(self.hparams.freq.shape[0]):
-            loss_factor[idx == i] = (1 - self.hparams.cb_loss) / (
-                1 - self.hparams.cb_loss ** self.hparams.freq[i]
-            )
+        for i in range(self.bin_centers.shape[0]):
+            loss_factor[idx == i] = self.loss_factors[i]
         return loss_factor
 
     def training_step(self, model, batch):
