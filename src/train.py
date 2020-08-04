@@ -449,6 +449,10 @@ def get_hparams(
         "Directory containing the forcings data Alternatively set $FORCINGS_DIR",
         "option",
     ) = os.environ.get("FORCINGS_DIR", os.getcwd()),
+    smos_dir: (
+        "Directory containing the soil-moisture data Alternatively set $SMOS_DIR",
+        "option",
+    ) = os.environ.get("SMOS_DIR", os.getcwd()),
     reanalysis_dir: (
         "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR.",
         "option",
