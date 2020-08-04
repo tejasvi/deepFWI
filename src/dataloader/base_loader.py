@@ -247,7 +247,7 @@ passed in as `batch`.
                         & (self.hparams.clip_output[0] < y)
                     ]
                 if self.hparams.cb_loss:
-                    loss_factor = get_cb_loss_factor(y)
+                    loss_factor = self.get_cb_loss_factor(y)
 
                 if self.hparams.boxcox:
                     y = torch.from_numpy(
@@ -307,7 +307,7 @@ passed in as `batch`.
                         & (self.hparams.clip_output[0] < y)
                     ]
                 if self.hparams.cb_loss:
-                    loss_factor = get_cb_loss_factor(y)
+                    loss_factor = self.get_cb_loss_factor(y)
 
                 if self.hparams.boxcox:
                     y = torch.from_numpy(
