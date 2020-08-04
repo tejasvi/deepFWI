@@ -149,7 +149,27 @@ defaults to None
                     .values.squeeze()
                     for i in range(self.hparams.in_days)
                     for v in ["rh", "t2", "tp", "wspeed"]
-                ],
+                ]
+                + (
+                    [
+                        resize(
+                            np.nan_to_num(
+                                self.smos_input[list(self.smos_input.data_vars)[0]]
+                                .sel(
+                                    time=[self.dates[idx] - np.timedelta64(i, "D")],
+                                    method="nearest",
+                                )
+                                .values.squeeze()[::-1],
+                                copy=False,
+                                nan=50,
+                            ),
+                            self.input.rh[0].shape,
+                        )
+                        for i in range(self.hparams.in_days)
+                    ]
+                    if self.hparams.smos_input
+                    else []
+                ),
                 axis=-1,
             )
         )
