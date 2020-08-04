@@ -346,6 +346,8 @@ on second call determined by the `force` parameter.
                     self.data.output[list(self.data.output.data_vars)[0]][0].values
                 )
             ).to(self.device)
+            if self.hparams.smos_input:
+                self.data.mask[0:105, :] = False
             self.add_bias(self.data.out_mean)
             if not hasattr(self.hparams, "eval"):
                 if self.hparams.chronological_split:
