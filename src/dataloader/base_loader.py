@@ -216,17 +216,20 @@ distribution and the supplied beta factor.
             loss_factor[idx == i] = self.loss_factors[i]
         return loss_factor
 
-    def training_step(self, model, batch):
+    def apply_mask(self, *y_list):
         """
-        Called inside the training loop with the data from the training dataloader \
-passed in as `batch`.
+        Returns batch_size x channels x N sized matrices after applying the mask.
 
-        :param model: The chosen model
-        :type model: Model
-        :param batch: Batch of input and ground truth variables
-        :type batch: int
-        :return: Loss and logs
-        :rtype: dict
+        :param *y_list: The interable of tensors to be masked
+        :type y_list: torch.Tensor
+        :return: The list of masked tensors
+        :rtype: list(torch.Tensor)
+        """
+        return [
+            y.permute(-2, -1, 0, 1)[self.mask.expand_as(y[0][0])].permute(-2, -1, 0)
+            for y in y_list
+        ]
+
         """
 
         # forward pass
