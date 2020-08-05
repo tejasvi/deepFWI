@@ -388,15 +388,6 @@ passed in as `batch`.
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).to(y_hat.device)
-                if self.hparams.clip_output:
-                    y_hat = y_hat[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                    y = y[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
 
                 if not y.numel():
                     return None
