@@ -287,6 +287,30 @@ and the label tensors.
 
         return loss
 
+    def training_step(self, model, batch):
+        """
+        Called inside the training loop with the data from the training dataloader \
+passed in as `batch`.
+
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+
+        # forward pass
+        x, y_pre = batch
+        y_hat_pre = model(x)
+        y_pre, y_hat_pre = self.apply_mask(y_pre, y_hat_pre)
+
+        assert y_pre.shape == y_hat_pre.shape
+        tensorboard_logs = defaultdict(dict)
+        for b in range(y_pre.shape[0]):
+            for c in range(y_pre.shape[1]):
+                loss = self.get_loss(y_pre[b][c], y_hat_pre[b][c])
+
                 tensorboard_logs["train_loss_unscaled"][str(c)] = loss
         loss = torch.stack(
             list(tensorboard_logs["train_loss_unscaled"].values())
