@@ -10,6 +10,7 @@ from skimage.transform import resize
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
+from imblearn.under_sampling import RandomUnderSampler
 
 
 class ModelDataset(Dataset):
