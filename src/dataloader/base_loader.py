@@ -377,7 +377,8 @@ passed in as `batch`.
         """
         x, y_pre = batch
         y_hat_pre = model(x)
-        mask = model.data.mask.expand_as(y_pre[0][0])
+        y_pre, y_hat_pre = self.apply_mask(y_pre, y_hat_pre)
+
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
