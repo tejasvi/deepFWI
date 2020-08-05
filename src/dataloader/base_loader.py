@@ -343,39 +343,13 @@ passed in as `batch`.
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
-                if self.hparams.round_to_zero:
-                    y_hat = y_hat[y > self.hparams.round_to_zero]
-                    y = y[y > self.hparams.round_to_zero]
-                if self.hparams.clip_output:
-                    y_hat = y_hat[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                    y = y[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                if self.hparams.cb_loss:
-                    loss_factor = self.get_cb_loss_factor(y)
-
-                if self.hparams.boxcox:
-                    y = torch.from_numpy(
-                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
-                    ).to(y.device)
-
-                pre_loss = (y_hat - y) ** 2
-                if "loss_factor" in locals():
-                    pre_loss *= loss_factor
-                loss = pre_loss.mean()
-                assert loss == loss
+                y, y_hat = y_pre[b][c], y_hat_pre[b][c]
+                loss = self.get_loss(y, y_hat)
 
                 # Accuracy for a threshold
-                n_correct_pred = (
-                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
-                )
-                abs_error = (y - y_hat).abs().float().mean()
+                abs_diff = (y - y_hat).abs()
+                n_correct_pred = (abs_diff < model.hparams.thresh).float().mean()
+                abs_error = abs_diff.mean()
 
                 tensorboard_logs["val_loss"][str(c)] = loss
                 tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
