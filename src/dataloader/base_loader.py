@@ -338,7 +338,8 @@ passed in as `batch`.
         # forward pass
         x, y_pre = batch
         y_hat_pre = model(x)
-        mask = model.data.mask.expand_as(y_pre[0][0])
+        y_pre, y_hat_pre = self.apply_mask(y_pre, y_hat_pre)
+
         assert y_pre.shape == y_hat_pre.shape
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
