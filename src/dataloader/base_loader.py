@@ -230,43 +230,62 @@ distribution and the supplied beta factor.
             for y in y_list
         ]
 
+    def get_loss(self, y, y_hat):
         """
+        Do the applicable processing and return the loss for the supplied prediction \
+and the label tensors.
 
-        # forward pass
-        x, y_pre = batch
-        y_hat_pre = model(x)
-        mask = model.data.mask.expand_as(y_pre[0][0])
-        assert y_pre.shape == y_hat_pre.shape
-        tensorboard_logs = defaultdict(dict)
-        for b in range(y_pre.shape[0]):
-            for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
-                if self.hparams.round_to_zero:
-                    y_hat = y_hat[y > self.hparams.round_to_zero]
-                    y = y[y > self.hparams.round_to_zero]
-                if self.hparams.clip_output:
-                    y_hat = y_hat[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                    y = y[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                if self.hparams.cb_loss:
-                    loss_factor = self.get_cb_loss_factor(y)
+        :param y: Label tensor
+        :type y: torch.Tensor
+        :param y_hat: Predicted tensor
+        :type y_hat: torch.Tensor
+        :return: Prediction loss
+        :rtype: torch.Tensor
+        """
+        if self.hparams.undersample:
+            sub_mask = y < self.hparams.undersample
+            subval = y[sub_mask]
+            low = max(subval.min(), 0.5)
+            high = subval.max()
+            boundaries = torch.arange(low, high, (high - low) / 10).to(
+                self.model.device
+            )
+            freq_idx = torch.bucketize(subval, boundaries[:-1], right=False)
+            self.undersampler.fit_resample(
+                subval.cpu().unsqueeze(-1),
+                (boundaries.take(index=freq_idx).cpu() * 100).int(),
+            )
+            idx = self.undersampler.sample_indices_
+            y = torch.cat((y[~sub_mask], subval[idx]))
+            y_hat = torch.cat((y_hat[~sub_mask], y_hat[sub_mask][idx]))
 
-                if self.hparams.boxcox:
-                    y = torch.from_numpy(
-                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
-                    ).to(y.device)
+        if self.hparams.round_to_zero:
+            y_hat = y_hat[y > self.hparams.round_to_zero]
+            y = y[y > self.hparams.round_to_zero]
 
-                pre_loss = (y_hat - y) ** 2
-                if "loss_factor" in locals():
-                    pre_loss *= loss_factor
-                loss = pre_loss.mean()
-                assert loss == loss
+        if self.hparams.clip_output:
+            y_hat = y_hat[
+                (y < self.hparams.clip_output[-1]) & (self.hparams.clip_output[0] < y)
+            ]
+            y = y[
+                (y < self.hparams.clip_output[-1]) & (self.hparams.clip_output[0] < y)
+            ]
+
+        if self.hparams.cb_loss:
+            loss_factor = self.get_cb_loss_factor(y)
+
+        if self.hparams.boxcox:
+            y = torch.from_numpy(boxcox(y.cpu(), lmbda=self.hparams.boxcox,)).to(
+                y.device
+            )
+
+        pre_loss = (y_hat - y) ** 2
+        if "loss_factor" in locals():
+            pre_loss *= loss_factor
+        loss = pre_loss.mean()
+        assert loss == loss
+
+        return loss
 
                 tensorboard_logs["train_loss_unscaled"][str(c)] = loss
         loss = torch.stack(
