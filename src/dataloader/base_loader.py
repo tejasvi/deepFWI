@@ -81,6 +81,10 @@ defaults to None
         else:
             self.hparams.case_study_dates = None
 
+        # Create imbalanced-learn random subsampler
+        if self.hparams.undersample:
+            self.undersampler = RandomUnderSampler()
+
         # Input transforms including mean and std normalization
         self.transform = transforms.Compose(
             [
