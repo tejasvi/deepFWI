@@ -381,11 +381,7 @@ passed in as `batch`.
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
-                if self.hparams.round_to_zero:
-                    y_hat = y_hat[y > self.hparams.round_to_zero]
-                    y = y[y > self.hparams.round_to_zero]
+
                 if self.hparams.boxcox:
                     # Negative predictions give NaN after inverse-boxcox
                     y_hat[y_hat < 0] = 0
