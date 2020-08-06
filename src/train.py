@@ -408,10 +408,6 @@ def get_hparams(
     ) = False,
     isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = False,
     transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = False,
-    bush_fire_peak: (
-        "Consider the data only during bush-fire peak (Dec-Jan)",
-        "option",
-    ) = False,
     date_range: (
         "Filter the data with specified date range. E.g. 2019-04-01,2019-05-01",
         "option",
