@@ -6,8 +6,6 @@ from glob import glob
 import xarray as xr
 import numpy as np
 
-import torch
-
 from dataloader.base_loader import ModelDataset as BaseDataset
 from pytorch_lightning import _logger as log
 
@@ -65,53 +63,9 @@ to defaults to None
         assert (
             self.hparams.in_days > 0 and self.hparams.out_days > 0
         ), "The number of input and output days must be > 0."
-        self.n_input = self.hparams.in_days
-        self.n_output = self.hparams.out_days
-        self.hparams.thresh = self.hparams.out_mad / 2
 
-        # Generate the list of all valid files in the specified directories
-        get_inp_time = (
-            lambda x: int(x.split("_20")[1][:2]) * 10000
-            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) * 100
-            + int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:])
-        )
-        inp_files = sorted(
-            sorted(glob(f"{forcings_dir}/ECMWF_FO_20*.nc")),
-            # Extracting the month and date from filenames to sort by time.
-            key=get_inp_time,
-        )
-        get_out_time = (
-            lambda x: int(x[-24:-22]) * 10000 + int(x[-22:-20]) * 100 + int(x[-20:-18])
-        )
-        out_files = sorted(
-            glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc"),
-            # Extracting the month and date from filenames to sort by time.
-            key=get_out_time,
-        )
-
-        if self.hparams.dry_run:
-            inp_files = inp_files[: 8 * (self.n_output + self.n_input)]
-            out_files = out_files[: 2 * (self.n_output + self.n_input)]
-
-        # Checking for valid date format
-        out_invalid = lambda x: not (
-            1 <= int(x[-22:-20]) <= 12 and 1 <= int(x[-20:-18]) <= 31
-        )
-        assert not (sum([out_invalid(x) for x in out_files])), (
-            "Invalid date format for output file(s)."
-            "The dates should be formatted as YYMMDD."
-        )
-        self.out_files = out_files
-
-        inp_invalid = lambda x: not (
-            1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][:2]) <= 12
-            and 1 <= int(x.split("_20")[1][2:].split("_1200_hr_")[0][2:]) <= 31
-        )
-        assert not (sum([inp_invalid(x) for x in inp_files])), (
-            "Invalid date format for input file(s)."
-            "The dates should be formatted as YYMMDD."
-        )
-        self.inp_files = inp_files
+        inp_files = glob(f"{forcings_dir}/ECMWF_FO_20*.nc")
+        out_files = glob(f"{reanalysis_dir}/ECMWF_FWI_20*_1200_hr_fwi_e5.nc")
 
         # Consider only ground truth and discard forecast values
         preprocess = lambda x: x.isel(time=slice(0, 1))
@@ -126,7 +80,7 @@ to defaults to None
             data_vars="minimal",
             compat="override",
         ) as ds:
-            self.input = ds.sortby("time").load()
+            self.input = ds.sortby("time")
 
         with xr.open_mfdataset(
             out_files,
@@ -138,34 +92,83 @@ to defaults to None
             data_vars="minimal",
             compat="override",
         ) as ds:
-            self.output = ds.sortby("time").load()
+            self.output = ds.sortby("time")
 
-        # Ensure the data timestamp is ordered
-        assert all(self.input.time.values[:-1] < self.input.time.values[1:])
-        assert all(self.output.time.values[:-1] < self.output.time.values[1:])
+        if self.hparams.smos_input:
+            self.smos_files = glob(f"{self.hparams.smos_dir}/20*_20*.as1.grib")
 
-        self.min_date = self.input.rh.time.min().values.astype("datetime64[D]")
+            with xr.open_mfdataset(
+                self.smos_files,
+                preprocess=lambda x: x.expand_dims("time"),
+                engine="cfgrib",
+                parallel=False,
+            ) as ds:
+                smos_input = ds
 
+        # The t=0 dates
         self.dates = []
         for t in self.input.time.values:
-            if all(
-                [
-                    t - np.timedelta64(i, "D") in self.input.time.values
-                    for i in range(self.hparams.in_days)
-                ]
-            ) and all(
-                [
-                    t + np.timedelta64(i, "D") in self.output.time.values
-                    for i in range(self.hparams.out_days)
-                ]
+            t = t.astype("datetime64[D]")
+            if (
+                # Date is within the range if specified
+                (
+                    not self.hparams.date_range
+                    or self.hparams.date_range[0] <= t <= self.hparams.date_range[-1]
+                )
+                # Date is within the case-study range if specified
+                and (
+                    not self.hparams.case_study_dates
+                    or min([r[0] <= t <= r[-1] for r in self.hparams.case_study_dates])
+                )
+                # Input data for preceding dates is available
+                and all(
+                    [
+                        t - np.timedelta64(i, "D") in self.input.time.values
+                        for i in range(self.hparams.in_days)
+                    ]
+                )
+                # Output data for later dates is available
+                and all(
+                    [
+                        t + np.timedelta64(i, "D") in self.output.time.values
+                        for i in range(self.hparams.out_days)
+                    ]
+                )
             ):
                 self.dates.append(t)
+                if self.hparams.dry_run and len(self.dates) == 4:
+                    break
 
-        log.info(f"Start date: {self.dates[0]}\nEnd date: {self.dates[-1]}",)
+        self.min_date = min(self.dates)
 
-        # Loading the mask for output variable if provided as generating from NaN mask
-        self.mask = torch.from_numpy(
-            np.load(self.hparams.mask)
-            if self.hparams.mask
-            else ~np.isnan(self.output["fwi"][0].values)
-        ).to("cuda" if self.hparams.gpus else "cpu")
+        # Required dates for operating on t=0 dates
+        dates_spread = list(
+            set(
+                sum(
+                    [
+                        [
+                            d + np.timedelta64(i - self.hparams.in_days, "D")
+                            for i in range(
+                                1, self.hparams.in_days + self.hparams.out_days
+                            )
+                        ]
+                        for d in self.dates
+                    ],
+                    [],
+                )
+            )
+        )
+
+        # Load the data only for required dates
+        self.input, self.output = (
+            self.input.sel(time=dates_spread).load(),
+            self.output.sel(time=dates_spread).load(),
+        )
+        if self.hparams.smos_input:
+            smos_input = smos_input.sel(time=dates_spread, method="nearest")
+            # Drop duplicates
+            self.smos_input = smos_input.isel(
+                time=np.unique(smos_input["time"], return_index=True)[1]
+            ).load()
+
+        log.info(f"Start date: {min(self.dates)}\nEnd date: {max(self.dates)}")

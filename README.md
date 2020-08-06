@@ -55,11 +55,15 @@
     -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference.
     -binned False                           Show the extended metrics for supplied comma separated binned FWI value range
     -round-to-zero False                    Round off the target values below the specified threshold to zero
+    -date_range False                       Filter the data with specified date range. E.g. 2019-04-01,2019-05-01
+    -cb_loss False                          Use Class-Balanced loss with the supplied beta parameter
+    -chronological_split False              Do chronological train-test split in the specified ratio
     -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered, unet_interpolated
     -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis
     -forecast-dir ${FORECAST_DIR:-$PWD}     Directory containing forecast data. Alternatively set $FORECAST_DIR
     -forcings-dir ${FORCINGS_DIR:-$PWD}     Directory containing forcings data. Alternatively set $FORCINGS_DIR
     -reanalysis-dir ${REANALYSIS_DIR:-$PWD} Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR
+    -smos-dir ${SMOS_DIR:-$PWD}             Directory containing soil moisture data. Alternatively set $SMOS_DIR
     -mask dataloader/mask.npy               File containing the mask stored as the numpy array
     -comment Comment of choice!             Used for logging
     -save-test-set False                    Save the test-set file names to the specified filepath

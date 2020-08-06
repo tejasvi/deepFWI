@@ -54,7 +54,7 @@ def main(hparams):
 
     # Callback to save checkpoint of best performing model
     checkpoint_callback = pl.callbacks.model_checkpoint.ModelCheckpoint(
-        filepath=f"model/checkpoints/{name}/",
+        filepath=f"src/model/checkpoints/{name}/",
         monitor="val_loss",
         verbose=True,
         save_top_k=1,
@@ -92,7 +92,9 @@ def main(hparams):
         wandb_logger.log_hyperparams(model.hparams)
         for file in [
             i
-            for s in [glob(x) for x in ["*.py", "dataloader/*.py", "model/*.py"]]
+            for s in [
+                glob(x) for x in ["src/*.py", "src/dataloader/*.py", "src/model/*.py"]
+            ]
             for i in s
         ]:
             shutil.copy(file, wandb.run.dir)
@@ -178,11 +180,15 @@ def set_hparams(hparams):
     :return: Modified parameters
     :rtype: Namespace
     """
+
+    # Check for CUDA availability if gpus > 0 requested
+    if hparams.gpus and not torch.cuda.is_available():
+        hparams.gpus = 0
+
     if hparams.case_study:
         case_studies = importlib.import_module("data.consts.case_study").case_studies
         hparams.case_study_dates = case_studies[hparams.case_study]
-        if not hparams.mask:
-            hparams.mask = f"dataloader/mask/{hparams.case_study}_mask.npy"
+        hparams.mask = f"src/dataloader/mask/{hparams.case_study}_mask.npy"
 
     from data.consts.forcing_stats import (
         FORCING_STD_TP,
@@ -207,6 +213,15 @@ def set_hparams(hparams):
         "t2": FORCING_STD_T2,
         "rh": FORCING_STD_RH,
     }
+
+    if hparams.smos_input:
+        from data.consts.soil_moisture_stats import (
+            SOIL_MOISTURE_MEAN,
+            SOIL_MOISTURE_STD,
+        )
+
+        hparams.smos_mean = SOIL_MOISTURE_MEAN
+        hparams.smos_std = SOIL_MOISTURE_STD
 
     if hparams.out == "fwi_reanalysis":
         from data.consts.fwi_reanalysis_stats import (
@@ -233,11 +248,9 @@ def set_hparams(hparams):
         )
 
         hparams.out_mean, hparams.out_mad, hparams.out_var = (
-            BOX_COX_FRP_MEAN,
-            BOX_COX_FRP_MAD,
+            BOX_COX_FRP_MEAN if hparams.boxcox else FRP_VAR,
+            BOX_COX_FRP_MAD if hparams.boxcox else FRP_MAD,
             BOX_COX_FRP_VAR if hparams.boxcox else FRP_MEAN,
-            FRP_MAD,
-            FRP_VAR,
         )
         if hparams.boxcox and not (type(hparams.boxcox) == type(bool)):
             hparams.boxcox = BOX_COX_LAMBDA
@@ -253,6 +266,23 @@ def set_hparams(hparams):
             FORECAST_FWI_MAD,
             FORECAST_FWI_VAR,
         )
+
+    if hparams.cb_loss and hparams.out == "fwi_reanalysis":
+        from data.consts.reanalysis_freq import bin_centers, freq
+
+        # Not allow zero frequency for numerical stability
+        freq[freq == 0] = 1
+
+        hparams.bin_centers = bin_centers
+        hparams.loss_factors = (1 - hparams.cb_loss) / (1 - hparams.cb_loss ** freq)
+        hparams.loss_factors = (
+            hparams.loss_factors
+            / hparams.loss_factors.sum()
+            * hparams.loss_factors.size
+        )
+        assert (
+            hparams.bin_centers.shape == hparams.loss_factors.shape
+        ), "The number of bin-centers for corresponding frequencies must be the same"
     return hparams
 
 
@@ -294,7 +324,7 @@ def get_model(hparams):
     else:
         raise ImportError(f"{hparams.model} and {hparams.out} combination invalid.")
 
-    model = Model(hparams)
+    model = Model(hparams).to("cuda" if hparams.gpus else "cpu")
     model.prepare_data(ModelDataset)
     return model
 
@@ -311,16 +341,17 @@ def str2num(s):
     if isinstance(s, bool):
         return s
     s = str(s)
-    if "." in s or "e-" in s or "," in s:
+    if "." in s or "e-" in s:
         try:
             return float(s)
         except:
-            try:
-                return [float(i) for i in s.split(",")]
-            except:
-                pass
-    if s.isdigit():
+            pass
+    if "," in s:
+        return [str2num(i) for i in s.split(",")]
+    elif s.isdigit():
         return int(s)
+    elif s == "inf":
+        return float("inf")
     elif s == "None":
         return None
     else:
@@ -352,7 +383,7 @@ def get_hparams(
     ) = "one_cycle",
     dry_run: ("Use small amount of data for sanity check", "option") = False,
     find_lr: ("Automatically search for an ideal learning rate", "option") = False,
-    search_bs: ("Scale the batch dynamically for full GPU usage") = False,
+    search_bs: ("Scale the batch dynamically for full GPU usage", "option") = False,
     case_study: (
         "The case-study region to use for inference: australia, california, portugal,"
         " siberia, chile, uk",
@@ -375,8 +406,20 @@ def get_hparams(
         "Round off the target values below the specified threshold to zero",
         "option",
     ) = False,
-    isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = True,
-    transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = True,
+    isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = False,
+    transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = False,
+    date_range: (
+        "Filter the data with specified date range. E.g. 2019-04-01,2019-05-01",
+        "option",
+    ) = False,
+    cb_loss: (
+        "Use Class-Balanced loss with the supplied beta parameter",
+        "option",
+    ) = False,
+    chronological_split: (
+        "Do chronological train-test split in the specified ratio",
+        "option",
+    ) = False,
     #
     # Run specific
     model: (
@@ -388,6 +431,7 @@ def get_hparams(
         "Output data for training: fwi_forecast or fwi_reanalysis or gfas_frp",
         "option",
     ) = "fwi_reanalysis",
+    smos_input: ("Use soil-moisture input data", "option") = "False",
     forecast_dir: (
         "Directory containing the forecast data. Alternatively set $FORECAST_DIR",
         "option",
@@ -396,6 +440,10 @@ def get_hparams(
         "Directory containing the forcings data Alternatively set $FORCINGS_DIR",
         "option",
     ) = os.environ.get("FORCINGS_DIR", os.getcwd()),
+    smos_dir: (
+        "Directory containing the soil-moisture data Alternatively set $SMOS_DIR",
+        "option",
+    ) = os.environ.get("SMOS_DIR", os.getcwd()),
     reanalysis_dir: (
         "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR.",
         "option",
@@ -408,14 +456,8 @@ def get_hparams(
         "File containing the mask stored as the numpy array",
         "option",
     ) = "src/dataloader/mask/reanalysis_mask.npy",
-    comment: ("Used for logging", "option") = "FRP 0 clipping, box cox",
-    #
-    # Test run
-    save_test_set: (
-        "Save the test-set file names to the specified filepath",
-        "option",
-    ) = False,
-    checkpoint_file: ("Path to the test model checkpoint", "option",) = "",
+    comment: ("Used for logging", "option") = False,
+    checkpoint_file: ("Path to the test model checkpoint", "option",) = False,
 ):
     """
     Process and print the dictionary of project wide arguments.
@@ -425,7 +467,7 @@ def get_hparams(
     """
     d = {k: str2num(v) for k, v in locals().items()}
     for k, v in d.items():
-        print(f" |{k.replace('_', '-'):>15} -> {str(v):<15}")
+        print(f" |{k.replace('_', '-'):>20} -> {str(v):<20}")
     return d
 
 

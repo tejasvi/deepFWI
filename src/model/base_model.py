@@ -37,7 +37,6 @@ useful hooks
         self.hparams = hparams
         self.batch_size = hparams.batch_size
         self.data_prepared = False
-        self.aux = False
 
     def forward(self):
         """
@@ -132,7 +131,7 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["val_loss"] = avg_loss
 
-        for n in range(self.data.n_output):
+        for n in range(self.hparams.out_days):
             tensorboard_logs[f"val_loss_{n}"] = torch.stack(
                 [d[str(n)] for d in [x["log"]["val_loss"] for x in outputs if x]]
             ).mean()
@@ -164,7 +163,7 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         tensorboard_logs = defaultdict(dict)
         tensorboard_logs["test_loss"] = avg_loss
 
-        for n in range(self.data.n_output):
+        for n in range(self.hparams.out_days):
             tensorboard_logs[f"test_loss_{n}"] = torch.stack(
                 rm_none([d[str(n)] for d in [x["log"]["test_loss"] for x in outputs]])
             ).mean()
@@ -330,30 +329,48 @@ on second call determined by the `force` parameter.
                 hparams=self.hparams,
                 out=self.hparams.out,
             )
-            self.add_bias(self.data.out_mean)
-            if self.hparams.test_set:
-                if hasattr(self.hparams, "eval"):
-                    self.train_data = self.test_data = self.data
-                else:
-                    self.train_data = self.data
-                    hparams = self.hparams
-                    hparams.eval = True
-                    self.test_data = ModelDataset(
-                        forecast_dir=self.hparams.forecast_dir,
-                        forcings_dir=self.hparams.forcings_dir,
-                        reanalysis_dir=self.hparams.reanalysis_dir,
-                        frp_dir=self.hparams.frp_dir,
-                        hparams=hparams,
-                        out=self.hparams.out,
-                    )
-            elif not hasattr(self.hparams, "eval"):
-                self.train_data, self.test_data = torch.utils.data.random_split(
-                    self.data,
-                    [
-                        len(self.data) * 8 // 10,
-                        len(self.data) - len(self.data) * 8 // 10,
-                    ],
+            self.data.model = self
+            if self.hparams.cb_loss:
+                # Move bin_centers and freq to GPU if possible
+                self.data.bin_centers = torch.from_numpy(self.hparams.bin_centers).to(
+                    self.device, dtype=next(iter(self.data))[1].dtype
                 )
+                self.data.loss_factors = torch.from_numpy(self.hparams.loss_factors).to(
+                    self.device, dtype=next(iter(self.data))[1].dtype
+                )
+            # Load the mask for output variable if provided or generate from NaN mask
+            self.data.mask = torch.from_numpy(
+                np.load(self.hparams.mask)
+                if self.hparams.mask
+                else ~np.isnan(
+                    self.data.output[list(self.data.output.data_vars)[0]][0].values
+                )
+            ).to(self.device)
+            if self.hparams.smos_input:
+                self.data.mask[0:105, :] = False
+            self.add_bias(self.data.out_mean)
+            if not hasattr(self.hparams, "eval"):
+                if self.hparams.chronological_split:
+                    self.train_data = torch.utils.data.Subset(
+                        self.data,
+                        range(int(len(self.data) * self.hparams.chronological_split)),
+                    )
+                    self.test_data = torch.utils.data.Subset(
+                        self.data,
+                        range(
+                            int(len(self.data) * self.hparams.chronological_split),
+                            len(self.data),
+                        ),
+                    )
+                else:
+                    self.train_data, self.test_data = torch.utils.data.random_split(
+                        self.data,
+                        [
+                            len(self.data) * (5 if self.hparams.dry_run else 8) // 10,
+                            len(self.data)
+                            - len(self.data) * (5 if self.hparams.dry_run else 8) // 10,
+                        ],
+                    )
             else:
                 self.train_data = self.test_data = self.data
                 self.test_data.indices = list(range(len(self.test_data)))
@@ -366,31 +383,6 @@ on second call determined by the `force` parameter.
 
             # Set flag to avoid resource intensive re-preparation during next call
             self.data_prepared = True
-
-        # Filter the test-set for case-study duration
-        if (
-            self.hparams.case_study
-            and not self.hparams.test_set
-            and not self.hparams.dry_run
-            and not hasattr(self.hparams, "eval")
-        ):
-            assert self.data.min_date + np.timedelta64(
-                max(self.test_data.indices), "D"
-            ) >= min(
-                [np.datetime64(r[0]) for r in self.hparams.case_study_dates]
-            ), "The data is outside the time-range of case study"
-            self.test_data.indices = list(
-                set(self.test_data.indices)
-                & set(
-                    [
-                        range(
-                            (r[0] - self.data.min_date).item().days,
-                            (r[-1] - self.data.min_date).item().days + 1,
-                        )
-                        for r in self.hparams.case_study_dates
-                    ]
-                )
-            )
 
     def train_dataloader(self):
         """

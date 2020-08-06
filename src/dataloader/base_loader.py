@@ -5,6 +5,7 @@ from collections import defaultdict
 import numpy as np
 from scipy.stats import boxcox
 from scipy.special import inv_boxcox
+from skimage.transform import resize
 
 import torch
 from torch.utils.data import Dataset
@@ -56,6 +57,7 @@ defaults to None
         self.hparams = hparams
         self.out_mean = out_mean
         self.out_var = out_var
+        self.hparams.thresh = self.hparams.out_mad / 2
         if self.hparams.binned:
             self.bin_intervals = self.hparams.binned
 
@@ -63,6 +65,20 @@ defaults to None
         self.out_mean = out_mean if out_mean else self.hparams.out_mean
         # Variance of output variable used to scale the training loss.
         self.out_var = out_var if out_var else self.hparams.out_var
+
+        # Convert string dates to numpy format
+        if self.hparams.date_range:
+            self.hparams.date_range = [
+                np.datetime64(d) for d in self.hparams.date_range
+            ]
+        # Convert case-study dates to numpy format
+        if hasattr(self.hparams, "case_study_dates") and not self.hparams.date_range:
+            self.hparams.case_study_dates = [
+                [np.datetime64(d) for d in r] for r in self.hparams.case_study_dates
+            ]
+        # If custom date range specified, override
+        else:
+            self.hparams.case_study_dates = None
 
         # Input transforms including mean and std normalization
         self.transform = transforms.Compose(
@@ -73,24 +89,34 @@ defaults to None
                 transforms.Normalize(
                     [
                         x
-                        for i in range(self.n_input)
+                        for i in range(self.hparams.in_days)
                         for x in (
                             self.hparams.inp_mean["rh"],
                             self.hparams.inp_mean["t2"],
                             self.hparams.inp_mean["tp"],
                             self.hparams.inp_mean["wspeed"],
                         )
-                    ],
+                    ]
+                    + (
+                        [self.hparams.smos_mean for i in range(self.hparams.in_days)]
+                        if self.hparams.smos_input
+                        else []
+                    ),
                     [
                         x
-                        for i in range(self.n_input)
+                        for i in range(self.hparams.in_days)
                         for x in (
                             self.hparams.inp_std["rh"],
                             self.hparams.inp_std["t2"],
                             self.hparams.inp_std["tp"],
                             self.hparams.inp_std["wspeed"],
                         )
-                    ],
+                    ]
+                    + (
+                        [self.hparams.smos_std for i in range(self.hparams.in_days)]
+                        if self.hparams.smos_input
+                        else []
+                    ),
                 ),
             ]
         )
@@ -117,32 +143,74 @@ defaults to None
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        X = np.stack(
-            [
-                self.input[v]
-                .sel(time=[self.dates[idx] - np.timedelta64(i, "D")])
-                .values
-                for i in range(self.n_input)
-                for v in ["rh", "t2", "tp", "wspeed"]
-            ],
-            axis=-1,
+        X = self.transform(
+            np.stack(
+                [
+                    self.input[v]
+                    .sel(time=[self.dates[idx] - np.timedelta64(i, "D")])
+                    .values.squeeze()
+                    for i in range(self.hparams.in_days)
+                    for v in ["rh", "t2", "tp", "wspeed"]
+                ]
+                + (
+                    [
+                        resize(
+                            np.nan_to_num(
+                                self.smos_input[list(self.smos_input.data_vars)[0]]
+                                .sel(
+                                    time=[self.dates[idx] - np.timedelta64(i, "D")],
+                                    method="nearest",
+                                )
+                                .values.squeeze()[::-1],
+                                copy=False,
+                                # Use 50 as the placeholder for water bodies
+                                nan=50,
+                            ),
+                            self.input.rh[0].shape,
+                        )
+                        for i in range(self.hparams.in_days)
+                    ]
+                    if self.hparams.smos_input
+                    else []
+                ),
+                axis=-1,
+            )
         )
+
         y = torch.from_numpy(
             np.stack(
                 [
                     self.output[list(self.output.data_vars)[0]]
                     .sel(time=[self.dates[idx] + np.timedelta64(i, "D")])
-                    .values
-                    for i in range(self.n_output)
+                    .values.squeeze()
+                    for i in range(self.hparams.out_days)
                 ],
                 axis=0,
             )
         )
 
-        if self.transform:
-            X = self.transform(X)
-
         return X, y
+
+    def get_cb_loss_factor(self, y):
+        """
+        Compute the Class-Balanced loss factor mask using output value frequency \
+distribution and the supplied beta factor.
+
+        :param y: The 1D ground truth value tensor
+        :type y: torch.tensor
+        """
+        idx = (
+            (
+                y.unsqueeze(0).expand(self.bin_centers.shape[0], -1)
+                - self.bin_centers.unsqueeze(-1).expand(-1, y.shape[0])
+            )
+            .abs()
+            .argmin(dim=0)
+        )
+        loss_factor = torch.empty_like(y)
+        for i in range(self.bin_centers.shape[0]):
+            loss_factor[idx == i] = self.loss_factors[i]
+        return loss_factor
 
     def training_step(self, model, batch):
         """
@@ -171,21 +239,28 @@ passed in as `batch`.
                     y_hat = y_hat[y > self.hparams.round_to_zero]
                     y = y[y > self.hparams.round_to_zero]
                 if self.hparams.clip_output:
-                    y = y[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
-                    ]
                     y_hat = y_hat[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
                     ]
+                    y = y[
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
+                    ]
+                if self.hparams.cb_loss:
+                    loss_factor = self.get_cb_loss_factor(y)
+
                 if self.hparams.boxcox:
                     y = torch.from_numpy(
                         boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
                     ).to(y.device)
+
                 pre_loss = (y_hat - y) ** 2
+                if "loss_factor" in locals():
+                    pre_loss *= loss_factor
                 loss = pre_loss.mean()
                 assert loss == loss
+
                 tensorboard_logs["train_loss_unscaled"][str(c)] = loss
         loss = torch.stack(
             list(tensorboard_logs["train_loss_unscaled"].values())
@@ -193,7 +268,7 @@ passed in as `batch`.
         tensorboard_logs["_train_loss_unscaled"] = loss
         # model.logger.log_metrics(tensorboard_logs)
         return {
-            "loss": loss.true_divide(model.data.out_var * model.data.n_output),
+            "loss": loss.true_divide(model.data.out_var * model.hparams.out_days),
             "_log": tensorboard_logs,
         }
 
@@ -224,19 +299,25 @@ passed in as `batch`.
                     y_hat = y_hat[y > self.hparams.round_to_zero]
                     y = y[y > self.hparams.round_to_zero]
                 if self.hparams.clip_output:
-                    y = y[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
-                    ]
                     y_hat = y_hat[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
                     ]
+                    y = y[
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
+                    ]
+                if self.hparams.cb_loss:
+                    loss_factor = self.get_cb_loss_factor(y)
+
                 if self.hparams.boxcox:
                     y = torch.from_numpy(
                         boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
                     ).to(y.device)
+
                 pre_loss = (y_hat - y) ** 2
+                if "loss_factor" in locals():
+                    pre_loss *= loss_factor
                 loss = pre_loss.mean()
                 assert loss == loss
 
@@ -271,7 +352,7 @@ passed in as `batch`.
         :rtype: dict
         """
         x, y_pre = batch
-        y_hat_pre, _ = model(x) if model.aux else model(x), None
+        y_hat_pre = model(x)
         mask = model.data.mask.expand_as(y_pre[0][0])
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
@@ -288,13 +369,13 @@ passed in as `batch`.
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).to(y_hat.device)
                 if self.hparams.clip_output:
-                    y = y[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
-                    ]
                     y_hat = y_hat[
-                        (y_hat < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y_hat)
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
+                    ]
+                    y = y[
+                        (y < self.hparams.clip_output[-1])
+                        & (self.hparams.clip_output[0] < y)
                     ]
 
                 if not y.numel():
