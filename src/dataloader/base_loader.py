@@ -163,6 +163,7 @@ defaults to None
                                 )
                                 .values.squeeze()[::-1],
                                 copy=False,
+                                # Use 50 as the placeholder for water bodies
                                 nan=50,
                             ),
                             self.input.rh[0].shape,
