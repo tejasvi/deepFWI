@@ -180,6 +180,11 @@ def set_hparams(hparams):
     :return: Modified parameters
     :rtype: Namespace
     """
+
+    # Check for CUDA availability if gpus > 0 requested
+    if hparams.gpus and not torch.cuda.is_available():
+        hparams.gpus = 0
+
     if hparams.case_study:
         case_studies = importlib.import_module("data.consts.case_study").case_studies
         hparams.case_study_dates = case_studies[hparams.case_study]
