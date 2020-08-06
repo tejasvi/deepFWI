@@ -1,5 +1,5 @@
 ## Overview of Code Structure
-[src/train.py](src/train.py) is a general-purpose training script. It works for variable length of input and prediction (with option `-in-days` and `-out-days`): Since there are four variables in FWI input, there are 4x number of input channels for each input day.
+[src/train.py](src/train.py) is a general-purpose training script. It works for variable length of input and prediction (with option `-in-days` and `-out-days`): Since there are four variables in FWI input, there are 4x number of input channels for each input day. Optionally the additional input, surface soil-moisture can be used as well.
 
 [src/test.py](src/test.py) is a general-purpose test script. Once you have trained your model with `train.py`, you can use this script to test the model. It will load a saved model from `-checkpoint-file` and print and save the results to `logs` directory.
 
