@@ -63,6 +63,7 @@
     -forecast-dir ${FORECAST_DIR:-$PWD}     Directory containing forecast data. Alternatively set $FORECAST_DIR
     -forcings-dir ${FORCINGS_DIR:-$PWD}     Directory containing forcings data. Alternatively set $FORCINGS_DIR
     -reanalysis-dir ${REANALYSIS_DIR:-$PWD} Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR
+    -smos-dir ${SMOS_DIR:-$PWD}             Directory containing soil moisture data. Alternatively set $SMOS_DIR
     -mask dataloader/mask.npy               File containing the mask stored as the numpy array
     -comment Comment of choice!             Used for logging
     -save-test-set False                    Save the test-set file names to the specified filepath
