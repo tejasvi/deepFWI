@@ -248,11 +248,9 @@ def set_hparams(hparams):
         )
 
         hparams.out_mean, hparams.out_mad, hparams.out_var = (
-            BOX_COX_FRP_MEAN,
-            BOX_COX_FRP_MAD,
+            BOX_COX_FRP_MEAN if hparams.boxcox else FRP_VAR,
+            BOX_COX_FRP_MAD if hparams.boxcox else FRP_MAD,
             BOX_COX_FRP_VAR if hparams.boxcox else FRP_MEAN,
-            FRP_MAD,
-            FRP_VAR,
         )
         if hparams.boxcox and not (type(hparams.boxcox) == type(bool)):
             hparams.boxcox = BOX_COX_LAMBDA
