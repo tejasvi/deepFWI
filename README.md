@@ -70,8 +70,6 @@
     -save-test-set False                    Save the test-set file names to the specified filepath
     -checkpoint-file                        Path to the test model checkpoint</pre>
 
-Code walk-through can be found at [Code_Structure_Overview.md](Code_Structure_Overview.md).
-
 * The [src/](src) directory contains the architecture implementation.
   * The [src/dataloader/](src/dataloader) directory contains the implementation specific to the training data.
   * The [src/model/](src/model) directory contains the model implementation.
@@ -84,4 +82,4 @@ Code walk-through can be found at [Code_Structure_Overview.md](Code_Structure_Ov
   * Forecast data: [data/EDA/fwi_forecast.ipynb](data/EDA/fwi_forecast.ipynb)
   * FRP data: [data/EDA/frp.ipynb](data/EDA/frp.ipynb)
   
-* Code walk-through can be found at [Code_Structure_Overview.md](Code_Structure_Overview.md).
+* A walk-through of the codebase is in the [Code_Structure_Overview.md](Code_Structure_Overview.md).
