@@ -54,6 +54,7 @@
     -clip-output False                      Limit the inference to the output values within supplied range (e.g. 0.5,60)
     -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference.
     -binned False                           Show the extended metrics for supplied comma separated binned FWI value range
+    -undersample False                      Undersample the datapoints having smaller than specified FWI (e.g. -undersample=10)
     -round-to-zero False                    Round off the target values below the specified threshold to zero
     -date_range False                       Filter the data with specified date range. E.g. 2019-04-01,2019-05-01
     -cb_loss False                          Use Class-Balanced loss with the supplied beta parameter

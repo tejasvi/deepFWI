@@ -10,6 +10,7 @@ from skimage.transform import resize
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
+from imblearn.under_sampling import RandomUnderSampler
 
 
 class ModelDataset(Dataset):
@@ -79,6 +80,10 @@ defaults to None
         # If custom date range specified, override
         else:
             self.hparams.case_study_dates = None
+
+        # Create imbalanced-learn random subsampler
+        if self.hparams.undersample:
+            self.undersampler = RandomUnderSampler()
 
         # Input transforms including mean and std normalization
         self.transform = transforms.Compose(
@@ -212,6 +217,77 @@ distribution and the supplied beta factor.
             loss_factor[idx == i] = self.loss_factors[i]
         return loss_factor
 
+    def apply_mask(self, *y_list):
+        """
+        Returns batch_size x channels x N sized matrices after applying the mask.
+
+        :param *y_list: The interable of tensors to be masked
+        :type y_list: torch.Tensor
+        :return: The list of masked tensors
+        :rtype: list(torch.Tensor)
+        """
+        return [
+            y.permute(-2, -1, 0, 1)[self.mask.expand_as(y[0][0])].permute(-2, -1, 0)
+            for y in y_list
+        ]
+
+    def get_loss(self, y, y_hat):
+        """
+        Do the applicable processing and return the loss for the supplied prediction \
+and the label tensors.
+
+        :param y: Label tensor
+        :type y: torch.Tensor
+        :param y_hat: Predicted tensor
+        :type y_hat: torch.Tensor
+        :return: Prediction loss
+        :rtype: torch.Tensor
+        """
+        if self.hparams.undersample:
+            sub_mask = y < self.hparams.undersample
+            subval = y[sub_mask]
+            low = max(subval.min(), 0.5)
+            high = subval.max()
+            boundaries = torch.arange(low, high, (high - low) / 10).to(
+                self.model.device
+            )
+            freq_idx = torch.bucketize(subval, boundaries[:-1], right=False)
+            self.undersampler.fit_resample(
+                subval.cpu().unsqueeze(-1),
+                (boundaries.take(index=freq_idx).cpu() * 100).int(),
+            )
+            idx = self.undersampler.sample_indices_
+            y = torch.cat((y[~sub_mask], subval[idx]))
+            y_hat = torch.cat((y_hat[~sub_mask], y_hat[sub_mask][idx]))
+
+        if self.hparams.round_to_zero:
+            y_hat = y_hat[y > self.hparams.round_to_zero]
+            y = y[y > self.hparams.round_to_zero]
+
+        if self.hparams.clip_output:
+            y_hat = y_hat[
+                (y < self.hparams.clip_output[-1]) & (self.hparams.clip_output[0] < y)
+            ]
+            y = y[
+                (y < self.hparams.clip_output[-1]) & (self.hparams.clip_output[0] < y)
+            ]
+
+        if self.hparams.cb_loss:
+            loss_factor = self.get_cb_loss_factor(y)
+
+        if self.hparams.boxcox:
+            y = torch.from_numpy(boxcox(y.cpu(), lmbda=self.hparams.boxcox,)).to(
+                y.device
+            )
+
+        pre_loss = (y_hat - y) ** 2
+        if "loss_factor" in locals():
+            pre_loss *= loss_factor
+        loss = pre_loss.mean()
+        assert loss == loss
+
+        return loss
+
     def training_step(self, model, batch):
         """
         Called inside the training loop with the data from the training dataloader \
@@ -228,38 +304,13 @@ passed in as `batch`.
         # forward pass
         x, y_pre = batch
         y_hat_pre = model(x)
-        mask = model.data.mask.expand_as(y_pre[0][0])
+        y_pre, y_hat_pre = self.apply_mask(y_pre, y_hat_pre)
+
         assert y_pre.shape == y_hat_pre.shape
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
-                if self.hparams.round_to_zero:
-                    y_hat = y_hat[y > self.hparams.round_to_zero]
-                    y = y[y > self.hparams.round_to_zero]
-                if self.hparams.clip_output:
-                    y_hat = y_hat[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                    y = y[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                if self.hparams.cb_loss:
-                    loss_factor = self.get_cb_loss_factor(y)
-
-                if self.hparams.boxcox:
-                    y = torch.from_numpy(
-                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
-                    ).to(y.device)
-
-                pre_loss = (y_hat - y) ** 2
-                if "loss_factor" in locals():
-                    pre_loss *= loss_factor
-                loss = pre_loss.mean()
-                assert loss == loss
+                loss = self.get_loss(y_pre[b][c], y_hat_pre[b][c])
 
                 tensorboard_logs["train_loss_unscaled"][str(c)] = loss
         loss = torch.stack(
@@ -288,44 +339,19 @@ passed in as `batch`.
         # forward pass
         x, y_pre = batch
         y_hat_pre = model(x)
-        mask = model.data.mask.expand_as(y_pre[0][0])
+        y_pre, y_hat_pre = self.apply_mask(y_pre, y_hat_pre)
+
         assert y_pre.shape == y_hat_pre.shape
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
-                if self.hparams.round_to_zero:
-                    y_hat = y_hat[y > self.hparams.round_to_zero]
-                    y = y[y > self.hparams.round_to_zero]
-                if self.hparams.clip_output:
-                    y_hat = y_hat[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                    y = y[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                if self.hparams.cb_loss:
-                    loss_factor = self.get_cb_loss_factor(y)
-
-                if self.hparams.boxcox:
-                    y = torch.from_numpy(
-                        boxcox(y.cpu(), lmbda=self.hparams.boxcox,)
-                    ).to(y.device)
-
-                pre_loss = (y_hat - y) ** 2
-                if "loss_factor" in locals():
-                    pre_loss *= loss_factor
-                loss = pre_loss.mean()
-                assert loss == loss
+                y, y_hat = y_pre[b][c], y_hat_pre[b][c]
+                loss = self.get_loss(y, y_hat)
 
                 # Accuracy for a threshold
-                n_correct_pred = (
-                    ((y - y_hat).abs() < model.hparams.thresh).float().mean()
-                )
-                abs_error = (y - y_hat).abs().float().mean()
+                abs_diff = (y - y_hat).abs()
+                n_correct_pred = (abs_diff < model.hparams.thresh).float().mean()
+                abs_error = abs_diff.mean()
 
                 tensorboard_logs["val_loss"][str(c)] = loss
                 tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
@@ -353,30 +379,20 @@ passed in as `batch`.
         """
         x, y_pre = batch
         y_hat_pre = model(x)
-        mask = model.data.mask.expand_as(y_pre[0][0])
+        y_pre, y_hat_pre = self.apply_mask(y_pre, y_hat_pre)
+
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
             for c in range(y_pre.shape[1]):
-                y = y_pre[b][c][mask]
-                y_hat = y_hat_pre[b][c][mask]
-                if self.hparams.round_to_zero:
-                    y_hat = y_hat[y > self.hparams.round_to_zero]
-                    y = y[y > self.hparams.round_to_zero]
+                y = y_pre[b][c]
+                y_hat = y_hat_pre[b][c]
+
                 if self.hparams.boxcox:
                     # Negative predictions give NaN after inverse-boxcox
                     y_hat[y_hat < 0] = 0
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).to(y_hat.device)
-                if self.hparams.clip_output:
-                    y_hat = y_hat[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
-                    y = y[
-                        (y < self.hparams.clip_output[-1])
-                        & (self.hparams.clip_output[0] < y)
-                    ]
 
                 if not y.numel():
                     return None

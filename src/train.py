@@ -420,6 +420,10 @@ def get_hparams(
         "Do chronological train-test split in the specified ratio",
         "option",
     ) = False,
+    undersample: (
+        "Undersample the datapoints with smaller than specified FWI",
+        "option",
+    ) = False,
     #
     # Run specific
     model: (
