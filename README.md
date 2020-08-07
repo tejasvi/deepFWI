@@ -64,7 +64,7 @@
     -forcings-dir ${FORCINGS_DIR:-$PWD}     Directory containing forcings data. Alternatively set $FORCINGS_DIR
     -reanalysis-dir ${REANALYSIS_DIR:-$PWD} Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR
     -smos-dir ${SMOS_DIR:-$PWD}             Directory containing soil moisture data. Alternatively set $SMOS_DIR
-    -mask src/dataloader/mask.npy               File containing the mask stored as the numpy array
+    -mask src/dataloader/mask.npy           File containing the mask stored as the numpy array
     -comment Comment of choice!             Used for logging
     -save-test-set False                    Save the test-set file names to the specified filepath
     -checkpoint-file                        Path to the test model checkpoint</pre>
