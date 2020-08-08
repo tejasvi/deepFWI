@@ -212,7 +212,7 @@ passed in as `batch`.
                         "_log": None,
                     }
                 y = y[y > 0.5]
-                if self.hparams.transform_frp:
+                if self.hparams.boxcox:
                     y = torch.from_numpy(
                         stats.boxcox(
                             y.cpu()
