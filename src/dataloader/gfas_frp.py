@@ -263,7 +263,7 @@ passed in as `batch`.
                     y = y[y > 0.5]
                 if y_hat.nelement() == 0:
                     return {}
-                if self.hparams.transform_frp:
+                if self.hparams.boxcox:
                     y = torch.from_numpy(
                         stats.boxcox(
                             y.cpu()
@@ -320,7 +320,7 @@ passed in as `batch`.
                     y = y[y > 0.5]
                 if y_hat.nelement() == 0:
                     return {}
-                if self.hparams.transform_frp:
+                if self.hparams.boxcox:
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).to(y_hat.device)
