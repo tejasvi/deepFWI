@@ -89,8 +89,7 @@ to defaults to None
         )
 
         if self.hparams.dry_run:
-            inp_files = inp_files[: 32 * (self.n_output + self.n_input)]
-            # out_files = out_files[: 2 * (self.n_output + self.n_input)]
+            inp_files = inp_files[: 32 * (self.hparams.out_days + self.hparams.in_days)]
 
         # Checking for valid date format
         inp_invalid = lambda x: not (
