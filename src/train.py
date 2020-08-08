@@ -365,103 +365,114 @@ def str2num(s):
 def get_hparams(
     #
     # U-Net config
-    init_features: ("Architecture complexity", "option") = 16,
-    in_days: ("Number of input days", "option") = 2,
-    out_days: ("Number of output days", "option") = 1,
+    init_features: ("Architecture complexity [int]", "option") = 16,
+    in_days: ("Number of input days [int]", "option") = 2,
+    out_days: ("Number of output days [int]", "option") = 1,
     #
     # General
-    epochs: ("Number of training epochs", "option") = 100,
-    learning_rate: ("Maximum learning rate", "option") = 1e-3,
-    loss: ("Loss function: mae, mse", "option") = "mse",
-    batch_size: ("Batch size of the input", "option") = 1,
-    split: ("Test split fraction", "option") = 0.2,
+    epochs: ("Number of training epochs [int]", "option") = 100,
+    learning_rate: ("Maximum learning rate [float]", "option") = 1e-3,
+    loss: ("Loss function: mae, mse [str]", "option") = "mse",
+    batch_size: ("Batch size of the input [int]", "option") = 1,
+    split: ("Test split fraction [float]", "option") = 0.2,
     use_16bit: ("Use 16-bit precision for training (train only)", "option") = True,
-    gpus: ("Number of GPUs to use", "option") = 1,
+    gpus: ("Number of GPUs to use [int]", "option") = 1,
     optim: (
-        "Learning rate optimizer: one_cycle or cosine (train only)",
+        "Learning rate optimizer: one_cycle or cosine (train only) [str]",
         "option",
     ) = "one_cycle",
-    dry_run: ("Use small amount of data for sanity check", "option") = False,
-    find_lr: ("Automatically search for an ideal learning rate", "option") = False,
-    search_bs: ("Scale the batch dynamically for full GPU usage", "option") = False,
+    dry_run: ("Use small amount of data for sanity check [Bool]", "option") = False,
+    find_lr: (
+        "Automatically search for an ideal learning rate [Bool]",
+        "option",
+    ) = False,
+    search_bs: (
+        "Scale the batch dynamically for full GPU usage [Bool]",
+        "option",
+    ) = False,
     case_study: (
         "The case-study region to use for inference: australia, california, portugal,"
-        " siberia, chile, uk",
+        " siberia, chile, uk [Bool/str]",
         "option",
     ) = False,
     clip_output: (
-        "Limit the inference to the datapoints within supplied range (e.g. 0.5,60)",
+        "Limit the inference to the datapoints within supplied range (e.g. 0.5,60) [Bool/list]",
         "option",
     ) = False,
     boxcox: (
         "Apply boxcox transformation with specified lambda while training and the "
-        "inverse boxcox transformation during the inference.",
+        "inverse boxcox transformation during the inference. [Bool/float]",
         "option",
     ) = False,
     binned: (
-        "Show the extended metrics for supplied comma separated binned FWI value range",
+        "Show the extended metrics for supplied comma separated binned FWI value range (e.g. 0,15,70) [Bool/list]",
         "option",
     ) = False,
     round_to_zero: (
-        "Round off the target values below the specified threshold to zero",
+        "Round off the target values below the specified threshold to zero [Bool/float]",
         "option",
     ) = False,
-    isolate_frp: ("Exclude the isolated datapoints with FRP > 0", "option",) = False,
-    transform_frp: ("Do Box-Cox transformation on FRP data", "option",) = False,
+    isolate_frp: (
+        "Exclude the isolated datapoints with FRP > 0 [Bool]",
+        "option",
+    ) = False,
     date_range: (
-        "Filter the data with specified date range. E.g. 2019-04-01,2019-05-01",
+        "Filter the data with specified date range. E.g. 2019-04-01,2019-05-01 [Bool/str]",
         "option",
     ) = False,
     cb_loss: (
-        "Use Class-Balanced loss with the supplied beta parameter",
+        "Use Class-Balanced loss with the supplied beta parameter [Bool/float]",
         "option",
     ) = False,
     chronological_split: (
-        "Do chronological train-test split in the specified ratio",
+        "Do chronological train-test split in the specified ratio [Bool/float]",
         "option",
     ) = False,
     undersample: (
-        "Undersample the datapoints with smaller than specified FWI",
+        "Undersample the datapoints with smaller than specified FWI [Bool/float]",
         "option",
     ) = False,
     #
     # Run specific
     model: (
         "Model to use: unet, unet_downsampled, unet_snipped, unet_tapered,"
-        " unet_interpolated",
+        " unet_interpolated [str]",
         "option",
     ) = "unet_tapered",
     out: (
-        "Output data for training: fwi_forecast or fwi_reanalysis or gfas_frp",
+        "Output data for training: fwi_forecast or fwi_reanalysis or gfas_frp [str]",
         "option",
     ) = "fwi_reanalysis",
-    smos_input: ("Use soil-moisture input data", "option") = "False",
+    smos_input: ("Use soil-moisture input data [Bool]", "option") = "False",
     forecast_dir: (
-        "Directory containing the forecast data. Alternatively set $FORECAST_DIR",
+        "Directory containing the forecast data. Alternatively set $FORECAST_DIR [str]",
         "option",
-    ) = os.environ.get("FORECAST_DIR", os.getcwd()),
+    ) = os.environ.get("FORECAST_DIR"),
     forcings_dir: (
-        "Directory containing the forcings data Alternatively set $FORCINGS_DIR",
+        "Directory containing the forcings data Alternatively set $FORCINGS_DIR [str]",
         "option",
-    ) = os.environ.get("FORCINGS_DIR", os.getcwd()),
+    ) = os.environ.get("FORCINGS_DIR"),
     smos_dir: (
-        "Directory containing the soil-moisture data Alternatively set $SMOS_DIR",
+        "Directory containing the soil-moisture data Alternatively set $SMOS_DIR [str]",
         "option",
-    ) = os.environ.get("SMOS_DIR", os.getcwd()),
+    ) = os.environ.get("SMOS_DIR"),
     reanalysis_dir: (
-        "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR.",
+        "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR. [str]",
         "option",
-    ) = os.environ.get("REANALYSIS_DIR", os.getcwd()),
+    ) = os.environ.get("REANALYSIS_DIR"),
     frp_dir: (
-        "Directory containing the FRP data. Alternatively set $FRP_DIR.",
+        "Directory containing the FRP data. Alternatively set $FRP_DIR. [str]",
         "option",
-    ) = os.environ.get("FRP_DIR", os.getcwd()),
+    ) = os.environ.get("FRP_DIR"),
     mask: (
-        "File containing the mask stored as the numpy array",
+        "File containing the mask stored as the numpy array [str]",
         "option",
     ) = "src/dataloader/mask/reanalysis_mask.npy",
-    comment: ("Used for logging", "option") = False,
-    checkpoint_file: ("Path to the test model checkpoint", "option",) = False,
+    comment: ("Used for logging [str]", "option") = False,
+    checkpoint_file: (
+        "Path to the test model checkpoint [Bool/str]",
+        "option",
+    ) = False,
 ):
     """
     Process and print the dictionary of project wide arguments.
