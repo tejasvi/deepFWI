@@ -66,8 +66,8 @@ to defaults to None
         assert (
             self.hparams.in_days > 0 and self.hparams.out_days > 0
         ), "The number of input and output days must be > 0."
-        self.n_input = self.hparams.in_days
-        self.n_output = self.hparams.out_days
+        self.hparams.in_days = self.hparams.in_days
+        self.hparams.out_days = self.hparams.out_days
         self.hparams.thresh = self.hparams.out_mad / 2
 
         # Generate the list of all valid files in the specified directories
@@ -89,8 +89,7 @@ to defaults to None
         )
 
         if self.hparams.dry_run:
-            inp_files = inp_files[: 32 * (self.n_output + self.n_input)]
-            # out_files = out_files[: 2 * (self.n_output + self.n_input)]
+            inp_files = inp_files[: 32 * (self.hparams.out_days + self.hparams.in_days)]
 
         # Checking for valid date format
         inp_invalid = lambda x: not (
@@ -162,9 +161,7 @@ to defaults to None
             f"\nEnd date: {self.output.frpfire.time.max(skipna=True)}",
         )
 
-        self.mask = torch.from_numpy(np.load(self.hparams.mask)).to(
-            "cuda" if self.hparams.gpus else "cpu"
-        )
+        self.mask = torch.from_numpy(np.load(self.hparams.mask)).to(self.model.device)
 
     def generate_isolated_mask(self, x):
         """
@@ -215,7 +212,7 @@ passed in as `batch`.
                         "_log": None,
                     }
                 y = y[y > 0.5]
-                if self.hparams.transform_frp:
+                if self.hparams.boxcox:
                     y = torch.from_numpy(
                         stats.boxcox(
                             y.cpu()
@@ -234,7 +231,7 @@ passed in as `batch`.
         tensorboard_logs["_train_loss_unscaled"] = loss
         # model.logger.log_metrics(tensorboard_logs)
         return {
-            "loss": loss.true_divide(model.data.out_var * model.data.n_output),
+            "loss": loss.true_divide(model.data.out_var * model.hparams.out_days),
             "_log": tensorboard_logs,
         }
 
@@ -266,7 +263,7 @@ passed in as `batch`.
                     y = y[y > 0.5]
                 if y_hat.nelement() == 0:
                     return {}
-                if self.hparams.transform_frp:
+                if self.hparams.boxcox:
                     y = torch.from_numpy(
                         stats.boxcox(
                             y.cpu()
@@ -311,7 +308,7 @@ passed in as `batch`.
         """
 
         x, y_pre = batch
-        y_hat_pre, _ = model(x) if model.aux else model(x), None
+        y_hat_pre = model(x)
         mask = model.data.mask.expand_as(y_pre[0][0])
         tensorboard_logs = defaultdict(dict)
         for b in range(y_pre.shape[0]):
@@ -323,7 +320,7 @@ passed in as `batch`.
                     y = y[y > 0.5]
                 if y_hat.nelement() == 0:
                     return {}
-                if self.hparams.transform_frp:
+                if self.hparams.boxcox:
                     y_hat = torch.from_numpy(
                         inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
                     ).to(y_hat.device)

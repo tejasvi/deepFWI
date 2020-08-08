@@ -24,51 +24,50 @@
   * Checkpoint file for 2 day input, 1 day FWI prediction is available [here](src/model/checkpoints/pre_trained/2_1/epoch_41_100.ckpt)
   * Checkpoint file for 4 day input, 10 day FWI prediction is available [here](src/model/checkpoints/pre_trained/4_10/epoch_99_100.ckpt)
 * **Run the inference script**:<br>
-  * Optionally set `$FORCINGS_DIR` and `$REANALYSIS_DIR` to override `$PWD` as the default location of data.
-  `python src/test.py -in-days=2 -out-days=1 -forcings-dir=${FORCINGS_DIR:-$PWD} -reanalysis-dir=${REANALYSIS_DIR:-$PWD} -checkpoint-file='path/to/checkpoint'`
+  * Set `$FORCINGS_DIR` and `$REANALYSIS_DIR` or pass the directory paths through the arguments.
+  `python src/test.py -in-days=2 -out-days=1 -forcings-dir=${FORCINGS_DIR} -reanalysis-dir=${REANALYSIS_DIR} -checkpoint-file='path/to/checkpoint'`
 
 ## Implementation overview
 * The entry point for training is [src/train.py](src/train.py)
-  * **Example Usage**: `python src/train.py [-h] [-in-days 4] [-out-days 1] [-forcings-dir ${FORCINGS_DIR:-$PWD}] [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}]`
+  * **Example Usage**: `python src/train.py [-h] [-in-days 4] [-out-days 1] [-forcings-dir ${FORCINGS_DIR}] [-reanalysis-dir ${REANALYSIS_DIR}]`
 
 * The entry point for inference is [src/test.py](src/test.py)
-  * **Example Usage**: `python src/test.py [-h] [-in-days 4] [-out-days 1] [-forcings-dir ${FORCINGS_DIR:-$PWD}] [-reanalysis-dir ${REANALYSIS_DIR:-$PWD}] [-checkpoint-file]`
+  * **Example Usage**: `python src/test.py [-h] [-in-days 4] [-out-days 1] [-forcings-dir ${FORCINGS_DIR}] [-reanalysis-dir ${REANALYSIS_DIR}] [-checkpoint-file]`
 
 * **Configuration Details**:
 <br> Optional arguments (default values indicated below):
 
     `  -h, --help show this help message and exit`
-<pre>    -init-features 16                       Architecture complexity
-    -in-days 4                              Number of input days
-    -out-days 1                             Number of output days
-    -epochs 100                             Number of training epochs
-    -learning-rate 0.001                    Maximum learning rate
-    -loss mse                               Loss function: mae, mse
-    -batch-size 1                           Batch size of the input
-    -split 0.2                              Test split fraction
-    -use-16bit True                         Use 16-bit precision for training (train only)
-    -gpus 1                                 Number of GPUs to use
-    -optim one_cycle                        Learning rate optimizer: one_cycle or cosine (train only)
-    -dry-run False                          Use small amount of data for sanity check
-    -case-study False                       Limit the analysis to Australian region (inference only)
-    -clip-output False                      Limit the inference to the output values within supplied range (e.g. 0.5,60)
-    -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference.
-    -binned False                           Show the extended metrics for supplied comma separated binned FWI value range
-    -undersample False                      Undersample the datapoints having smaller than specified FWI (e.g. -undersample=10)
-    -round-to-zero False                    Round off the target values below the specified threshold to zero
-    -date_range False                       Filter the data with specified date range. E.g. 2019-04-01,2019-05-01
-    -cb_loss False                          Use Class-Balanced loss with the supplied beta parameter
-    -chronological_split False              Do chronological train-test split in the specified ratio
-    -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered, unet_interpolated
-    -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis
-    -forecast-dir ${FORECAST_DIR:-$PWD}     Directory containing forecast data. Alternatively set $FORECAST_DIR
-    -forcings-dir ${FORCINGS_DIR:-$PWD}     Directory containing forcings data. Alternatively set $FORCINGS_DIR
-    -reanalysis-dir ${REANALYSIS_DIR:-$PWD} Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR
-    -smos-dir ${SMOS_DIR:-$PWD}             Directory containing soil moisture data. Alternatively set $SMOS_DIR
-    -mask src/dataloader/mask.npy           File containing the mask stored as the numpy array
-    -comment Comment of choice!             Used for logging
-    -save-test-set False                    Save the test-set file names to the specified filepath
-    -checkpoint-file                        Path to the test model checkpoint</pre>
+<pre>    -init-features 16                       Architecture complexity [int]
+    -in-days 4                              Number of input days [int]
+    -out-days 1                             Number of output days [int]
+    -epochs 100                             Number of training epochs [int]
+    -learning-rate 0.001                    Maximum learning rate [float]
+    -loss mse                               Loss function: mae, mse [str]
+    -batch-size 1                           Batch size of the input [int]
+    -split 0.2                              Test split fraction [float]
+    -use-16bit True                         Use 16-bit precision for training (train only) [Bool]
+    -gpus 1                                 Number of GPUs to use [int]
+    -optim one_cycle                        Learning rate optimizer: one_cycle or cosine (train only) [str]
+    -dry-run False                          Use small amount of data for sanity check [Bool]
+    -case-study False                       The case-study region to use for inference: australia,california, portugal, siberia, chile, uk [Bool/str]
+    -clip-output False                      Limit the inference to the output values within supplied range (e.g. 0.5,60) [Bool/list]
+    -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference. [Bool/float]
+    -binned False                           Show the extended metrics for supplied comma separated binned FWI value range [Bool/list]
+    -undersample False                      Undersample the datapoints having smaller than specified FWI (e.g. -undersample=10) [Bool/float]
+    -round-to-zero False                    Round off the target values below the specified threshold to zero [Bool/float]
+    -date_range False                       Filter the data with specified date range. E.g. 2019-04-01,2019-05-01 [Bool/float]
+    -cb_loss False                          Use Class-Balanced loss with the supplied beta parameter [Bool/float]
+    -chronological_split False              Do chronological train-test split in the specified ratio [Bool/float]
+    -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered, unet_interpolated [str]
+    -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis [str]
+    -forecast-dir ${FORECAST_DIR}           Directory containing forecast data. Alternatively set $FORECAST_DIR [str]
+    -forcings-dir ${FORCINGS_DIR}           Directory containing forcings data. Alternatively set $FORCINGS_DIR [str]
+    -reanalysis-dir ${REANALYSIS_DIR}       Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR [str]
+    -smos-dir ${SMOS_DIR}                   Directory containing soil moisture data. Alternatively set $SMOS_DIR [str]
+    -mask src/dataloader/mask.npy           File containing the mask stored as the numpy array [str]
+    -comment Comment of choice!             Used for logging [str]
+    -checkpoint-file                        Path to the test model checkpoint [Bool/str]</pre>
 
 * The [src/](src) directory contains the architecture implementation.
   * The [src/dataloader/](src/dataloader) directory contains the implementation specific to the training data.

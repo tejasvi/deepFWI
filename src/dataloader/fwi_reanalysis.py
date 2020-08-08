@@ -142,15 +142,28 @@ to defaults to None
         self.min_date = min(self.dates)
 
         # Required dates for operating on t=0 dates
-        dates_spread = list(
+        in_dates_spread = list(
             set(
                 sum(
                     [
                         [
-                            d + np.timedelta64(i - self.hparams.in_days, "D")
-                            for i in range(
-                                1, self.hparams.in_days + self.hparams.out_days
-                            )
+                            d + np.timedelta64(i + 1 - self.hparams.in_days, "D")
+                            for i in range(self.hparams.in_days)
+                        ]
+                        for d in self.dates
+                    ],
+                    [],
+                )
+            )
+        )
+
+        out_dates_spread = list(
+            set(
+                sum(
+                    [
+                        [
+                            d - np.timedelta64(i + 1 - self.hparams.out_days, "D")
+                            for i in range(self.hparams.out_days)
                         ]
                         for d in self.dates
                     ],
@@ -161,11 +174,11 @@ to defaults to None
 
         # Load the data only for required dates
         self.input, self.output = (
-            self.input.sel(time=dates_spread).load(),
-            self.output.sel(time=dates_spread).load(),
+            self.input.sel(time=in_dates_spread).load(),
+            self.output.sel(time=out_dates_spread).load(),
         )
         if self.hparams.smos_input:
-            smos_input = smos_input.sel(time=dates_spread, method="nearest")
+            smos_input = smos_input.sel(time=in_dates_spread, method="nearest")
             # Drop duplicates
             self.smos_input = smos_input.isel(
                 time=np.unique(smos_input["time"], return_index=True)[1]
