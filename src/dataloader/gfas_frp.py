@@ -233,7 +233,7 @@ passed in as `batch`.
         tensorboard_logs["_train_loss_unscaled"] = loss
         # model.logger.log_metrics(tensorboard_logs)
         return {
-            "loss": loss.true_divide(model.data.out_var * model.data.n_output),
+            "loss": loss.true_divide(model.data.out_var * model.hparams.out_days),
             "_log": tensorboard_logs,
         }
 
