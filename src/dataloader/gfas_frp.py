@@ -161,9 +161,7 @@ to defaults to None
             f"\nEnd date: {self.output.frpfire.time.max(skipna=True)}",
         )
 
-        self.mask = torch.from_numpy(np.load(self.hparams.mask)).to(
-            "cuda" if self.hparams.gpus else "cpu"
-        )
+        self.mask = torch.from_numpy(np.load(self.hparams.mask)).to(self.model.device)
 
     def generate_isolated_mask(self, x):
         """
