@@ -61,10 +61,10 @@
     -chronological_split False              Do chronological train-test split in the specified ratio
     -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered, unet_interpolated
     -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis
-    -forecast-dir ${FORECAST_DIR:-$PWD}     Directory containing forecast data. Alternatively set $FORECAST_DIR
-    -forcings-dir ${FORCINGS_DIR:-$PWD}     Directory containing forcings data. Alternatively set $FORCINGS_DIR
-    -reanalysis-dir ${REANALYSIS_DIR:-$PWD} Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR
-    -smos-dir ${SMOS_DIR:-$PWD}             Directory containing soil moisture data. Alternatively set $SMOS_DIR
+    -forecast-dir ${FORECAST_DIR}           Directory containing forecast data. Alternatively set $FORECAST_DIR
+    -forcings-dir ${FORCINGS_DIR}           Directory containing forcings data. Alternatively set $FORCINGS_DIR
+    -reanalysis-dir ${REANALYSIS_DIR}       Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR
+    -smos-dir ${SMOS_DIR}                   Directory containing soil moisture data. Alternatively set $SMOS_DIR
     -mask src/dataloader/mask.npy           File containing the mask stored as the numpy array
     -comment Comment of choice!             Used for logging
     -save-test-set False                    Save the test-set file names to the specified filepath
