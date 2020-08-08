@@ -6,6 +6,12 @@
 
 [src/dataloader](src/dataloader) directory contains all the modules related to data loading and preprocessing. To add a custom dataset class called `dummy`, you need to add a file called `dummy_dataset.py` and define a subclass `DummyDataset` inherited from `ModelDataset` defined in [src/dataloader/base_loader.py](src/dataloader/base_loader.py). You need to optionally implement six functions: `__init__` (initialize the class), `__len__` (return the size of dataset), `__getitem__`　(get a data point), `training_step` (forward pass during training), `validation_step` (forward pass during validation), and `test_step` (forward pass during inference). Now you can use the dataset class by specifying flag `-out dummy`. See example dataset [class](src/dataloader/fwi_reanalysis.py) for an example.
 
+To add a new input variable:
+* Add data loading implementation in Dataset.__init__().
+* Update self.transforms in Dataset.__init__().
+* Update input tensor generation in Dataset.__getitem__().
+* Update self.in_channels in BaseModel.__init__() corresponding to the number of input variables.
+
 * [fwi_forecast.py](src/dataloader/fwi_forecast.py) implements `__init__` specific to FWI Forecast data.
 * [fwi_reanalysis.py](src/dataloader/fwi_reanalysis.py) implements `__init__`, `training_step`, `validation_step`, and `test_step` specific to FWI Reanalysis data along with the corresponding case-study coordinates.
 * [gfas_frp.py](src/dataloader/gfas_frp.py) implements `__init__`, `training_step`, `validation_step`, and `test_step` specific to FWI Reanalysis data along with the corresponding case-study.
