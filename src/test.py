@@ -55,6 +55,18 @@ def main(hparams, verbose=True):
     # ------------------------
 
     trainer = pl.Trainer(gpus=hparams.gpus)  # , tb_logger],
+
+    # ------------------------
+    # 3 START TESTING
+    # ------------------------
+
+    # Temporary fix until next release of pytorch-lightning
+    try:
+        result = trainer.test(model, verbose=verbose)[0]
+    except:
+        result = trainer.test(model)[0]
+
+    return result, model.hparams
         )
         wandb_logger.watch(model, log="all", log_freq=200)
         wandb_logger.log_hyperparams(model.hparams)
