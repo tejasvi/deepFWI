@@ -341,17 +341,36 @@ on second call determined by the `force` parameter.
                 self.data.loss_factors = torch.from_numpy(self.hparams.loss_factors).to(
                     self.device, dtype=next(iter(self.data))[1].dtype
                 )
-            # Load the mask for output variable if provided or generate from NaN mask
-            self.data.mask = torch.from_numpy(
-                np.load(self.hparams.mask)
-                if self.hparams.mask
-                else ~np.isnan(
-                    self.data.output[list(self.data.output.data_vars)[0]][0].values
-                )
-            ).to(self.device)
+
             if self.hparams.smos_input:
                 self.data.mask[0:105, :] = False
+
+            if self.hparams.benchmark:
+                self.data.input = self.data.BenchmarkDataset(
+                    dates=self.data.dates,
+                    forecast_dir=self.hparams.forecast_dir,
+                    hparams=self.hparams,
+                ).output
+
+            # Load the mask for output variable if provided or generate from NaN mask
+            nan_mask = ~np.isnan(
+                self.data.output[list(self.data.output.data_vars)[0]][0].values
+            )
+            if self.hparams.benchmark:
+                nan_mask &= ~np.isnan(
+                    resize(
+                        self.data.input[list(self.data.input.data_vars)[0]][0][
+                            0
+                        ].values,
+                        self.data.output[list(self.data.output.data_vars)[0]][0].shape,
+                    )
+                )
+            if self.hparams.mask:
+                nan_mask &= np.load(self.hparams.mask)
+            self.data.mask = torch.from_numpy(nan_mask).to(self.device)
+
             self.add_bias(self.data.out_mean)
+
             if not hasattr(self.hparams, "eval"):
                 if self.hparams.chronological_split:
                     self.train_data = torch.utils.data.Subset(
