@@ -4,9 +4,6 @@ options.
 """
 from argparse import Namespace
 import random
-import time
-from glob import glob
-import shutil
 import plac
 import sys
 import logging
@@ -19,10 +16,6 @@ from IPython.display import clear_output
 import torch
 
 import pytorch_lightning as pl
-
-from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.loggers import TensorBoardLogger
-import wandb
 
 sys.path.append("src")
 from train import get_hparams, get_model  # noqa: E402
@@ -57,31 +50,26 @@ def main(hparams, verbose=True):
         model.load_state_dict(torch.load(hparams.checkpoint_file)["state_dict"])
     model.eval()
 
-    name = "-".join([hparams.model, hparams.out, "test"])
-
     # ------------------------
     # LOGGING SETUP
     # ------------------------
 
-    tb_logger = TensorBoardLogger(save_dir="logs/tb_logs/", name=name)
-    tb_logger.experiment.add_graph(model, model.data[0][0].unsqueeze(0))
-    wandb_logger = WandbLogger(
-        name=hparams.comment if hparams.comment else time.ctime(),
-        project=name,
-        save_dir="logs",
-    )
-    wandb_logger.watch(model, log="all", log_freq=200)
-    wandb_logger.log_hyperparams(model.hparams)
-    for file in [
-        i
-        for s in [
-            glob(x) for x in ["src/*.py", "src/dataloader/*.py", "src/model/*.py"]
-        ]
-        for i in s
-    ]:
-        shutil.copy(file, wandb.run.dir)
+    trainer = pl.Trainer(gpus=hparams.gpus)  # , tb_logger],
+        )
+        wandb_logger.watch(model, log="all", log_freq=200)
+        wandb_logger.log_hyperparams(model.hparams)
+        for file in [
+            i
+            for s in [
+                glob(x) for x in ["src/*.py", "src/dataloader/*.py", "src/model/*.py"]
+            ]
+            for i in s
+        ]:
+            shutil.copy(file, wandb.run.dir)
 
-    trainer = pl.Trainer(gpus=hparams.gpus, logger=[wandb_logger])  # , tb_logger],
+    trainer = pl.Trainer(
+        gpus=hparams.gpus, logger=None if hparams.dry_run else [wandb_logger]
+    )  # , tb_logger],
 
     # ------------------------
     # 3 START TESTING
