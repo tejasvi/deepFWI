@@ -392,7 +392,6 @@ def get_hparams(
     # General
     epochs: ("Number of training epochs [int]", "option") = 100,
     learning_rate: ("Maximum learning rate [float]", "option") = 1e-3,
-    loss: ("Loss function: mae, mse [str]", "option") = "mse",
     batch_size: ("Batch size of the input [int]", "option") = 1,
     split: ("Test split fraction [float]", "option") = 0.2,
     use_16bit: ("Use 16-bit precision for training (train only)", "option") = True,
@@ -416,20 +415,23 @@ def get_hparams(
         "option",
     ) = False,
     clip_output: (
-        "Limit the inference to the datapoints within supplied range (e.g. 0.5,60) [Bool/list]",
+        "Limit the inference to the datapoints within supplied range (e.g. 0.5,60) "
+        "[Bool/list]",
         "option",
     ) = False,
     boxcox: (
         "Apply boxcox transformation with specified lambda while training and the "
         "inverse boxcox transformation during the inference. [Bool/float]",
         "option",
-    ) = False,
+    ) = 0.1182,
     binned: (
-        "Show the extended metrics for supplied comma separated binned FWI value range (e.g. 0,15,70) [Bool/list]",
+        "Show the extended metrics for supplied comma separated binned FWI value range "
+        "(e.g. 0,15,70) [Bool/list]",
         "option",
-    ) = False,
+    ) = "0,5.2,11.2,21.3,38.0,50",
     round_to_zero: (
-        "Round off the target values below the specified threshold to zero [Bool/float]",
+        "Round off the target values below the specified threshold to zero "
+        "[Bool/float]",
         "option",
     ) = False,
     isolate_frp: (
@@ -437,7 +439,9 @@ def get_hparams(
         "option",
     ) = False,
     date_range: (
-        "Filter the data with specified date range. E.g. 2019-04-01,2019-05-01 [Bool/str]",
+        "Filter the data with specified date range in YYYY-MM-DD format. E.g. "
+        "2019-04-01,2019-05-01 "
+        "[Bool/str]",
         "option",
     ) = False,
     cb_loss: (
@@ -460,7 +464,7 @@ def get_hparams(
         "option",
     ) = "unet_tapered",
     out: (
-        "Output data for training: fwi_forecast or fwi_reanalysis or gfas_frp [str]",
+        "Output data for training: fwi_reanalysis or gfas_frp [str]",
         "option",
     ) = "fwi_reanalysis",
     smos_input: ("Use soil-moisture input data [Bool]", "option") = "False",
@@ -477,7 +481,8 @@ def get_hparams(
         "option",
     ) = os.environ.get("SMOS_DIR"),
     reanalysis_dir: (
-        "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR. [str]",
+        "Directory containing the reanalysis data. Alternatively set $REANALYSIS_DIR. "
+        "[str]",
         "option",
     ) = os.environ.get("REANALYSIS_DIR"),
     frp_dir: (
@@ -502,7 +507,7 @@ def get_hparams(
     """
     d = {k: str2num(v) for k, v in locals().items()}
     for k, v in d.items():
-        print(f" |{k.replace('_', '-'):>20} -> {str(v):<20}")
+        log.info(f" |{k.replace('_', '-'):>20} -> {str(v):<20}")
     return d
 
 
