@@ -67,6 +67,26 @@ def main(hparams, verbose=True):
         result = trainer.test(model)[0]
 
     return result, model.hparams
+
+
+def autolabel(rects, ax, width):
+    """
+    Attach a text label above each bar in *rects*, displaying its height.
+
+    :param rects: Bar containers
+    :type rects: matplotlib.container.BarContainer
+    """
+    for rect in rects:
+        height = rect.get_height()
+        ax.annotate(
+            "{}".format(height),
+            xy=(rect.get_x() + rect.get_width() / 2, height),
+            xytext=(0, 1),  # 3 points vertical offset
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            fontsize=min(90 * width, 25),
+            zorder=5,
         )
         wandb_logger.watch(model, log="all", log_freq=200)
         wandb_logger.log_hyperparams(model.hparams)
