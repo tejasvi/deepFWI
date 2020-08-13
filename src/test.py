@@ -257,6 +257,13 @@ def process_result(result):
 
 
 def run(**kwargs):
+    """
+    Run inference and do benchmarks if benchmarks=True supplied. The kwargs are \
+equivalent to the commandline arguments.
+
+    :return: Result metrics and the inferred hyperparamters
+    :rtype: tuple
+    """
     plt.rcParams["figure.figsize"] = [20, 10]
     plt.rcParams["font.size"] = 18
     plt.rcParams["legend.fontsize"] = "large"
