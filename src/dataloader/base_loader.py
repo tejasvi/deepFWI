@@ -389,6 +389,88 @@ passed in as `batch`.
             "log": tensorboard_logs,
         }
 
+    def inference_step(self, y_pre, y_hat_pre):
+        """
+        Run inference for the target and predicted values and return the loss and the \
+metrics values as logs.
+
+        :param y_pre: Label values
+        :type y_pre: torch.Tensor
+        :param y_hat_pre: Predicted value
+        :type y_hat_pre: torch.Tensor
+        :return: Loss and the log dictionary
+        :rtype: tuple
+        """
+        y_pre, y_hat_pre = self.apply_mask(y_pre, y_hat_pre)
+
+        tensorboard_logs = defaultdict(dict)
+
+        for b in range(y_pre.shape[0]):
+            for c in range(y_pre.shape[1]):
+                y = y_pre[b][c]
+                y_hat = y_hat_pre[b][c]
+
+                if self.hparams.boxcox and not self.hparams.benchmark:
+                    # Negative predictions give NaN after inverse-boxcox
+                    y_hat[y_hat < 0] = 0
+                    y_hat = torch.from_numpy(
+                        inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
+                    ).to(y_hat.device)
+
+                if not y.numel():
+                    return None
+
+                pre_loss = (y_hat - y) ** 2
+
+                loss = lambda low, high: pre_loss[(y > low) & (y <= high)].mean()
+                assert loss(y.min(), y.max()) == loss(y.min(), y.max())
+
+                # Accuracy for a threshold
+                acc = (
+                    lambda low, high: (
+                        (y - y_hat)[(y > low) & (y <= high)].abs() < self.hparams.thresh
+                    )
+                    .float()
+                    .mean()
+                )
+
+                # Mean absolute error
+                mae = (
+                    lambda low, high: (y - y_hat)[(y > low) & (y <= high)]
+                    .abs()
+                    .float()
+                    .mean()
+                )
+
+                tensorboard_logs["mse"][str(c)] = loss(y.min(), y.max())
+                tensorboard_logs["acc"][str(c)] = acc(y.min(), y.max())
+                tensorboard_logs["mae"][str(c)] = mae(y.min(), y.max())
+
+                # Inference on binned values
+                if self.hparams.binned:
+                    for i in range(len(self.bin_intervals) - 1):
+                        low, high = (
+                            self.bin_intervals[i],
+                            self.bin_intervals[i + 1],
+                        )
+                        tensorboard_logs[f"mse_{low}_{high}"][str(c)] = loss(low, high)
+                        tensorboard_logs[f"acc_{low}_{high}"][str(c)] = acc(low, high)
+                        tensorboard_logs[f"mae_{low}_{high}"][str(c)] = mae(low, high)
+                    tensorboard_logs[f"mse_{self.bin_intervals[-1]}inf"][str(c)] = loss(
+                        self.bin_intervals[-1], y.max()
+                    )
+                    tensorboard_logs[f"acc_{self.bin_intervals[-1]}inf"][str(c)] = acc(
+                        self.bin_intervals[-1], y.max()
+                    )
+                    tensorboard_logs[f"mae_{self.bin_intervals[-1]}inf"][str(c)] = mae(
+                        self.bin_intervals[-1], y.max()
+                    )
+
+        inference_loss = torch.stack(list(tensorboard_logs["mse"].values())).mean()
+        tensorboard_logs["_inference_loss"] = inference_loss
+
+        return inference_loss, tensorboard_logs
+
     def test_step(self, model, batch):
         """
         Called inside the testing loop with the data from the testing dataloader \
@@ -403,84 +485,14 @@ passed in as `batch`.
         """
         x, y_pre = batch
         y_hat_pre = model(x)
-        y_pre, y_hat_pre = self.apply_mask(y_pre, y_hat_pre)
 
-        tensorboard_logs = defaultdict(dict)
-        for b in range(y_pre.shape[0]):
-            for c in range(y_pre.shape[1]):
-                y = y_pre[b][c]
-                y_hat = y_hat_pre[b][c]
+        test_loss, tensorboard_logs = self.inference_step(y_pre, y_hat_pre)
 
-                if self.hparams.boxcox:
-                    # Negative predictions give NaN after inverse-boxcox
-                    y_hat[y_hat < 0] = 0
-                    y_hat = torch.from_numpy(
-                        inv_boxcox(y_hat.cpu().numpy(), self.hparams.boxcox)
-                    ).to(y_hat.device)
+        return {
+            "mse": test_loss,
+            "log": tensorboard_logs,
+        }
 
-                if not y.numel():
-                    return None
-
-                pre_loss = (
-                    (y_hat - y).abs()
-                    if model.hparams.loss == "mae"
-                    else (y_hat - y) ** 2
-                )
-
-                loss = lambda low, high: pre_loss[(y > low) & (y <= high)].mean()
-                assert loss(y.min(), y.max()) == loss(y.min(), y.max())
-
-                # Accuracy for a threshold
-                n_correct_pred = (
-                    lambda low, high: (
-                        (y - y_hat)[(y > low) & (y <= high)].abs()
-                        < model.hparams.thresh
-                    )
-                    .float()
-                    .mean()
-                )
-
-                # Mean absolute error
-                abs_error = (
-                    lambda low, high: (y - y_hat)[(y > low) & (y <= high)]
-                    .abs()
-                    .float()
-                    .mean()
-                    if model.hparams.loss == "mae"
-                    else (y - y_hat)[(y > low) & (y <= high)].abs().float().mean()
-                )
-
-                tensorboard_logs["test_loss"][str(c)] = loss(y.min(), y.max())
-                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred(
-                    y.min(), y.max()
-                )
-                tensorboard_logs["abs_error"][str(c)] = abs_error(y.min(), y.max())
-
-                # Inference on binned values
-                if self.hparams.binned:
-                    for i in range(len(self.bin_intervals) - 1):
-                        low, high = (
-                            self.bin_intervals[i],
-                            self.bin_intervals[i + 1],
-                        )
-                        tensorboard_logs[f"test_loss_{low}_{high}"][str(c)] = loss(
-                            low, high
-                        )
-                        tensorboard_logs[f"n_correct_pred_{low}_{high}"][
-                            str(c)
-                        ] = n_correct_pred(low, high)
-                        tensorboard_logs[f"abs_error_{low}_{high}"][str(c)] = abs_error(
-                            low, high
-                        )
-                    tensorboard_logs[f"test_loss_{self.bin_intervals[-1]}_max"][
-                        str(c)
-                    ] = loss(self.bin_intervals[-1], y.max())
-                    tensorboard_logs[f"n_correct_pred_{self.bin_intervals[-1]}_max"][
-                        str(c)
-                    ] = n_correct_pred(self.bin_intervals[-1], y.max())
-                    tensorboard_logs[f"abs_error_{self.bin_intervals[-1]}_max"][
-                        str(c)
-                    ] = abs_error(self.bin_intervals[-1], y.max())
 
         test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
         tensorboard_logs["_test_loss"] = test_loss
