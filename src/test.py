@@ -38,20 +38,23 @@ np.random.seed(SEED)
 random.seed(SEED)
 
 
-def main(hparams):
+def main(hparams, verbose=True):
     """
     Main testing routine specific for this project
 
     :param hparams: Namespace containing configuration values
     :type hparams: Namespace
     """
+    # Set the evaluation flag
+    hparams.eval = True
 
     # ------------------------
     # 1 INIT MODEL
     # ------------------------
 
     model = get_model(hparams)
-    model.load_state_dict(torch.load(hparams.checkpoint_file)["state_dict"])
+    if not hparams.benchmark:
+        model.load_state_dict(torch.load(hparams.checkpoint_file)["state_dict"])
     model.eval()
 
     name = "-".join([hparams.model, hparams.out, "test"])
