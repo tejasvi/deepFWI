@@ -188,6 +188,13 @@ def set_hparams(hparams):
     if hparams.gpus and not torch.cuda.is_available():
         hparams.gpus = 0
 
+    if hparams.benchmark:
+        # Use empty model while benchmarking with fwi-forecast
+        hparams.model = "base_model"
+        hparams.out = "fwi_reanalysis"
+        hparams.eval = True
+        hparams.gpus = 0
+
     if hparams.case_study:
         case_studies = importlib.import_module("data.consts.case_study").case_studies
         hparams.case_study_dates = case_studies[hparams.case_study]
