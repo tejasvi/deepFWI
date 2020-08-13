@@ -493,11 +493,23 @@ passed in as `batch`.
             "log": tensorboard_logs,
         }
 
+    def benchmark_step(self, batch):
+        """
+        Called inside the testing loop with the data from the testing dataloader \
+passed in as `batch`.
 
-        test_loss = torch.stack(list(tensorboard_logs["test_loss"].values())).mean()
-        tensorboard_logs["_test_loss"] = test_loss
+        :param model: The chosen model
+        :type model: Model
+        :param batch: Batch of input and ground truth variables
+        :type batch: int
+        :return: Loss and logs
+        :rtype: dict
+        """
+        y_hat_pre, y_pre = batch
+
+        benchmark_loss, tensorboard_logs = self.inference_step(y_pre, y_hat_pre)
 
         return {
-            "test_loss": test_loss,
+            "mse": benchmark_loss,
             "log": tensorboard_logs,
         }
