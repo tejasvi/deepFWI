@@ -156,39 +156,55 @@ defaults to None
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        X = self.transform(
-            np.stack(
-                [
-                    self.input[v]
-                    .sel(time=[self.dates[idx] - np.timedelta64(i, "D")])
-                    .values.squeeze()
-                    for i in range(self.hparams.in_days)
-                    for v in ["rh", "t2", "tp", "wspeed"]
-                ]
-                + (
+        if self.hparams.benchmark:
+            X = torch.from_numpy(
+                np.stack(
                     [
                         resize(
-                            np.nan_to_num(
-                                self.smos_input[list(self.smos_input.data_vars)[0]]
-                                .sel(
-                                    time=[self.dates[idx] - np.timedelta64(i, "D")],
-                                    method="nearest",
-                                )
-                                .values.squeeze()[::-1],
-                                copy=False,
-                                # Use 50 as the placeholder for water bodies
-                                nan=50,
-                            ),
-                            self.input.rh[0].shape,
+                            self.input[list(self.input.data_vars)[0]]
+                            .sel(time=[self.dates[idx]], lead=[i])
+                            .values.squeeze(),
+                            self.output[list(self.output.data_vars)[0]][0].shape,
                         )
-                        for i in range(self.hparams.in_days)
-                    ]
-                    if self.hparams.smos_input
-                    else []
-                ),
-                axis=-1,
+                        for i in range(self.hparams.out_days)
+                    ],
+                    axis=0,
+                )
             )
-        )
+        else:
+            X = self.transform(
+                np.stack(
+                    [
+                        self.input[v]
+                        .sel(time=[self.dates[idx] - np.timedelta64(i, "D")])
+                        .values.squeeze()
+                        for i in range(self.hparams.in_days)
+                        for v in ["rh", "t2", "tp", "wspeed"]
+                    ]
+                    + (
+                        [
+                            resize(
+                                np.nan_to_num(
+                                    self.smos_input[list(self.smos_input.data_vars)[0]]
+                                    .sel(
+                                        time=[self.dates[idx] - np.timedelta64(i, "D")],
+                                        method="nearest",
+                                    )
+                                    .values.squeeze()[::-1],
+                                    copy=False,
+                                    # Use 50 as the placeholder for water bodies
+                                    nan=50,
+                                ),
+                                self.input.rh[0].shape,
+                            )
+                            for i in range(self.hparams.in_days)
+                        ]
+                        if self.hparams.smos_input
+                        else []
+                    ),
+                    axis=-1,
+                )
+            )
 
         y = torch.from_numpy(
             np.stack(
