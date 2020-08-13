@@ -256,12 +256,45 @@ def process_result(result):
     return processed_dict
 
 
+def run(**kwargs):
+    plt.rcParams["figure.figsize"] = [20, 10]
+    plt.rcParams["font.size"] = 18
+    plt.rcParams["legend.fontsize"] = "large"
+    plt.rcParams["figure.titlesize"] = "medium"
 
-    # ------------------------
-    # 3 START TESTING
-    # ------------------------
+    logging.disable(sys.maxsize)
+    warnings.filterwarnings("ignore")
 
-    trainer.test(model)
+    hparams = Namespace(**get_hparams(**kwargs))
+
+    if hparams.benchmark:
+        print("Doing inference with the model..")
+        hparams.benchmark = False
+        result, _ = main(hparams=hparams, verbose=False)
+        hparams.benchmark = True
+
+        print("Running benchmarks..")
+        benchmark_result, hparams = main(hparams=hparams, verbose=False)
+        benchmark_result = process_result(benchmark_result)
+    else:
+        benchmark_result = None
+        print("Doing inference with the model..")
+        result, hparams = main(hparams=hparams, verbose=False)
+
+    clear_output(wait=True)
+    result = process_result(result)
+
+    for m in ["acc", "mse", "mae"]:
+        if hparams.out_days > 1:
+            multi_day_plot(
+                result=result[m], hparams=hparams, m=m, benchmark=benchmark_result[m],
+            )
+        else:
+            single_day_plot(
+                result=result[m], hparams=hparams, m=m, benchmark=benchmark_result[m],
+            )
+
+    return result, hparams
 
 
 if __name__ == "__main__":
