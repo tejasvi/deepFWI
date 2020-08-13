@@ -467,6 +467,10 @@ def get_hparams(
         "Output data for training: fwi_reanalysis or gfas_frp [str]",
         "option",
     ) = "fwi_reanalysis",
+    benchmark: (
+        "Benchmark the FWI-Forecast data against FWI-Reanalysis [Bool]",
+        "option",
+    ) = False,
     smos_input: ("Use soil-moisture input data [Bool]", "option") = "False",
     forecast_dir: (
         "Directory containing the forecast data. Alternatively set $FORECAST_DIR [str]",
