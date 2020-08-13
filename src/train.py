@@ -20,6 +20,7 @@ import torch
 import pytorch_lightning as pl
 
 # from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning import _logger as log
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 
@@ -168,7 +169,9 @@ def main(hparams):
     signal.signal(signal.SIGINT or 255, trainer.test)
 
     trainer.fit(model)
-    trainer.test()
+    results = trainer.test()
+
+    return results
 
 
 def set_hparams(hparams):
