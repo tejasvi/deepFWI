@@ -521,9 +521,9 @@ if __name__ == "__main__":
     """
 
     # Converting dictionary to namespace
-    hyperparams = Namespace(**plac.call(get_hparams, eager=False))
+    hparams = Namespace(**plac.call(get_hparams, eager=False))
     # ---------------------
     # RUN TRAINING
     # ---------------------
 
-    main(hyperparams)
+    main(hparams)
