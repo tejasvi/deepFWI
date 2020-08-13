@@ -343,7 +343,7 @@ passed in as `batch`.
         tensorboard_logs["_train_loss_unscaled"] = loss
         # model.logger.log_metrics(tensorboard_logs)
         return {
-            "loss": loss.true_divide(model.data.out_var * model.hparams.out_days),
+            "loss": loss.true_divide(model.data.out_var * self.hparams.out_days),
             "_log": tensorboard_logs,
         }
 
@@ -374,12 +374,12 @@ passed in as `batch`.
 
                 # Accuracy for a threshold
                 abs_diff = (y - y_hat).abs()
-                n_correct_pred = (abs_diff < model.hparams.thresh).float().mean()
-                abs_error = abs_diff.mean()
+                acc = (abs_diff < self.hparams.thresh).float().mean()
+                mae = abs_diff.mean()
 
                 tensorboard_logs["val_loss"][str(c)] = loss
-                tensorboard_logs["n_correct_pred"][str(c)] = n_correct_pred
-                tensorboard_logs["abs_error"][str(c)] = abs_error
+                tensorboard_logs["acc"][str(c)] = acc
+                tensorboard_logs["mae"][str(c)] = mae
 
         val_loss = torch.stack(list(tensorboard_logs["val_loss"].values())).mean()
         tensorboard_logs["_val_loss"] = val_loss
