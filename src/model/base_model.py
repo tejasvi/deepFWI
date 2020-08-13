@@ -7,6 +7,7 @@ import torch
 from torch import optim
 from torch.utils.data import DataLoader
 import numpy as np
+from skimage.transform import resize
 
 # Logging helpers
 from pytorch_lightning import _logger as log
