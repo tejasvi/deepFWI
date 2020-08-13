@@ -140,10 +140,10 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
                 [d[str(n)] for d in [x["log"]["val_loss"] for x in outputs if x]]
             ).mean()
             tensorboard_logs[f"val_acc_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs if x]]
+                [d[str(n)] for d in [x["log"]["acc"] for x in outputs if x]]
             ).mean()
-            tensorboard_logs[f"abs_error_{n}"] = torch.stack(
-                [d[str(n)] for d in [x["log"]["abs_error"] for x in outputs if x]]
+            tensorboard_logs[f"mae_{n}"] = torch.stack(
+                [d[str(n)] for d in [x["log"]["mae"] for x in outputs if x]]
             ).mean()
 
         return {
@@ -160,24 +160,23 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Loss and logs.
         :rtype: dict
         """
+
         ifx = lambda x: x if x else [torch.zeros(1)]
         rm_none = lambda x: ifx([t for t in x if not torch.isnan(t).any()])
-        avg_loss = torch.stack(rm_none([x["test_loss"] for x in outputs])).mean()
+        avg_loss = torch.stack(rm_none([x["mse"] for x in outputs])).mean()
 
         tensorboard_logs = defaultdict(dict)
-        tensorboard_logs["test_loss"] = avg_loss
+        tensorboard_logs["mse"] = avg_loss
 
         for n in range(self.hparams.out_days):
-            tensorboard_logs[f"test_loss_{n}"] = torch.stack(
-                rm_none([d[str(n)] for d in [x["log"]["test_loss"] for x in outputs]])
+            tensorboard_logs[f"mse_{n}"] = torch.stack(
+                rm_none([d[str(n)] for d in [x["log"]["mse"] for x in outputs]])
             ).mean()
-            tensorboard_logs[f"test_acc_{n}"] = torch.stack(
-                rm_none(
-                    [d[str(n)] for d in [x["log"]["n_correct_pred"] for x in outputs]]
-                )
+            tensorboard_logs[f"acc_{n}"] = torch.stack(
+                rm_none([d[str(n)] for d in [x["log"]["acc"] for x in outputs]])
             ).mean()
-            tensorboard_logs[f"abs_error_{n}"] = torch.stack(
-                rm_none([d[str(n)] for d in [x["log"]["abs_error"] for x in outputs]])
+            tensorboard_logs[f"mae_{n}"] = torch.stack(
+                rm_none([d[str(n)] for d in [x["log"]["mae"] for x in outputs]])
             ).mean()
 
             # Inference on binned values
@@ -187,73 +186,70 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
                         self.data.bin_intervals[i],
                         self.data.bin_intervals[i + 1],
                     )
-                    tensorboard_logs[f"test_loss_{low}_{high}_{n}"] = torch.stack(
+                    tensorboard_logs[f"mse_{low}_{high}_{n}"] = torch.stack(
                         rm_none(
                             [
                                 d[str(n)]
                                 for d in [
-                                    x["log"][f"test_loss_{low}_{high}"] for x in outputs
+                                    x["log"][f"mse_{low}_{high}"] for x in outputs
                                 ]
                             ]
                         )
                     ).mean()
-                    tensorboard_logs[f"test_acc_{low}_{high}_{n}"] = torch.stack(
+                    tensorboard_logs[f"acc_{low}_{high}_{n}"] = torch.stack(
                         rm_none(
                             [
                                 d[str(n)]
                                 for d in [
-                                    x["log"][f"n_correct_pred_{low}_{high}"]
-                                    for x in outputs
+                                    x["log"][f"acc_{low}_{high}"] for x in outputs
                                 ]
                             ]
                         )
                     ).mean()
-                    tensorboard_logs[f"abs_error_{low}_{high}_{n}"] = torch.stack(
+                    tensorboard_logs[f"mae_{low}_{high}_{n}"] = torch.stack(
                         rm_none(
                             [
                                 d[str(n)]
                                 for d in [
-                                    x["log"][f"abs_error_{low}_{high}"] for x in outputs
+                                    x["log"][f"mae_{low}_{high}"] for x in outputs
                                 ]
                             ]
                         )
                     ).mean()
                 tensorboard_logs[
-                    f"test_loss_{self.data.bin_intervals[-1]}_max_{n}"
+                    f"mse_{self.data.bin_intervals[-1]}_inf_{n}"
                 ] = torch.stack(
                     rm_none(
                         [
                             d[str(n)]
                             for d in [
-                                x["log"][f"test_loss_{self.data.bin_intervals[-1]}_max"]
+                                x["log"][f"mse_{self.data.bin_intervals[-1]}inf"]
                                 for x in outputs
                             ]
                         ]
                     )
                 ).mean()
                 tensorboard_logs[
-                    f"test_acc_{self.data.bin_intervals[-1]}_max_{n}"
+                    f"acc_{self.data.bin_intervals[-1]}_inf_{n}"
                 ] = torch.stack(
                     rm_none(
                         [
                             d[str(n)]
                             for d in [
-                                x["log"][
-                                    f"n_correct_pred_{self.data.bin_intervals[-1]}_max"
-                                ]
+                                x["log"][f"acc_{self.data.bin_intervals[-1]}inf"]
                                 for x in outputs
                             ]
                         ]
                     )
                 ).mean()
                 tensorboard_logs[
-                    f"abs_error_{self.data.bin_intervals[-1]}_max_{n}"
+                    f"mae_{self.data.bin_intervals[-1]}_inf_{n}"
                 ] = torch.stack(
                     rm_none(
                         [
                             d[str(n)]
                             for d in [
-                                x["log"][f"abs_error_{self.data.bin_intervals[-1]}_max"]
+                                x["log"][f"mae_{self.data.bin_intervals[-1]}inf"]
                                 for x in outputs
                             ]
                         ]
