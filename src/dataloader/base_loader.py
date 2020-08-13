@@ -73,7 +73,11 @@ defaults to None
                 np.datetime64(d) for d in self.hparams.date_range
             ]
         # Convert case-study dates to numpy format
-        if hasattr(self.hparams, "case_study_dates") and not self.hparams.date_range:
+        if (
+            hasattr(self.hparams, "case_study_dates")
+            and self.hparams.case_study_dates
+            and not self.hparams.date_range
+        ):
             self.hparams.case_study_dates = [
                 [np.datetime64(d) for d in r] for r in self.hparams.case_study_dates
             ]
