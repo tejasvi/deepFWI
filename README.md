@@ -43,7 +43,6 @@
     -out-days 1                             Number of output days [int]
     -epochs 100                             Number of training epochs [int]
     -learning-rate 0.001                    Maximum learning rate [float]
-    -loss mse                               Loss function: mae, mse [str]
     -batch-size 1                           Batch size of the input [int]
     -split 0.2                              Test split fraction [float]
     -use-16bit True                         Use 16-bit precision for training (train only) [Bool]
