@@ -8,8 +8,14 @@ import time
 from glob import glob
 import shutil
 import plac
-
+import sys
+import logging
+import warnings
+import matplotlib.pyplot as plt
+from collections import defaultdict
 import numpy as np
+from IPython.display import clear_output
+
 import torch
 
 import pytorch_lightning as pl
@@ -18,7 +24,8 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.loggers import TensorBoardLogger
 import wandb
 
-from train import get_hparams, get_model
+sys.path.append("src")
+from train import get_hparams, get_model  # noqa: E402
 
 # Setting seeds to ensure reproducibility. Setting CUDA to deterministic mode slows down
 # the training.
