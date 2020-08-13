@@ -301,7 +301,7 @@ equivalent to the commandline arguments.
                 result=result[m], hparams=hparams, m=m, benchmark=benchmark_result[m],
             )
 
-    return result, hparams
+    return (result, benchmark_result), hparams
 
 
 if __name__ == "__main__":
@@ -310,11 +310,9 @@ if __name__ == "__main__":
     """
 
     # Converting dictionary to namespace
-    hyperparams = Namespace(**plac.call(get_hparams, eager=False))
-    # Set the evaluation flag in hyperparamters
-    hyperparams.eval = True
+    hparams = Namespace(**plac.call(get_hparams, eager=False))
     # ---------------------
     # RUN TESTING
     # ---------------------
 
-    main(hyperparams)
+    main(hparams)
