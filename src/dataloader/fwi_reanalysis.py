@@ -136,22 +136,7 @@ to defaults to None
 
         self.min_date = min(self.dates)
 
-        # Required dates for operating on t=0 dates
-        in_dates_spread = list(
-            set(
-                sum(
-                    [
-                        [
-                            d + np.timedelta64(i + 1 - self.hparams.in_days, "D")
-                            for i in range(self.hparams.in_days)
-                        ]
-                        for d in self.dates
-                    ],
-                    [],
-                )
-            )
-        )
-
+        # Required output dates for operating on t=0 dates
         out_dates_spread = list(
             set(
                 sum(
@@ -168,15 +153,32 @@ to defaults to None
         )
 
         # Load the data only for required dates
-        self.input, self.output = (
-            self.input.sel(time=in_dates_spread).load(),
-            self.output.sel(time=out_dates_spread).load(),
-        )
-        if self.hparams.smos_input:
-            smos_input = smos_input.sel(time=in_dates_spread, method="nearest")
-            # Drop duplicates
-            self.smos_input = smos_input.isel(
-                time=np.unique(smos_input["time"], return_index=True)[1]
-            ).load()
+        self.output = self.output.sel(time=out_dates_spread).load()
+
+        if not self.hparams.benchmark:
+            # Required input dates for operating on t=0 dates
+            in_dates_spread = list(
+                set(
+                    sum(
+                        [
+                            [
+                                d + np.timedelta64(i + 1 - self.hparams.in_days, "D")
+                                for i in range(self.hparams.in_days)
+                            ]
+                            for d in self.dates
+                        ],
+                        [],
+                    )
+                )
+            )
+
+            self.input = input_.sel(time=in_dates_spread).load()
+
+            if self.hparams.smos_input:
+                smos_input = smos_input.sel(time=in_dates_spread, method="nearest")
+                # Drop duplicates
+                self.smos_input = smos_input.isel(
+                    time=np.unique(smos_input["time"], return_index=True)[1]
+                ).load()
 
         log.info(f"Start date: {min(self.dates)}\nEnd date: {max(self.dates)}")
