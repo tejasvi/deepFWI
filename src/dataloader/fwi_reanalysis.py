@@ -63,7 +63,7 @@ to defaults to None
             data_vars="minimal",
             compat="override",
         ) as ds:
-            self.input = ds.sortby("time")
+            input_ = ds.sortby("time")
 
         with xr.open_mfdataset(
             out_files,
@@ -90,7 +90,7 @@ to defaults to None
 
         # The t=0 dates
         self.dates = []
-        for t in self.input.time.values:
+        for t in self.output.time.values:
             t = t.astype("datetime64[D]")
             if (
                 # Date is within the range if specified
@@ -104,11 +104,23 @@ to defaults to None
                     or min([r[0] <= t <= r[-1] for r in self.hparams.case_study_dates])
                 )
                 # Input data for preceding dates is available
-                and all(
-                    [
-                        t - np.timedelta64(i, "D") in self.input.time.values
-                        for i in range(self.hparams.in_days)
-                    ]
+                and (
+                    all(
+                        [
+                            t - np.timedelta64(i, "D") in input_.time.values
+                            for i in range(self.hparams.in_days)
+                        ]
+                    )
+                    and (
+                        all(
+                            [
+                                t - np.timedelta64(i, "D") in smos_input.time.values
+                                for i in range(self.hparams.in_days)
+                            ]
+                        )
+                        if self.hparams.smos_input
+                        else True
+                    )
                 )
                 # Output data for later dates is available
                 and all(
