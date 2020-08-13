@@ -88,16 +88,77 @@ def autolabel(rects, ax, width):
             fontsize=min(90 * width, 25),
             zorder=5,
         )
-        wandb_logger.watch(model, log="all", log_freq=200)
-        wandb_logger.log_hyperparams(model.hparams)
-        for file in [
-            i
-            for s in [
-                glob(x) for x in ["src/*.py", "src/dataloader/*.py", "src/model/*.py"]
-            ]
-            for i in s
-        ]:
-            shutil.copy(file, wandb.run.dir)
+
+
+def single_day_plot(result, hparams, m, benchmark=None):
+    """
+    Plot mteric results for single day output.
+
+    :param result: Model inference result dictionary
+    :type result: dict
+    :param hparams: Hyperparamters
+    :type hparams: Namespace
+    :param benchmark: Benchmark result dictionary, defaults to None
+    :type benchmark: dict, optional
+    """
+    bin_range = hparams.binned
+    bin_labels = [
+        f"({bin_range[i]}, {bin_range[i+1]}]"
+        for i in range(len(bin_range))
+        if i < len(bin_range) - 1
+    ]
+    bin_labels.append(f"({bin_range[-1]}, inf)")
+
+    xlab = "Prediction day"
+    # The label locations
+    x = np.arange(len(bin_labels))
+    # The width of the bars
+    width = 0.7 / (3 if benchmark else 2)
+    title = f"{hparams.in_days} Day Input // 1 Day Prediction (Global)"
+    fig, ax = plt.subplots()
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ylabel = {
+        "acc": "Accuracy",
+        "mae": "Mean absolute error",
+        "mse": "Mean squared error",
+    }
+    ax.set_ylabel(ylabel[m])
+    ax.set_xlabel(xlab)
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels(bin_labels)
+
+    num_groups = 2 if benchmark else 1
+
+    rect_list = []
+    preds = [x[0] for x in result.values()]
+    rect_list.append(
+        ax.bar(
+            x - width * num_groups / 2 + width * 1 / 2, preds, width, label="deepFWI"
+        )
+    )
+    if benchmark:
+        bench = [x[0] for x in benchmark.values()]
+        rect_list.append(
+            ax.bar(
+                x - width * num_groups / 2 + width * 1 / 2 + width * 1,
+                bench,
+                width,
+                label="FWI-Forecast",
+            )
+        )
+
+    for rect in rect_list:
+        autolabel(rect, ax, width)
+
+    if benchmark:
+        ax.legend()
+
+    fig.tight_layout()
+    plt.show()
+
+
 
     trainer = pl.Trainer(
         gpus=hparams.gpus, logger=None if hparams.dry_run else [wandb_logger]
