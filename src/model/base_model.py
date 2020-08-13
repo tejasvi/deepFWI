@@ -277,7 +277,10 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Optimizer and the schedular
         :rtype: tuple
         """
-        optimizer = optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        if self.hparams.benchmark:
+            return None
+
+        optimizer = optim.Adam(self.parameters(), lr=self.hparams.learning_rate,)
         if self.hparams.optim == "cosine":
             scheduler = [
                 optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10),
