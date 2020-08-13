@@ -233,9 +233,29 @@ def multi_day_plot(result, hparams, benchmark=None, m="acc"):
 
     fig.tight_layout()
 
-    trainer = pl.Trainer(
-        gpus=hparams.gpus, logger=None if hparams.dry_run else [wandb_logger]
-    )  # , tb_logger],
+    plt.show()
+
+
+def process_result(result):
+    metrics = ["acc", "mse", "mae"]
+    processed_dict = defaultdict(lambda: defaultdict(dict))
+    for metric in metrics:
+        for r in result:
+            if metric in r:
+                splits = r.split("_")
+                try:
+                    processed_dict[metric][(float(splits[1]), float(splits[2]))][
+                        int(splits[3])
+                    ] = (
+                        round(result[r] * 100, 2)
+                        if metric == "acc"
+                        else round(result[r], 2)
+                    )
+                except IndexError:
+                    pass
+    return processed_dict
+
+
 
     # ------------------------
     # 3 START TESTING
