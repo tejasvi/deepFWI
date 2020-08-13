@@ -361,23 +361,23 @@ def str2num(s):
     if isinstance(s, bool):
         return s
     s = str(s)
+    if "," in s:
+        return [str2num(i) for i in s.split(",")]
     if "." in s or "e-" in s:
         try:
             return float(s)
         except:
             pass
-    if "," in s:
-        return [str2num(i) for i in s.split(",")]
     elif s.isdigit():
         return int(s)
-    elif s == "inf":
+    elif s.lower() == "inf":
         return float("inf")
-    elif s == "None":
+    elif s.lower() == "none":
         return None
     else:
-        if s == "True":
+        if s.lower() == "true":
             return True
-        elif s == "False":
+        elif s.lower() == "false":
             return False
     return s
 
