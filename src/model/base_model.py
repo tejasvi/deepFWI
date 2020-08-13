@@ -92,7 +92,11 @@ passed in as `batch`. The implementation is delegated to the dataloader instead.
         :return: Loss and logs
         :rtype: dict
         """
-        return self.data.test_step(self, batch)
+        return (
+            self.data.benchmark_step(batch)
+            if self.hparams.benchmark
+            else self.data.test_step(self, batch)
+        )
 
     def training_epoch_end(self, outputs):
         """
