@@ -5,8 +5,6 @@ from glob import glob
 
 import xarray as xr
 
-import torch
-
 from dataloader.base_loader import ModelDataset as BaseDataset
 
 
@@ -20,43 +18,22 @@ class ModelDataset(BaseDataset):
     """
 
     def __init__(
-        self,
-        out_var=None,
-        out_mean=None,
-        forecast_dir=None,
-        forcings_dir=None,
-        reanalysis_dir=None,
-        hparams=None,
-        **kwargs,
+        self, dates, forecast_dir, hparams=None, **kwargs,
     ):
         """
         Constructor for the ModelDataset class
 
-        :param out_var: Variance of the output variable, defaults to None
-        :type out_var: float, optional
-        :param out_mean: Mean of the output variable, defaults to None
-        :type out_mean: float, optional
+        :param dates: The t=0 dates
+        :type dates: list
         :param forecast_dir: The directory containing the FWI-Forecast data, defaults to
             None
         :type forecast_dir: str, optional
-        :param forcings_dir: The directory containing the FWI-Forcings data, defaults to
-            None
-        :type forcings_dir: str, optional
-        :param reanalysis_dir: The directory containing the FWI-Reanalysis data,
-            defaults to None
-        :type reanalysis_dir: str, optional
         :param hparams: Holds configuration values, defaults to None
         :type hparams: Namespace, optional
         """
 
         super().__init__(
-            out_var=out_var,
-            out_mean=out_mean,
-            forecast_dir=forecast_dir,
-            forcings_dir=forcings_dir,
-            reanalysis_dir=reanalysis_dir,
-            hparams=hparams,
-            **kwargs,
+            forecast_dir=forecast_dir, hparams=hparams, **kwargs,
         )
 
         self.hparams.thresh = self.hparams.out_mad / 2
