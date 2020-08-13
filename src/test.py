@@ -159,6 +159,79 @@ def single_day_plot(result, hparams, m, benchmark=None):
     plt.show()
 
 
+def multi_day_plot(result, hparams, benchmark=None, m="acc"):
+    bin_range = hparams.binned
+
+    bin_labels = [
+        f"({bin_range[i]}, {bin_range[i+1]}]"
+        for i in range(len(bin_range))
+        if i < len(bin_range) - 1
+    ]
+    bin_labels.append(f"({bin_range[-1]}, inf)")
+
+    labels = list(range(len(list(result.values())[0])))
+
+    width = 1 / (len(bin_range) + 1)
+    x = np.arange(len(list(result.values())[0]))
+
+    preds = [list(x.values()) for x in result.values()]
+
+    fig, ax = plt.subplots()
+    rects = []
+    color = [f"C{i}" for i in range(10)]
+    for i in range(len(bin_range)):
+        rects.append(
+            ax.bar(
+                x - width * (len(bin_range) + 1) / 2 + (i + 1) * width,
+                [x for x in preds[i]],
+                width,
+                label=bin_labels[i],
+                align="center",
+                color=color[i],
+            )
+        )
+    if benchmark:
+        rects_b = []
+        bench = [list(x.values()) for x in benchmark.values()]
+        for i in range(len(bin_range)):
+            rects_b.append(
+                ax.scatter(
+                    x - width * (len(bin_range) + 1) / 2 + (i + 1) * width,
+                    [int(x) for x in bench[i]],
+                    color="black",
+                    marker="x",
+                    s=1000 * width,
+                    zorder=3,
+                    label=None if i else r"$\mathbf{FWI-Forecast}$",
+                )
+            )
+
+    ax.plot([], [], " ", label=r"$\mathbf{deepFWI}$")
+
+    ylabel = {
+        "acc": "Accuracy",
+        "mae": "Mean absolute error",
+        "mse": "Mean squared error",
+    }
+    ax.set_ylabel(ylabel[m])
+    ax.set_title(
+        f"{hparams.in_days} Day Input // {hparams.out_days} Day Prediction "
+        f"({hparams.case_study if hparams.case_study else 'Global'})"
+    )
+
+    ax.set_xticks(x)
+    ax.set_xlabel("FWI range")
+    ax.set_xticklabels(labels)
+    ax.legend()
+    handles, labels = ax.get_legend_handles_labels()
+    handles.append(handles.pop(1))
+    labels.append(labels.pop(1))
+    ax.legend(handles, labels, bbox_to_anchor=(1, 1), loc="upper left")
+
+    for rect in rects:
+        autolabel(rect, ax, width)
+
+    fig.tight_layout()
 
     trainer = pl.Trainer(
         gpus=hparams.gpus, logger=None if hparams.dry_run else [wandb_logger]
