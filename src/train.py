@@ -311,28 +311,38 @@ def get_model(hparams):
     # Update hparams with the constants
     set_hparams(hparams)
 
-    Model = importlib.import_module(f"model.{hparams.model}").Model
-    if hparams.model in ["unet"]:
-        if hparams.out == "fwi_forecast":
-            ModelDataset = importlib.import_module(
-                f"dataloader.{hparams.out}"
-            ).ModelDataset
-    elif hparams.model in [
-        "unet_downsampled",
-        "unet_snipped",
-        "unet_tapered",
-    ]:
+    if hparams.model in ["base_model"]:
+        Model = importlib.import_module(f"model.{hparams.model}").BaseModel
         if hparams.out == "fwi_reanalysis":
             ModelDataset = importlib.import_module(
                 f"dataloader.{hparams.out}"
             ).ModelDataset
-    elif hparams.model in ["unet_interpolated"]:
-        if hparams.out == "gfas_frp":
-            ModelDataset = importlib.import_module(
-                f"dataloader.{hparams.out}"
+            ModelDataset.BenchmarkDataset = importlib.import_module(
+                "dataloader.fwi_forecast"
             ).ModelDataset
     else:
-        raise ImportError(f"{hparams.model} and {hparams.out} combination invalid.")
+        Model = importlib.import_module(f"model.{hparams.model}").Model
+        if hparams.model in ["unet"]:
+            if hparams.out == "fwi_forecast":
+                ModelDataset = importlib.import_module(
+                    f"dataloader.{hparams.out}"
+                ).ModelDataset
+        elif hparams.model in [
+            "unet_downsampled",
+            "unet_snipped",
+            "unet_tapered",
+        ]:
+            if hparams.out == "fwi_reanalysis":
+                ModelDataset = importlib.import_module(
+                    f"dataloader.{hparams.out}"
+                ).ModelDataset
+        elif hparams.model in ["unet_interpolated"]:
+            if hparams.out == "gfas_frp":
+                ModelDataset = importlib.import_module(
+                    f"dataloader.{hparams.out}"
+                ).ModelDataset
+        else:
+            raise ImportError(f"{hparams.model} and {hparams.out} combination invalid.")
 
     model = Model(hparams).to("cuda" if hparams.gpus else "cpu")
     model.prepare_data(ModelDataset)
