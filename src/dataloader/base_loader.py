@@ -89,46 +89,50 @@ defaults to None
         if self.hparams.undersample:
             self.undersampler = RandomUnderSampler()
 
-        # Input transforms including mean and std normalization
-        self.transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                # Mean and standard deviation stats used to normalize the input data to
-                # the mean of zero and standard deviation of one.
-                transforms.Normalize(
-                    [
-                        x
-                        for i in range(self.hparams.in_days)
-                        for x in (
-                            self.hparams.inp_mean["rh"],
-                            self.hparams.inp_mean["t2"],
-                            self.hparams.inp_mean["tp"],
-                            self.hparams.inp_mean["wspeed"],
-                        )
-                    ]
-                    + (
-                        [self.hparams.smos_mean for i in range(self.hparams.in_days)]
-                        if self.hparams.smos_input
-                        else []
+        if not self.hparams.benchmark:
+            # Input transforms including mean and std normalization
+            self.transform = transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    # Mean and standard deviation stats used to normalize the input data
+                    # to the mean of zero and standard deviation of one.
+                    transforms.Normalize(
+                        [
+                            x
+                            for i in range(self.hparams.in_days)
+                            for x in (
+                                self.hparams.inp_mean["rh"],
+                                self.hparams.inp_mean["t2"],
+                                self.hparams.inp_mean["tp"],
+                                self.hparams.inp_mean["wspeed"],
+                            )
+                        ]
+                        + (
+                            [
+                                self.hparams.smos_mean
+                                for i in range(self.hparams.in_days)
+                            ]
+                            if self.hparams.smos_input
+                            else []
+                        ),
+                        [
+                            x
+                            for i in range(self.hparams.in_days)
+                            for x in (
+                                self.hparams.inp_std["rh"],
+                                self.hparams.inp_std["t2"],
+                                self.hparams.inp_std["tp"],
+                                self.hparams.inp_std["wspeed"],
+                            )
+                        ]
+                        + (
+                            [self.hparams.smos_std for i in range(self.hparams.in_days)]
+                            if self.hparams.smos_input
+                            else []
+                        ),
                     ),
-                    [
-                        x
-                        for i in range(self.hparams.in_days)
-                        for x in (
-                            self.hparams.inp_std["rh"],
-                            self.hparams.inp_std["t2"],
-                            self.hparams.inp_std["tp"],
-                            self.hparams.inp_std["wspeed"],
-                        )
-                    ]
-                    + (
-                        [self.hparams.smos_std for i in range(self.hparams.in_days)]
-                        if self.hparams.smos_input
-                        else []
-                    ),
-                ),
-            ]
-        )
+                ]
+            )
 
     def __len__(self):
         """
