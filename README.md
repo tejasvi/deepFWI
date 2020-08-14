@@ -75,10 +75,10 @@
   * The [src/model/base_model.py](src/model/base_model.py) script has the common implementation used by every model.
 
 * The [data/EDA/](data/EDA/) directory contains the Exploratory Data Analysis and Preprocessing required for each dataset demonstrated via Jupyter Notebooks.
-  * Forcings data: [data/EDA/fwi_forcings.ipynb](data/EDA/fwi_forcings.ipynb)
-  * Soil moisture data: [data/EDA/soil_moisture.ipynb](data/EDA/soil_moisture.ipynb)
-  * Reanalysis data: [data/EDA/fwi_reanalysis.ipynb](data/EDA/fwi_reanalysis.ipynb)
-  * Forecast data: [data/EDA/fwi_forecast.ipynb](data/EDA/fwi_forecast.ipynb)
-  * FRP data: [data/EDA/frp.ipynb](data/EDA/frp.ipynb)
+  * Forcings data: [data/EDA/fwi_forcings.ipynb](data/EDA/fwi_forcings.ipynb) (*Resolution: 2560x5120, 1 day*)
+  * Soil moisture data: [data/EDA/soil_moisture.ipynb](data/EDA/soil_moisture.ipynb) (*Resolution: 600x1440, 3 days*)
+  * Reanalysis data: [data/EDA/fwi_reanalysis.ipynb](data/EDA/fwi_reanalysis.ipynb) (*Resolution: 640x1280, 1 day*)
+  * Forecast data: [data/EDA/fwi_forecast.ipynb](data/EDA/fwi_forecast.ipynb) (*Resolution: 2560x5120, 1 day*)
+  * FRP data: [data/EDA/frp.ipynb](data/EDA/frp.ipynb) (*Resolution: 1800x3600, 1 day*)
   
 * A walk-through of the codebase is in the [Code_Structure_Overview.md](Code_Structure_Overview.md).
