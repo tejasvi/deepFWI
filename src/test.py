@@ -154,8 +154,9 @@ def single_day_plot(result, hparams, m, benchmark=None):
             )
         )
 
-    for rect in rect_list:
-        autolabel(rect, ax, width)
+    # bar labels not needed, since it is not legible
+#     for rect in rect_list:
+#         autolabel(rect, ax, width)
 
     if benchmark:
         ax.legend()
@@ -233,8 +234,9 @@ def multi_day_plot(result, hparams, benchmark=None, m="acc"):
     labels.append(labels.pop(1))
     ax.legend(handles, labels, bbox_to_anchor=(1, 1), loc="upper left")
 
-    for rect in rects:
-        autolabel(rect, ax, width)
+    # bar labels not needed, since it is not legible
+#     for rect in rects:
+#         autolabel(rect, ax, width)
 
     fig.tight_layout()
 
