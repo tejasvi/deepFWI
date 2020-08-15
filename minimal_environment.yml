@@ -16,7 +16,6 @@ dependencies:
   - pip=20.0.2
   - plac=0.9.6
   - python=3.7.7
-  - pytorch-lightning=0.9.0rc12
   - pytorch=1.5.0
   - regionmask=0.5.0
   - scikit-image=0.16.2
@@ -26,4 +25,5 @@ dependencies:
   - torchvision=0.6.0
   - pip:
     - wandb==0.8.36
+    - pytorch_lightning==0.9.0rc12
     - gsutil
