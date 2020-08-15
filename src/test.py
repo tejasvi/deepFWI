@@ -45,9 +45,13 @@ def main(hparams, verbose=True):
     # 1 INIT MODEL
     # ------------------------
 
+    # https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-model-across-devices
     model = get_model(hparams)
     if not hparams.benchmark:
-        model.load_state_dict(torch.load(hparams.checkpoint_file)["state_dict"])
+        if torch.cuda.is_available():
+            model.load_state_dict(torch.load(hparams.checkpoint_file)["state_dict"])
+        else:
+            model.load_state_dict(torch.load(hparams.checkpoint_file, torch.device('cpu'))["state_dict"])
     model.eval()
 
     # ------------------------
@@ -61,6 +65,7 @@ def main(hparams, verbose=True):
     # ------------------------
 
     # Temporary fix until next release of pytorch-lightning
+    # configured to work for pytorch_lightning 0.9.0 rc12
     try:
         result = trainer.test(model, verbose=verbose)[0]
     except:
