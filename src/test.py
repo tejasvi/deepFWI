@@ -184,7 +184,8 @@ def multi_day_plot(result, hparams, benchmark=None, m="acc"):
 
     fig, ax = plt.subplots()
     rects = []
-    color = [f"C{i}" for i in range(10)]
+    
+    color = ["#008000", "#FFFF00", "#FFA500", "#FF0000", "#654321", "#000000"]
     for i in range(len(bin_range)):
         rects.append(
             ax.bar(
