@@ -43,7 +43,6 @@
     -out-days 1                             Number of output days [int]
     -epochs 100                             Number of training epochs [int]
     -learning-rate 0.001                    Maximum learning rate [float]
-    -loss mse                               Loss function: mae, mse [str]
     -batch-size 1                           Batch size of the input [int]
     -split 0.2                              Test split fraction [float]
     -use-16bit True                         Use 16-bit precision for training (train only) [Bool]
@@ -52,8 +51,8 @@
     -dry-run False                          Use small amount of data for sanity check [Bool]
     -case-study False                       The case-study region to use for inference: australia,california, portugal, siberia, chile, uk [Bool/str]
     -clip-output False                      Limit the inference to the output values within supplied range (e.g. 0.5,60) [Bool/list]
-    -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference. [Bool/float]
-    -binned False                           Show the extended metrics for supplied comma separated binned FWI value range [Bool/list]
+    -boxcox 0.1182                          Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference. [Bool/float]
+    -binned "0,5.2,11.2,21.3,38.0,50"       Show the extended metrics for supplied comma separated binned FWI value range [Bool/list]
     -undersample False                      Undersample the datapoints having smaller than specified FWI (e.g. -undersample=10) [Bool/float]
     -round-to-zero False                    Round off the target values below the specified threshold to zero [Bool/float]
     -date_range False                       Filter the data with specified date range. E.g. 2019-04-01,2019-05-01 [Bool/float]
@@ -66,6 +65,7 @@
     -reanalysis-dir ${REANALYSIS_DIR}       Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR [str]
     -smos-dir ${SMOS_DIR}                   Directory containing soil moisture data. Alternatively set $SMOS_DIR [str]
     -mask src/dataloader/mask.npy           File containing the mask stored as the numpy array [str]
+    -benchmark False                        Benchmark the FWI-Forecast data against FWI-Reanalysis [Bool]
     -comment Comment of choice!             Used for logging [str]
     -checkpoint-file                        Path to the test model checkpoint [Bool/str]</pre>
 
@@ -75,10 +75,12 @@
   * The [src/model/base_model.py](src/model/base_model.py) script has the common implementation used by every model.
 
 * The [data/EDA/](data/EDA/) directory contains the Exploratory Data Analysis and Preprocessing required for each dataset demonstrated via Jupyter Notebooks.
-  * Forcings data: [data/EDA/fwi_forcings.ipynb](data/EDA/fwi_forcings.ipynb) (*Resolution: 2560x5120, 1 day*)
+  * Forcings data: [data/EDA/fwi_forcings.ipynb](data/EDA/fwi_forcings.ipynb) (*Resolution: 0.07 deg x 0.07 deg, 10 days*)
+  * Reanalysis data: [data/EDA/fwi_reanalysis.ipynb](data/EDA/fwi_reanalysis.ipynb) (*Resolution: 0.1 deg x 0.1 deg, 1 day*)
+  * Forecast data: [data/EDA/fwi_forecast.ipynb](data/EDA/fwi_forecast.ipynb) (*Resolution: 0.1 deg x 0.1 deg, 10 days*)
+  
+  To-Fix - 
   * Soil moisture data: [data/EDA/soil_moisture.ipynb](data/EDA/soil_moisture.ipynb) (*Resolution: 600x1440, 3 days*)
-  * Reanalysis data: [data/EDA/fwi_reanalysis.ipynb](data/EDA/fwi_reanalysis.ipynb) (*Resolution: 640x1280, 1 day*)
-  * Forecast data: [data/EDA/fwi_forecast.ipynb](data/EDA/fwi_forecast.ipynb) (*Resolution: 2560x5120, 1 day*)
-  * FRP data: [data/EDA/frp.ipynb](data/EDA/frp.ipynb) (*Resolution: 1800x3600, 1 day*)
+  * FRP data: [data/EDA/frp.ipynb](data/EDA/frp.ipynb) (*Resolution: 0.1 deg x 0.1 deg, 1 day*)
   
 * A walk-through of the codebase is in the [Code_Structure_Overview.md](Code_Structure_Overview.md).
