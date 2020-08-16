@@ -204,19 +204,20 @@ def multi_day_plot(result, hparams, benchmark=None, m="acc"):
                 align="center",
                 color=color[i],
             )
-        )
-
+        ) 
+        
+    
     if benchmark:
         bench = [list(x.values()) for x in benchmark.values()]
         for i in range(len(bin_range)):
-            ax.plot(x, bench[i], color=color[i], zorder=3)
+            ax.plot(x, bench[i], color=color[i], marker='o', zorder=3, label=None if i else r"$\mathbf{FWI-Forecast}$")
             
     ax.plot([], [], " ", label=r"$\mathbf{deepFWI}$")
 
     ylabel = {
-        "acc": "Accuracy",
-        "mae": "Mean absolute error",
-        "mse": "Mean squared error",
+        "acc": "Accuracy in %",
+        "mae": "Mean absolute error (A.U.)",
+        "mse": "Mean squared error (A.U.)",
     }
     ax.set_ylabel(ylabel[m])
     ax.set_title(
@@ -229,8 +230,8 @@ def multi_day_plot(result, hparams, benchmark=None, m="acc"):
     ax.set_xticklabels(labels)
     ax.legend()
     handles, labels = ax.get_legend_handles_labels()
-    handles.append(handles.pop(1))
-    labels.append(labels.pop(1))
+    handles.append('_')
+    labels.append('FWI-forecast')
     ax.legend(handles, labels, bbox_to_anchor=(1, 1), loc="upper left", fontsize='x-small')
 
     # bar labels not needed, since it is not legible
