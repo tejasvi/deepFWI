@@ -205,22 +205,12 @@ def multi_day_plot(result, hparams, benchmark=None, m="acc"):
                 color=color[i],
             )
         )
+
     if benchmark:
-        rects_b = []
         bench = [list(x.values()) for x in benchmark.values()]
         for i in range(len(bin_range)):
-            rects_b.append(
-                ax.scatter(
-                    x - width * (len(bin_range) + 1) / 2 + (i + 1) * width,
-                    [int(x) for x in bench[i]],
-                    color="black",
-                    marker="x",
-                    s=1000 * width,
-                    zorder=3,
-                    label=None if i else r"$\mathbf{FWI-Forecast}$",
-                )
-            )
-
+            ax.plot(x, bench[i], color=color[i], zorder=3)
+            
     ax.plot([], [], " ", label=r"$\mathbf{deepFWI}$")
 
     ylabel = {
