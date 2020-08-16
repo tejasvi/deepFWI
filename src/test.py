@@ -113,8 +113,12 @@ def single_day_plot(result, hparams, m, benchmark=None):
         if i < len(bin_range) - 1
     ]
     bin_labels.append(f"({bin_range[-1]}, inf)")
+    
+    fwi_levels = ['V. Low', 'Low', 'Mod', 'High', 'V. High', 'Extreme']
+    bin_labels = [bin_labels[i] + "\n" + fwi_levels[i] for i in range(len(bin_labels))]
+    
 
-    xlab = "Prediction day"
+    xlab = "FWI Level"
     # The label locations
     x = np.arange(len(bin_labels))
     # The width of the bars
@@ -167,13 +171,17 @@ def single_day_plot(result, hparams, m, benchmark=None):
 
 def multi_day_plot(result, hparams, benchmark=None, m="acc"):
     bin_range = hparams.binned
-
+    
+    fwi_levels = ['V. Low', 'Low', 'Mod', 'High', 'V. High', 'Extreme']
+    
     bin_labels = [
         f"({bin_range[i]}, {bin_range[i+1]}]"
         for i in range(len(bin_range))
         if i < len(bin_range) - 1
     ]
     bin_labels.append(f"({bin_range[-1]}, inf)")
+    
+    bin_labels = [bin_labels[i] + " " + fwi_levels[i] for i in range(len(bin_labels))]
 
     labels = list(range(len(list(result.values())[0])))
 
@@ -233,7 +241,7 @@ def multi_day_plot(result, hparams, benchmark=None, m="acc"):
     handles, labels = ax.get_legend_handles_labels()
     handles.append(handles.pop(1))
     labels.append(labels.pop(1))
-    ax.legend(handles, labels, bbox_to_anchor=(1, 1), loc="upper left")
+    ax.legend(handles, labels, bbox_to_anchor=(1, 1), loc="upper left", fontsize='x-small')
 
     # bar labels not needed, since it is not legible
 #     for rect in rects:
