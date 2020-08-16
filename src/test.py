@@ -235,7 +235,7 @@ def multi_day_plot(result, hparams, benchmark=None, m="acc"):
     )
 
     ax.set_xticks(x)
-    ax.set_xlabel("FWI range")
+    ax.set_xlabel("Day of FWI Prediction")
     ax.set_xticklabels(labels)
     ax.legend()
     handles, labels = ax.get_legend_handles_labels()
