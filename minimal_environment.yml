@@ -5,6 +5,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - black=19.10b0
   - cudatoolkit=10.2.89
   - h5netcdf=0.8.1
   - imbalanced-learn=0.7.0
