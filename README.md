@@ -51,8 +51,8 @@
     -dry-run False                          Use small amount of data for sanity check [Bool]
     -case-study False                       The case-study region to use for inference: australia,california, portugal, siberia, chile, uk [Bool/str]
     -clip-output False                      Limit the inference to the output values within supplied range (e.g. 0.5,60) [Bool/list]
-    -boxcox False                           Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference. [Bool/float]
-    -binned False                           Show the extended metrics for supplied comma separated binned FWI value range [Bool/list]
+    -boxcox 0.1182                          Apply boxcox transformation with specified lambda while training and the inverse boxcox transformation during the inference. [Bool/float]
+    -binned "0,5.2,11.2,21.3,38.0,50"       Show the extended metrics for supplied comma separated binned FWI value range [Bool/list]
     -undersample False                      Undersample the datapoints having smaller than specified FWI (e.g. -undersample=10) [Bool/float]
     -round-to-zero False                    Round off the target values below the specified threshold to zero [Bool/float]
     -date_range False                       Filter the data with specified date range. E.g. 2019-04-01,2019-05-01 [Bool/float]
@@ -65,6 +65,7 @@
     -reanalysis-dir ${REANALYSIS_DIR}       Directory containing reanalysis data. Alternatively set $REANALYSIS_DIR [str]
     -smos-dir ${SMOS_DIR}                   Directory containing soil moisture data. Alternatively set $SMOS_DIR [str]
     -mask src/dataloader/mask.npy           File containing the mask stored as the numpy array [str]
+    -benchmark False                        Benchmark the FWI-Forecast data against FWI-Reanalysis [Bool]
     -comment Comment of choice!             Used for logging [str]
     -checkpoint-file                        Path to the test model checkpoint [Bool/str]</pre>
 
