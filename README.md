@@ -1,5 +1,18 @@
 # deepFWI: Prediction of Fire Weather Index
 
+## TL; DR
+
+This codebase (and this README) is a work-in-progress. We are constantly refactoring and introducing breaking changes. Here's a quick few steps that *just work* to get going:
+
+* Clone the repo and create a conda environment using `minimal_environment.yml` on Ubuntu 18.04 and 20.04 only.
+* Check the EDA notebooks titled [`EDA_XXX_mini_sample.ipynb`](data/EDA). We recommend `jupyterlab`.
+* The notebooks also include code to download mini-samples of the dataset (`~17GiB`).
+* Check the Inference notebook titled [`Sample_Inference_4_10.ipynb`](examples/Sample_Inference_4_10.ipynb).
+
+For a deeper dive, read the instructions below or head straight to [`Code_Structure_Overview.md`](Code_Structure_Overview.md) and then explore your way around [`train.py`](src/train.py), [`test.py`](src/test.py), [`dataloader/`](src/dataloader/) and [`model/`](src/model/).
+
+The work-in-progress documentation can be viewed online on [wildfire-forecasting.readthedocs.io](https://wildfire-forecasting.readthedocs.io/en/latest/).
+
 ## Getting Started:
 - **Clone this repo**:
 <br> `git clone https://github.com/wikilimo/deepFWI.git`
@@ -9,7 +22,7 @@
 <br> `conda env create -f environment.yml`
 <br> `conda activate wildfire-dl`
 
-* **Using docker**: To create the image and container, run
+* **Using docker**: Docker support is experimental. To create the image and container, run
 <br> `docker build -t deepfwi .`
 <br> `docker docker run -it deepfwi`
 
@@ -84,3 +97,14 @@
   * FRP data: [data/EDA/frp.ipynb](data/EDA/frp.ipynb) (*Resolution: 0.1 deg x 0.1 deg, 1 day*)
   
 * A walk-through of the codebase is in the [Code_Structure_Overview.md](Code_Structure_Overview.md).
+
+## Documentation
+
+We use Sphinx for building our docs and host them on Readthedocs. The latest build of the docs can be accessed online [here](https://wildfire-forecasting.readthedocs.io/en/latest/). In order to build the docs from source, you will need `sphinx` and `sphinx-autoapi`. Follow the instructions below:
+
+```bash
+cd docs
+make html
+```
+
+Once the docs get built, you can access them inside [`docs/build/html/`](docs/build/html/index.html).
