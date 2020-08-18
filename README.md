@@ -72,7 +72,7 @@ The work-in-progress documentation can be viewed online on [wildfire-forecasting
     -cb_loss False                          Use Class-Balanced loss with the supplied beta parameter [Bool/float]
     -chronological_split False              Do chronological train-test split in the specified ratio [Bool/float]
     -model unet_tapered                     Model to use: unet, unet_downsampled, unet_snipped, unet_tapered, unet_interpolated [str]
-    -out fwi_reanalysis                     Output data for training: fwi_forecast or fwi_reanalysis [str]
+    -out fwi_reanalysis                     Output data for training: fwi_forecast or gfas_frp [str]
     -smos_input False                       Use soil-moisture input data [Bool]
     -forecast-dir ${FORECAST_DIR}           Directory containing forecast data. Alternatively set $FORECAST_DIR [str]
     -forcings-dir ${FORCINGS_DIR}           Directory containing forcings data. Alternatively set $FORCINGS_DIR [str]
@@ -92,11 +92,11 @@ The work-in-progress documentation can be viewed online on [wildfire-forecasting
   * Forcings data: [data/EDA/fwi_forcings.ipynb](data/EDA/fwi_forcings.ipynb) (*Resolution: 0.07 deg x 0.07 deg, 10 days*)
   * Reanalysis data: [data/EDA/fwi_reanalysis.ipynb](data/EDA/fwi_reanalysis.ipynb) (*Resolution: 0.1 deg x 0.1 deg, 1 day*)
   * Forecast data: [data/EDA/fwi_forecast.ipynb](data/EDA/fwi_forecast.ipynb) (*Resolution: 0.1 deg x 0.1 deg, 10 days*)
-  
-  To-Fix - 
+
+  To-Fix -
   * Soil moisture data: [data/EDA/soil_moisture.ipynb](data/EDA/soil_moisture.ipynb) (*Resolution: 600x1440, 3 days*)
   * FRP data: [data/EDA/frp.ipynb](data/EDA/frp.ipynb) (*Resolution: 0.1 deg x 0.1 deg, 1 day*)
-  
+
 * A walk-through of the codebase is in the [Code_Structure_Overview.md](Code_Structure_Overview.md).
 
 ## Documentation
